@@ -2,6 +2,14 @@
 .env
 .env.*
 
+# ...ancak örnek/şablon dosyaları takip edilmeli (yeni ortam kurulabilsin diye)
+!.env.example
+!.env.*.example
+
+# Dependencies (backend/.gitignore da kapsıyor; buradaki kural ikinci savunma hattı)
+vendor/
+node_modules/
+
 # IDE / OS
 .vscode/
 .idea/
