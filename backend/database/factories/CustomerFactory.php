@@ -54,6 +54,8 @@ class CustomerFactory extends Factory
             ? $companyId->getKey()
             : $companyId;
 
-        return (int) Customer::where('company_id', $companyId)->max('customer_no') + 1;
+        return (int) Customer::withoutTenantScope('factory: numara hesabı company_id ile sınırlı')
+            ->where('company_id', $companyId)
+            ->max('customer_no') + 1;
     }
 }

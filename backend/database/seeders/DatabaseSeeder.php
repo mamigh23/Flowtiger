@@ -66,17 +66,27 @@ class DatabaseSeeder extends Seeder
             ['customer_no' => 2, 'name' => 'Mehmet', 'phone' => '05050000001'],
         ];
 
-        foreach ($customers as $customer) {
-            Customer::firstOrCreate(
-                [
-                    'company_id' => $company->getKey(),
-                    'customer_no' => $customer['customer_no'],
-                ],
-                [
-                    'name' => $customer['name'],
-                    'phone' => $customer['phone'],
-                ],
-            );
+        foreach ($customers as $attributes) {
+            // Seeder sistem seviyesi bir işlemdir: aktif company context yoktur,
+            // bu yüzden tenant scope'u açıkça devre dışı bırakılır.
+            $customer = Customer::withoutTenantScope('seeder: gelistirme verisi kuruluyor')
+                ->where('company_id', $company->getKey())
+                ->where('customer_no', $attributes['customer_no'])
+                ->first();
+
+            if ($customer === null) {
+                $customer = new Customer();
+
+                // company_id ve customer_no mass-assignable değildir (§9);
+                // sistem tarafından açıkça atanır.
+                $customer->company_id = $company->getKey();
+                $customer->customer_no = $attributes['customer_no'];
+            }
+
+            $customer->fill([
+                'name' => $attributes['name'],
+                'phone' => $attributes['phone'],
+            ])->save();
         }
     }
 }

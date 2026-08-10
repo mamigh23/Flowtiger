@@ -37,4 +37,22 @@ public function companies(): BelongsToMany
         ->withPivot('role')
         ->withTimestamps();
 }
+
+    /**
+     * Kullanıcı bu şirketin üyesi mi?
+     *
+     * Tenant isolation'ın en alt seviyedeki doğrulaması. Hem CompanyContext
+     * hem CustomerPolicy buraya dayanır, bu yüzden pivot tablosunu her zaman
+     * veritabanından sorgular — bellekteki bir ilişkiye güvenmez.
+     */
+    public function isMemberOf(Company|int $company): bool
+    {
+        $companyId = $company instanceof Company ? $company->getKey() : $company;
+
+        if ($companyId === null) {
+            return false;
+        }
+
+        return $this->companies()->whereKey($companyId)->exists();
+    }
 }
