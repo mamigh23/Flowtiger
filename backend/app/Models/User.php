@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -38,6 +39,21 @@ public function companies(): BelongsToMany
         ->withPivot('role')
         ->withTimestamps();
 }
+
+    /**
+     * Kullanıcının o anda üzerinde çalıştığı şirket.
+     *
+     * DİKKAT: active_company_id bilinçli olarak #[Fillable] listesinde
+     * DEĞİLDİR. Aktif şirket yalnızca CompanySelectionService üzerinden,
+     * üyelik doğrulandıktan sonra değiştirilebilir (Anayasa §16).
+     *
+     * Bu ilişkinin varlığı üyeliğin geçerli olduğunu KANITLAMAZ; üyelik her
+     * istekte yeniden doğrulanır (bkz. CompanySelectionService::resolveFor).
+     */
+    public function activeCompany(): BelongsTo
+    {
+        return $this->belongsTo(Company::class, 'active_company_id');
+    }
 
     /**
      * Kullanıcı bu şirketin üyesi mi?
