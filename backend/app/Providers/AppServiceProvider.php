@@ -2,9 +2,12 @@
 
 namespace App\Providers;
 
+use App\Models\User;
+use App\Policies\CompanyMemberPolicy;
 use App\Services\CompanyContext;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
@@ -34,6 +37,40 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureLoginRateLimiter();
+        $this->registerPolicies();
+    }
+
+    /*
+     * NOT — Relation::morphMap BİLİNÇLİ OLARAK KULLANILMADI.
+     *
+     * audit_logs.auditable_type'a 'App\Models\Customer' yerine 'customer'
+     * yazdırmak cazipti. Ancak morphMap GLOBAL'dir ve Laravel'deki TÜM
+     * polimorfik ilişkileri etkiler — Sanctum'un
+     * personal_access_tokens.tokenable_type sütunu dahil. Haritayı
+     * kurmak, Faz 2.1'den beri çalışan token şemasını sessizce
+     * değiştirir ve SanctumTokenTest'in doğruladığı sözleşmeyi kırardı.
+     *
+     * Audit tablosunun okunabilirliği için ödenecek bedel değil.
+     * Kısaltma yalnızca API yanıtında, AuditLogResource içinde yapılır;
+     * veritabanı Laravel'in standart davranışını korur ve morphTo
+     * ilişkisi sorunsuz çözülür.
+     */
+
+    /**
+     * İsimlendirmeyle otomatik keşfedilemeyen policy kayıtları.
+     *
+     * CompanyMemberPolicy, adı gereği App\Policies\UserPolicy olmadığı için
+     * açıkça bağlanır. Bu bilinçli bir tercih: "UserPolicy" adı, uygulamanın
+     * HER yerindeki User yetkilendirmesinin şirket üyeliği kuralına tabi
+     * olduğunu ima ederdi. Oysa bu policy'nin sorduğu tek soru şudur:
+     * "isteği yapan, AKTİF ŞİRKETİN üyelerini yönetebilir mi?"
+     *
+     * CustomerPolicy kaydedilmez ve kaydedilmemelidir — o, Laravel'in
+     * Model↔Policy isim eşleşmesiyle Faz 1'den beri otomatik bulunuyor.
+     */
+    private function registerPolicies(): void
+    {
+        Gate::policy(User::class, CompanyMemberPolicy::class);
     }
 
     /**

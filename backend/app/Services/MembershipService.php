@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\AuditAction;
 use App\Enums\Role;
 use App\Exceptions\LastOwnerException;
 use App\Models\Company;
@@ -23,6 +24,10 @@ use Illuminate\Support\Facades\DB;
  */
 class MembershipService
 {
+    public function __construct(
+        private readonly AuditLogService $audit,
+    ) {}
+
     /**
      * Şirketin üyelerini sorgulayan ilişki (sayfalama için).
      *
@@ -109,7 +114,60 @@ class MembershipService
             // Rol pivot'a AÇIKÇA yazılır; mass assignment yolu yoktur.
             $company->users()->attach($user->getKey(), ['role' => $role->value]);
 
-            return $this->findMemberOrFail($company, $user);
+            $member = $this->findMemberOrFail($company, $user);
+
+            // PAROLA AUDIT'E GİRMEZ. new_values elle seçilmiş üç alandan
+            // ibarettir; $user->toArray() gibi bir kestirme, modele yarın
+            // eklenecek hassas bir alanı sessizce audit'e taşırdı (§3).
+            $this->audit->record(
+                action: AuditAction::MemberCreated,
+                company: $company,
+                auditable: $member,
+                newValues: [
+                    'name' => $member->name,
+                    'email' => $member->email,
+                    'role' => $role->value,
+                ],
+            );
+
+            return $member;
+        });
+    }
+
+    /**
+     * Üyenin adını ve e-postasını günceller.
+     *
+     * Bu iş Faz 4'te controller'daydı. Faz 5'te buraya taşındı çünkü
+     * güncelleme ile audit kaydının AYNI transaction'da olması gerekiyor
+     * (§9): profil değişip iz kaybolursa, "bu e-posta ne zaman değişti"
+     * sorusu cevapsız kalır.
+     *
+     * Rol BURADA DEĞİŞTİRİLEMEZ; onun ayrı bir metodu ve ayrı yetkisi var.
+     */
+    public function updateProfile(Company $company, User $member, string $name, string $email): User
+    {
+        return DB::transaction(function () use ($company, $member, $name, $email): User {
+            $membership = $this->findMemberOrFail($company, $member);
+
+            $oldValues = [
+                'name' => $membership->name,
+                'email' => $membership->email,
+            ];
+
+            $membership->fill([
+                'name' => $name,
+                'email' => $email,
+            ])->save();
+
+            $this->audit->record(
+                action: AuditAction::MemberUpdated,
+                company: $company,
+                auditable: $membership,
+                oldValues: $oldValues,
+                newValues: ['name' => $membership->name, 'email' => $membership->email],
+            );
+
+            return $membership;
         });
     }
 
@@ -147,7 +205,19 @@ class MembershipService
 
             // Pivot'u tazelemek için yeniden okunur; yanıt gerçekten
             // veritabanındaki rolü göstermeli.
-            return $this->findMemberOrFail($company, $member);
+            $updated = $this->findMemberOrFail($company, $member);
+
+            // Yetki değişimi audit'in en kritik kaydıdır: birinin owner
+            // olması, şirketin kontrolünün el değiştirmesidir.
+            $this->audit->record(
+                action: AuditAction::MemberRoleChanged,
+                company: $company,
+                auditable: $updated,
+                oldValues: ['role' => $currentRole?->value],
+                newValues: ['role' => $newRole->value],
+            );
+
+            return $updated;
         });
     }
 
@@ -173,7 +243,21 @@ class MembershipService
 
             $company->users()->detach($member->getKey());
 
-            $this->clearStaleActiveCompany($company, $member);
+            $this->clearStaleActiveCompany($company, $membership);
+
+            // Çıkarılan üyenin hangi rolde olduğu kaydedilir: bir owner'ın
+            // çıkarılması ile bir member'ın çıkarılması aynı ağırlıkta
+            // olaylar değildir.
+            $this->audit->record(
+                action: AuditAction::MemberRemoved,
+                company: $company,
+                auditable: $membership,
+                oldValues: [
+                    'name' => $membership->name,
+                    'email' => $membership->email,
+                    'role' => $currentRole?->value,
+                ],
+            );
         });
     }
 

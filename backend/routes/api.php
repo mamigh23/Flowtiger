@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\V1\AuditLogController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\CompanyController;
 use App\Http\Controllers\Api\V1\CustomerController;
@@ -121,4 +122,17 @@ Route::middleware(['auth:sanctum', 'company.context'])->name('api.v1.')->group(f
 
     Route::delete('members/{user}', [MemberController::class, 'destroy'])
         ->name('members.destroy');
+
+    /*
+    | AUDIT GEÇMİŞİ — salt okunur.
+    |
+    | Yalnızca listeleme var: audit kaydı API'den yazılamaz, güncellenemez,
+    | silinemez. Yazılabilseydi iz uydurmak mümkün olurdu.
+    |
+    | company.context ZORUNLU: AuditLog'un global scope'u aktif şirkete
+    | filtreler ve context yoksa fail-closed patlar. Bu uç asla o
+    | zincirin dışına çıkarılmamalı (§25).
+    */
+    Route::get('audit-logs', [AuditLogController::class, 'index'])
+        ->name('audit-logs.index');
 });

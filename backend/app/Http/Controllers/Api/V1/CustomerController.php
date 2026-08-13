@@ -134,11 +134,15 @@ class CustomerController extends Controller
     {
         $this->authorize('update', $customer);
 
-        $customer->fill([
-            'name' => $request->validated('name'),
+        // Faz 5'te servise taşındı: değişiklik ile audit kaydı aynı
+        // transaction'da olmalı (§9).
+        $customer = $this->customers->update(
+            $this->context->getOrFail(),
+            $customer,
+            $request->validated('name'),
             // PUT semantiği: gönderilmeyen alan temizlenir, korunmaz.
-            'phone' => $request->validated('phone'),
-        ])->save();
+            $request->validated('phone'),
+        );
 
         return CustomerResource::make($customer);
     }
@@ -154,7 +158,7 @@ class CustomerController extends Controller
     {
         $this->authorize('delete', $customer);
 
-        $customer->delete();
+        $this->customers->delete($this->context->getOrFail(), $customer);
 
         return response()->noContent();
     }

@@ -117,12 +117,14 @@ class MemberController extends Controller
     {
         $this->authorize('update', $user);
 
-        $member = $this->memberships->findMemberOrFail($this->context->getOrFail(), $user);
-
-        $member->fill([
-            'name' => $request->validated('name'),
-            'email' => $request->validated('email'),
-        ])->save();
+        // Güncelleme Faz 5'te servise taşındı: değişiklik ile audit kaydı
+        // aynı transaction'da olmalı (§9).
+        $member = $this->memberships->updateProfile(
+            $this->context->getOrFail(),
+            $user,
+            $request->validated('name'),
+            $request->validated('email'),
+        );
 
         return MemberResource::make($member);
     }

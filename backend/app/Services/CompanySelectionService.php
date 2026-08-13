@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\AuditAction;
 use App\Exceptions\ActiveCompanyException;
 use App\Exceptions\CrossTenantAccessException;
 use App\Models\Company;
@@ -22,6 +23,7 @@ class CompanySelectionService
 {
     public function __construct(
         private readonly CompanyContext $context,
+        private readonly AuditLogService $audit,
     ) {}
 
     /**
@@ -44,6 +46,16 @@ class CompanySelectionService
         $user->save();
 
         $this->context->setForUser($user, $company);
+
+        // Audit, üyelik doğrulandıktan ve seçim GERÇEKLEŞTİKTEN sonra
+        // yazılır. Reddedilen bir seçim yukarıda exception ile döner ve
+        // hiçbir iz bırakmaz — audit yalnızca olan biteni kaydeder,
+        // denenen ve reddedileni değil (Faz 5 §11).
+        $this->audit->record(
+            action: AuditAction::CompanySelected,
+            company: $company,
+            auditable: $company,
+        );
 
         return $company;
     }

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\AuditAction;
 use App\Exceptions\CrossTenantAccessException;
 use App\Models\Company;
 use App\Models\Customer;
@@ -11,6 +12,7 @@ class CustomerService
 {
     public function __construct(
         private readonly CompanyContext $context,
+        private readonly AuditLogService $audit,
     ) {}
 
     /**
@@ -53,7 +55,89 @@ class CustomerService
             $customer->customer_no = $nextCustomerNo;
             $customer->save();
 
+            $this->audit->record(
+                action: AuditAction::CustomerCreated,
+                company: $company,
+                auditable: $customer,
+                newValues: [
+                    'customer_no' => $customer->customer_no,
+                    'name' => $customer->name,
+                    'phone' => $customer->phone,
+                ],
+            );
+
             return $customer;
+        });
+    }
+
+    /**
+     * Müşteriyi günceller.
+     *
+     * FAZ 3 KARARININ BİLİNÇLİ OLARAK TERSİNE ÇEVRİLMESİ:
+     * Faz 3'te bu metodu yazmamıştım; gerekçem "tek satırlık bir işlem
+     * için ikinci bir soyutlama katmanı" idi (projenin kendi YAGNI
+     * ilkesi). Faz 5 o gerekçeyi geçersiz kıldı: artık gerçek bir iş
+     * kuralı var — değişiklik ile audit kaydı AYNI transaction'da
+     * olmalı (§9). Kayıt güncellenip iz kaybolursa, "bu müşterinin
+     * telefonunu kim değiştirdi" sorusu cevapsız kalır.
+     *
+     * Tenant koruması değişmedi: müşteri zaten aktif şirket scope'undan
+     * geçerek gelir, BelongsToCompany da başka şirkete taşınmasını
+     * engeller.
+     */
+    public function update(Company $company, Customer $customer, string $name, ?string $phone): Customer
+    {
+        $this->guardAgainstCrossTenantWrite($company);
+
+        return DB::transaction(function () use ($company, $customer, $name, $phone): Customer {
+            $oldValues = [
+                'name' => $customer->name,
+                'phone' => $customer->phone,
+            ];
+
+            $customer->fill([
+                'name' => $name,
+                'phone' => $phone,
+            ])->save();
+
+            $this->audit->record(
+                action: AuditAction::CustomerUpdated,
+                company: $company,
+                auditable: $customer,
+                oldValues: $oldValues,
+                newValues: ['name' => $customer->name, 'phone' => $customer->phone],
+            );
+
+            return $customer;
+        });
+    }
+
+    /**
+     * Müşteriyi siler ve silinen halini audit'e bırakır.
+     *
+     * old_values burada özellikle değerli: kayıt artık yok, geriye
+     * yalnızca audit'teki kopya kalıyor. "Ne silindi" sorusunun tek
+     * cevabı bu satır olacak.
+     */
+    public function delete(Company $company, Customer $customer): void
+    {
+        $this->guardAgainstCrossTenantWrite($company);
+
+        DB::transaction(function () use ($company, $customer): void {
+            $oldValues = [
+                'customer_no' => $customer->customer_no,
+                'name' => $customer->name,
+                'phone' => $customer->phone,
+            ];
+
+            $customer->delete();
+
+            $this->audit->record(
+                action: AuditAction::CustomerDeleted,
+                company: $company,
+                auditable: $customer,
+                oldValues: $oldValues,
+            );
         });
     }
 

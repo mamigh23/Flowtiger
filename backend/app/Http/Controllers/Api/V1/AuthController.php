@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Enums\AuditAction;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\LoginRequest;
 use App\Http\Resources\UserResource;
 use App\Models\User;
+use App\Services\AuditLogService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -31,6 +33,10 @@ class AuthController extends Controller
      */
     private const TOKEN_NAME = 'api';
 
+    public function __construct(
+        private readonly AuditLogService $audit,
+    ) {}
+
     /**
      * E-posta + parola karşılığında bir personal access token üretir.
      *
@@ -50,16 +56,19 @@ class AuthController extends Controller
             // süresinden okunamaz.
             Hash::make($credentials['password']);
 
-            return $this->invalidCredentials();
+            return $this->failedLogin(null, $credentials['email']);
         }
 
         if (! Hash::check($credentials['password'], $user->getAuthPassword())) {
-            return $this->invalidCredentials();
+            return $this->failedLogin($user, $credentials['email']);
         }
 
         // Yeni token ÜRETİLİR, mevcutlar iptal EDİLMEZ: kullanıcının diğer
         // cihazlarındaki oturumları düşürmek login'in işi değildir.
         $token = $user->createToken(self::TOKEN_NAME)->plainTextToken;
+
+        // Token audit'e GİRMEZ; yalnızca olayın kendisi kaydedilir.
+        $this->audit->recordAuthEvent(AuditAction::LoginSucceeded, $user);
 
         return response()->json([
             'data' => [
@@ -85,6 +94,8 @@ class AuthController extends Controller
         if ($token instanceof PersonalAccessToken) {
             $token->delete();
         }
+
+        $this->audit->recordAuthEvent(AuditAction::LoggedOut, $request->user());
 
         return response()->noContent();
     }
@@ -113,5 +124,31 @@ class AuthController extends Controller
             'message' => 'Kimlik bilgileri hatalı.',
             'code' => 'invalid_credentials',
         ], Response::HTTP_UNAUTHORIZED);
+    }
+
+    /**
+     * Başarısız girişi kaydeder ve tek tip 401'i döndürür.
+     *
+     * PAROLA AUDIT'E GİRMEZ. E-POSTA DA DÜZ METİN GİRMEZ (§3, §12).
+     *
+     * Denenen adres kayıtlı bir kullanıcıya aitse user_id yazılır — "bu
+     * hesaba saldırı var mı?" sorusunun cevabı budur. Değilse yalnızca
+     * tek yönlü özet kalır: başarısız denemeler sistemde hesabı olmayan
+     * kişilerin adreslerini de içerir (yanlış yazım, credential stuffing
+     * listeleri) ve onları saklamak, saldırganın listesini bizim adımıza
+     * arşivlemek olurdu.
+     *
+     * Yanıt her iki durumda da BİRE BİR aynıdır; audit'in içeriği
+     * dışarıdan gözlemlenemez, user enumeration koruması bozulmaz.
+     */
+    private function failedLogin(?User $user, string $attemptedEmail): JsonResponse
+    {
+        $this->audit->recordAuthEvent(
+            AuditAction::LoginFailed,
+            $user,
+            ['email_hash' => $this->audit->hashEmail($attemptedEmail)],
+        );
+
+        return $this->invalidCredentials();
     }
 }

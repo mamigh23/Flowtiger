@@ -42,6 +42,20 @@ enum Role: string
     }
 
     /**
+     * Bu rol şirketin audit geçmişini görebilir mi?
+     *
+     * managesMembers()'tan AYRI bir metot olarak duruyor, ikisi şu an aynı
+     * cevabı verse bile. Sebep: bunlar farklı sorular. İleride "denetçi"
+     * gibi bir rol, üye yönetemeden audit okuyabilmeli; ya da tersine,
+     * üye yönetebilen biri güvenlik geçmişini göremeyebilir. İki soruyu
+     * tek metoda bağlamak, o ayrımı ileride imkânsız kılardı.
+     */
+    public function viewsAuditLogs(): bool
+    {
+        return $this === self::Owner;
+    }
+
+    /**
      * Şirketin en az bir tanesine sahip olmak ZORUNDA olduğu rol mü?
      *
      * "Bir şirket asla ownersız kalamaz" kuralının (§5, §19) tek
