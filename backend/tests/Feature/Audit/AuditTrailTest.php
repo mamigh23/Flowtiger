@@ -294,7 +294,12 @@ class AuditTrailTest extends TestCase
         $this->assertSame('Yeni Uye', $newValues['name']);
         $this->assertSame('member', $newValues['role']);
 
+        // E-posta özet olarak saklanır, düz metin olarak değil.
+        $this->assertSame(hash('sha256', 'yeni@flowtiger.test'), $newValues['email_hash']);
+        $this->assertArrayNotHasKey('email', $newValues);
+
         $this->assertArrayNotHasKey('password', $newValues);
+        $this->assertStringNotContainsString('yeni@flowtiger.test', $this->wholeAuditTableAsText());
         $this->assertStringNotContainsString(
             'super-gizli-parola',
             $this->wholeAuditTableAsText(),
@@ -313,8 +318,25 @@ class AuditTrailTest extends TestCase
 
         $row = $this->singleAuditRow(AuditAction::MemberUpdated);
 
-        $this->assertSame('member@flowtiger.test', $this->decode($row->old_values)['email']);
-        $this->assertSame('yeni-adres@flowtiger.test', $this->decode($row->new_values)['email']);
+        $old = $this->decode($row->old_values);
+        $new = $this->decode($row->new_values);
+
+        // Fixture adı factory'den geliyor; sabit yazmak yerine okunur.
+        $this->assertSame($this->member->name, $old['name']);
+        $this->assertSame('Yeni Ad', $new['name']);
+
+        // E-posta değişimi izlenebilir olmalı — ama DÜZ METİN DEĞİL.
+        // Audit kalıcı ve silinemez olduğu için oraya yazılan bir adres
+        // bir daha asla silinemez; tek yönlü özet hem izlenebilirliği
+        // hem silinebilirliği korur.
+        $this->assertSame(hash('sha256', 'member@flowtiger.test'), $old['email_hash']);
+        $this->assertSame(hash('sha256', 'yeni-adres@flowtiger.test'), $new['email_hash']);
+
+        $this->assertArrayNotHasKey('email', $old);
+        $this->assertArrayNotHasKey('email', $new);
+
+        $this->assertStringNotContainsString('member@flowtiger.test', $this->wholeAuditTableAsText());
+        $this->assertStringNotContainsString('yeni-adres@flowtiger.test', $this->wholeAuditTableAsText());
     }
 
     public function test_changing_a_role_records_the_old_and_new_role(): void

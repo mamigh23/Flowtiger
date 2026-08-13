@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\V1\AuditLogController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\CompanyController;
 use App\Http\Controllers\Api\V1\CustomerController;
+use App\Http\Controllers\Api\V1\InvitationController;
 use App\Http\Controllers\Api\V1\MemberController;
 use Illuminate\Support\Facades\Route;
 
@@ -62,6 +63,25 @@ Route::middleware('auth:sanctum')->name('api.v1.')->group(function (): void {
     Route::post('companies/{company}/select', [CompanyController::class, 'select'])
         ->name('companies.select');
 });
+
+/*
+| DAVET KABULÜ — tenant DIŞI ve kimlik doğrulaması ZORUNLU DEĞİL.
+|
+| Daveti kabul eden kişi çoğu zaman hiçbir şirketin üyesi değildir;
+| sıklıkla hiç hesabı da yoktur. auth:sanctum ya da company.context
+| eklenirse davet sistemi hiç çalışmaz. Bu ucun anahtarı token'dır ve
+| doğrulaması InvitationService'te yapılır.
+|
+| Token GÖVDEDE taşınır, URL'de değil: URL'ler erişim loglarına,
+| proxy'lere, Referer başlığına ve tarayıcı geçmişine düşer.
+|
+| throttle: bu uç kimlik doğrulaması olmadan çalıştığı için token deneme
+| saldırılarına açık tek yüzeydir. Token 256 bit olduğundan kaba kuvvet
+| pratikte imkânsız; sınır yine de ucuz bir sigorta.
+*/
+Route::post('invitations/accept', [InvitationController::class, 'accept'])
+    ->middleware('throttle:invitation-accept')
+    ->name('api.v1.invitations.accept');
 
 /*
 |--------------------------------------------------------------------------
@@ -135,4 +155,23 @@ Route::middleware(['auth:sanctum', 'company.context'])->name('api.v1.')->group(f
     */
     Route::get('audit-logs', [AuditLogController::class, 'index'])
         ->name('audit-logs.index');
+
+    /*
+    | DAVETLER — owner yönetimi.
+    |
+    | Kabul ucu bilinçli olarak bu grubun DIŞINDADIR (yukarıya bakınız).
+    |
+    | {invitation} binding'i daveti tenant'tan bağımsız çözer; Invitation
+    | global scope taşımaz çünkü kabul akışı company context olmadan
+    | çalışmak zorundadır. Tenant sınırı InvitationService'te çizilir
+    | ve başka şirketin daveti 404 döner.
+    */
+    Route::get('invitations', [InvitationController::class, 'index'])
+        ->name('invitations.index');
+
+    Route::post('invitations', [InvitationController::class, 'store'])
+        ->name('invitations.store');
+
+    Route::delete('invitations/{invitation}', [InvitationController::class, 'destroy'])
+        ->name('invitations.destroy');
 });
