@@ -19,6 +19,23 @@ class CustomerFactory extends Factory
      * hesaplanır — aksi halde company_id + customer_no UNIQUE kısıtı
      * testlerde rastgele patlar.
      *
+     * ⚠ TOPLU ÜRETİMDE create() KULLANMAYIN — createMany() KULLANIN.
+     *
+     * Numara aşağıda lazy attribute olarak, yani model BELLEKTE
+     * üretilirken hesaplanır. Laravel'in Factory::create() metodu ise
+     * count(N) verildiğinde önce N modelin TAMAMINI make() eder, ancak
+     * ondan SONRA store() ile tek tek kaydeder. Dolayısıyla N closure'ın
+     * hepsi aynı max(customer_no) değerini görür, hepsi aynı numarayı
+     * üretir ve ikinci INSERT'te UNIQUE kısıtı patlar:
+     *
+     *   ❌ Customer::factory()->count(5)->forCompany($c)->create()
+     *   ✅ Customer::factory()->count(5)->forCompany($c)->createMany()
+     *
+     * createMany() her kaydı ayrı ayrı create() ettiği için her closure
+     * bir öncekinin yazdığı satırı görür.
+     *
+     * Tek kayıt üretiminde create() güvenlidir.
+     *
      * @return array<string, mixed>
      */
     public function definition(): array

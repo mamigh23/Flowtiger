@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\CompanyController;
+use App\Http\Controllers\Api\V1\CustomerController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -18,13 +19,21 @@ use Illuminate\Support\Facades\Route;
 |   2. Hangi şirkettesin? → company.context
 |   3. Ne yapabilirsin?   → Policy (Customer uçları açıldığında)
 |
-| company.context BİLİNÇLİ olarak GLOBAL DEĞİLDİR. Aşağıdaki uçların
-| hiçbiri tenant verisi döndürmez, bu yüzden hiçbiri aktif şirket
-| gerektirmez. Tenant uçları (Customer CRUD, Faz 2.4+) şu zincirin
-| arkasına alınacaktır:
+| company.context BİLİNÇLİ olarak GLOBAL DEĞİLDİR. Dosya iki bölüme
+| ayrılır:
 |
-|   Route::middleware(['auth:sanctum', 'company.context'])->group(...)
+|   A) TENANT DIŞI uçlar  → yalnızca auth:sanctum
+|      (kullanıcı henüz şirket seçmemiş olabilir)
 |
+|   B) TENANT uçları      → auth:sanctum + company.context
+|      (aktif şirket ve üyelik doğrulanmadan geçilmez)
+|
+*/
+
+/*
+|--------------------------------------------------------------------------
+| A) TENANT DIŞI
+|--------------------------------------------------------------------------
 */
 
 Route::prefix('auth')->name('api.v1.auth.')->group(function (): void {
@@ -50,4 +59,35 @@ Route::middleware('auth:sanctum')->name('api.v1.')->group(function (): void {
 
     Route::post('companies/{company}/select', [CompanyController::class, 'select'])
         ->name('companies.select');
+});
+
+/*
+|--------------------------------------------------------------------------
+| B) TENANT UÇLARI
+|--------------------------------------------------------------------------
+|
+| Zincir: auth:sanctum → company.context → SubstituteBindings → controller
+|
+| Sıralama tesadüf değildir. {customer} binding sorgusu CompanyScope'un
+| altından geçer; scope ise aktif company context'e ihtiyaç duyar. Bu
+| yüzden company.context, SubstituteBindings'ten ÖNCE koşmak ZORUNDADIR
+| ve bu bootstrap/app.php'deki middleware priority kaydıyla garanti
+| edilmiştir. Sıra bozulursa her {customer} isteği 403 döner.
+|
+*/
+Route::middleware(['auth:sanctum', 'company.context'])->name('api.v1.')->group(function (): void {
+    Route::get('customers', [CustomerController::class, 'index'])
+        ->name('customers.index');
+
+    Route::post('customers', [CustomerController::class, 'store'])
+        ->name('customers.store');
+
+    Route::get('customers/{customer}', [CustomerController::class, 'show'])
+        ->name('customers.show');
+
+    Route::put('customers/{customer}', [CustomerController::class, 'update'])
+        ->name('customers.update');
+
+    Route::delete('customers/{customer}', [CustomerController::class, 'destroy'])
+        ->name('customers.destroy');
 });

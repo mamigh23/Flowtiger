@@ -7,6 +7,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Middleware\SubstituteBindings;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -30,6 +31,44 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'company.context' => ResolveCompanyContext::class,
         ]);
+
+        /*
+         * SIRALAMA GARANTİSİ — Faz 3'ün en kritik tek satırı.
+         *
+         * SORUN:
+         * Laravel, bir route'un middleware'lerini yazıldıkları sıraya göre
+         * DEĞİL, priority listesine göre çalıştırır (SortedMiddleware).
+         * SubstituteBindings bu listede vardır, ResolveCompanyContext ise
+         * yoktu. Sonuç:
+         *
+         *   auth:sanctum → SubstituteBindings → company.context
+         *
+         * Yani {customer} route model binding'i, aktif şirket HENÜZ
+         * KURULMAMIŞKEN çalışırdı. Binding sorgusu CompanyScope'un altından
+         * geçtiği için context bulamaz, TenantContextMissingException
+         * fırlatır ve HER show/update/delete isteği 403 dönerdi.
+         *
+         * ÇÖZÜM:
+         * ResolveCompanyContext'i priority listesinde SubstituteBindings'in
+         * hemen ÖNÜNE koymak. Böylece gerçek sıra:
+         *
+         *   auth:sanctum → company.context → SubstituteBindings → controller
+         *
+         * NEDEN BU ÇÖZÜM, "controller'da elle findOrFail" DEĞİL:
+         * Bu projenin tenant güvenliği "doğru şeyi otomatik yap" ilkesine
+         * dayanır (CompanyScope'un varlık sebebi budur). Binding'den vazgeçip
+         * her controller'da elle sorgu yazmak, gelecekteki her tenant modeli
+         * için unutulabilecek bir adım eklerdi. Bu satır ise bir kez yazılır
+         * ve tüm tenant modelleri için geçerlidir.
+         *
+         * Bu, GLOBAL MIDDLEWARE EKLEMEK DEĞİLDİR: priority listesi yalnızca
+         * bir route'ta ZATEN BULUNAN middleware'lerin sırasını belirler.
+         * company.context taşımayan uçlar bundan etkilenmez.
+         */
+        $middleware->prependToPriorityList(
+            before: SubstituteBindings::class,
+            prepend: ResolveCompanyContext::class,
+        );
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(
