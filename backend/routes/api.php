@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\CompanyController;
 use App\Http\Controllers\Api\V1\CustomerController;
+use App\Http\Controllers\Api\V1\MemberController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -90,4 +91,34 @@ Route::middleware(['auth:sanctum', 'company.context'])->name('api.v1.')->group(f
 
     Route::delete('customers/{customer}', [CustomerController::class, 'destroy'])
         ->name('customers.destroy');
+
+    /*
+    | ÜYELİK YÖNETİMİ
+    |
+    | {user} binding'i BİLİNÇLİ olarak tenant'tan bağımsızdır: User modeli
+    | global tenant scope'a sokulmaz, çünkü kullanıcı birden fazla şirketin
+    | üyesi olabilir ve login/me gibi uçlar şirketsiz de çalışmalıdır.
+    | Tenant sınırı MembershipService::findMemberOrFail'de çizilir → 404.
+    |
+    | Rol değişimi ayrı uçtur: PATCH, çünkü kaydın tamamı değil tek bir
+    | özniteliği değişir — ve çünkü en tehlikeli işlem kazara başka bir
+    | güncellemenin içine karışmamalıdır.
+    */
+    Route::get('members', [MemberController::class, 'index'])
+        ->name('members.index');
+
+    Route::post('members', [MemberController::class, 'store'])
+        ->name('members.store');
+
+    Route::get('members/{user}', [MemberController::class, 'show'])
+        ->name('members.show');
+
+    Route::put('members/{user}', [MemberController::class, 'update'])
+        ->name('members.update');
+
+    Route::patch('members/{user}/role', [MemberController::class, 'updateRole'])
+        ->name('members.role.update');
+
+    Route::delete('members/{user}', [MemberController::class, 'destroy'])
+        ->name('members.destroy');
 });

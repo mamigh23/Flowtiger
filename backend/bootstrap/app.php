@@ -1,6 +1,7 @@
 <?php
 
 use App\Exceptions\ActiveCompanyException;
+use App\Exceptions\LastOwnerException;
 use App\Exceptions\TenantContextMissingException;
 use App\Http\Middleware\ResolveCompanyContext;
 use Illuminate\Foundation\Application;
@@ -118,6 +119,30 @@ return Application::configure(basePath: dirname(__DIR__))
                 'message' => 'Aktif şirket bağlamı yok. Erişim reddedildi.',
                 'code' => 'tenant_context_missing',
             ], 403);
+        });
+
+        /*
+         * "Bir şirket asla ownersız kalamaz" kuralının ihlali.
+         *
+         * Neden 403 değil 422: isteği yapan kullanıcının yetkisi TAMDIR —
+         * owner olmasaydı policy zaten reddederdi. Reddedilen şey kişi
+         * değil, sistemi tutarsız bırakacak SONUÇ. 422 "isteğin biçimi
+         * doğru ama içeriği kabul edilemez" demektir; burada kastedilen
+         * tam olarak budur.
+         *
+         * Neden 409 değil: §21'de tanımlı status kümesinin dışına
+         * çıkmamak için. Ayrım makine-okunur kodla yapılır.
+         */
+        $exceptions->render(function (LastOwnerException $e, Request $request) {
+            if (! $request->is('api/*')) {
+                return null;
+            }
+
+            return response()->json([
+                'message' => 'Bu işlem şirketi owner\'sız bırakırdı. '.
+                    'Önce başka bir üyeye owner rolü verin.',
+                'code' => 'company_requires_an_owner',
+            ], 422);
         });
 
         /*
