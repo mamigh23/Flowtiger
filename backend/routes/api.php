@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\V1\CustomerController;
 use App\Http\Controllers\Api\V1\EmailVerificationController;
 use App\Http\Controllers\Api\V1\InvitationController;
 use App\Http\Controllers\Api\V1\MemberController;
+use App\Http\Controllers\Api\V1\PasswordResetController;
 use App\Http\Controllers\Api\V1\ProfileController;
 use Illuminate\Support\Facades\Route;
 
@@ -51,6 +52,25 @@ Route::prefix('auth')->name('api.v1.auth.')->group(function (): void {
     Route::post('logout', [AuthController::class, 'logout'])
         ->middleware('auth:sanctum')
         ->name('logout');
+
+    /*
+    | PAROLA SIFIRLAMA — ikisi de HERKESE AÇIK.
+    |
+    | Parolasını unutmuş kullanıcı tanım gereği giriş yapamaz;
+    | auth:sanctum eklemek akışı imkânsız kılardı. Kimlik, sıfırlama
+    | token'ıyla kanıtlanır ve token GÖVDEDE taşınır (URL'ler loglara,
+    | proxy'lere ve tarayıcı geçmişine düşer).
+    |
+    | Her ikisi de rate limit'lidir: forgot bir mail gönderim yüzeyi,
+    | reset ise token tahmin etme yüzeyidir.
+    */
+    Route::post('password/forgot', [PasswordResetController::class, 'sendResetLink'])
+        ->middleware('throttle:password-forgot')
+        ->name('password.forgot');
+
+    Route::post('password/reset', [PasswordResetController::class, 'reset'])
+        ->middleware('throttle:password-reset')
+        ->name('password.reset');
 });
 
 /*

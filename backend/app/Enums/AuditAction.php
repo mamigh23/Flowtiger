@@ -48,6 +48,21 @@ enum AuditAction: string
 
     case PasswordChanged = 'password.changed';
 
+    /*
+     * Parola sıfırlama.
+     *
+     * password.reset.failed BİLİNÇLİ OLARAK YOK (§13 değerlendirmesi):
+     * sıfırlama ucu kimlik doğrulaması OLMADAN çalışır ve audit tablosu
+     * Faz 5'ten beri kalıcıdır (güncellenemez, silinemez, saklama süresi
+     * yoktur). Başarısız denemeleri kaydetmek, tabloyu saldırganın
+     * istediği kadar büyütebildiği bir yüzeye çevirirdi. Üstelik geçersiz
+     * bir token hangi hesabın hedeflendiğini de söylemez — kayıt neredeyse
+     * bilgisiz olurdu. Doğru kontrol audit değil rate limit'tir.
+     */
+    case PasswordResetRequested = 'password.reset.requested';
+
+    case PasswordResetCompleted = 'password.reset.completed';
+
     // Şirket bağlamı
     case CompanySelected = 'company.selected';
 
@@ -103,6 +118,8 @@ enum AuditAction: string
             self::EmailVerificationRequested,
             self::EmailVerified,
             self::PasswordChanged,
+            self::PasswordResetRequested,
+            self::PasswordResetCompleted,
         ], true);
     }
 

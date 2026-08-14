@@ -109,8 +109,9 @@ class ProfileService
         User $user,
         #[\SensitiveParameter] string $newPassword,
         ?PersonalAccessToken $currentToken = null,
+        AuditAction $action = AuditAction::PasswordChanged,
     ): int {
-        return DB::transaction(function () use ($user, $newPassword, $currentToken): int {
+        return DB::transaction(function () use ($user, $newPassword, $currentToken, $action): int {
             // 'hashed' cast'i devrede: düz metin parola veritabanına
             // hiçbir koşulda yazılmaz.
             $user->password = $newPassword;
@@ -133,8 +134,14 @@ class ProfileService
             // 'session' vardır. 'revoked_other_tokens' ya da
             // 'revoked_other_sessions' gibi bir ad, sır sanılıp sessizce
             // düşürülür ve bu sayı audit'e hiç yazılmazdı.
+            // $action parametresi Faz 8'de eklendi: parola yazma, oturum
+            // iptali ve audit MEKANİZMASI aynıdır; değişen tek şey olayın
+            // KAYNAĞIDIR (kullanıcı kendi değiştirdi mi, yoksa sıfırlama
+            // bağlantısıyla mı geldi). Aynı işi ikinci bir serviste
+            // tekrarlamak, iki yerden birinin bir gün oturum iptalini
+            // unutması demek olurdu.
             $this->audit->recordAuthEvent(
-                action: AuditAction::PasswordChanged,
+                action: $action,
                 actor: $user,
                 metadata: ['other_logins_revoked' => $revoked],
             );

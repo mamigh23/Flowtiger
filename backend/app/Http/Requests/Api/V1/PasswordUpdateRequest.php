@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Api\V1;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rules\Password;
 
 /**
  * Kendi parolasını değiştirme gövdesi.
@@ -43,8 +44,13 @@ class PasswordUpdateRequest extends FormRequest
             'new_password' => [
                 'required',
                 'string',
-                'min:8',
                 'max:255',
+                // Faz 8'de 'min:8' yerine geçti: parola politikası artık
+                // AppServiceProvider'da bir kez tanımlanıyor ve sıfırlama
+                // akışıyla PAYLAŞILIYOR (§11). Politika değiştiğinde iki
+                // uç birlikte değişir; birinin sessizce eskimesi mümkün
+                // değil.
+                Password::defaults(),
                 'confirmed',
                 'different:current_password',
             ],

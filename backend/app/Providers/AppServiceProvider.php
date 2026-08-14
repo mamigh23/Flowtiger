@@ -5,12 +5,15 @@ namespace App\Providers;
 use App\Models\User;
 use App\Policies\CompanyMemberPolicy;
 use App\Services\CompanyContext;
+use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Contracts\Auth\CanResetPassword;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rules\Password as PasswordRule;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -38,6 +41,78 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->configureLoginRateLimiter();
         $this->registerPolicies();
+        $this->configurePasswordPolicy();
+        $this->configurePasswordResetLink();
+    }
+
+    /**
+     * Parolanın TEK politikası (§11).
+     *
+     * Hem profil üzerinden parola değiştirme hem parola sıfırlama bu
+     * kuraldan beslenir. İki yerde ayrı ayrı 'min:8' yazılsaydı, kural
+     * bir gün birinde güncellenir diğerinde unutulurdu.
+     *
+     * Laravel'in yerleşik kural nesnesi kullanılıyor; ileride
+     * ->mixedCase(), ->numbers() ya da sızmış parola veritabanına bakan
+     * ->uncompromised() eklemek TEK satırlık bir değişiklik olacak ve
+     * tüm parola uçlarında aynı anda geçerli olacak.
+     *
+     * Not: davet kabulü ve owner'ın üye oluşturması (Faz 4/6) hâlâ kendi
+     * 'min:8' kurallarını taşıyor. Onları da buraya bağlamak doğru olur
+     * ama bu fazın kapsamı §11 ile parola DEĞİŞTİRME akışlarıyla sınırlı.
+     */
+    /**
+     * E-posta + IP tabanlı throttle anahtarı.
+     *
+     * Üç uç da (login, forgot, reset) aynı anahtarlamayı kullanır:
+     *   - yalnızca IP: aynı ofisten çalışan masum kullanıcılar birbirini
+     *     kilitler,
+     *   - yalnızca e-posta: bir saldırgan istediği hesabı kilitleyerek
+     *     hizmet dışı bırakabilir.
+     *
+     * Bu closure VALIDATION'DAN ÖNCE çalışır: gövde henüz doğrulanmamıştır
+     * ve email bir dizi ya da null olabilir.
+     *
+     * Anahtar RateLimiter tarafından md5'lenerek cache'e yazılır; e-posta
+     * ham hâliyle saklanmaz. Limiter adları da anahtara karıştığı için üç
+     * uç birbirinin sayacını tüketmez.
+     */
+    private function emailThrottleKey(Request $request): string
+    {
+        $input = $request->input('email');
+        $email = is_string($input) ? Str::lower($input) : '';
+
+        return Str::transliterate($email).'|'.$request->ip();
+    }
+
+    private function configurePasswordPolicy(): void
+    {
+        PasswordRule::defaults(fn (): PasswordRule => PasswordRule::min(8));
+    }
+
+    /**
+     * Sıfırlama bağlantısının nereye işaret edeceği.
+     *
+     * Laravel'in varsayılan davranışı 'password.reset' adlı bir ROUTE
+     * arar; bu bir API projesinde yoktur ve olmamalıdır — kullanıcı
+     * formu frontend'de doldurur, API yalnızca token'ı alır. Route
+     * bulunamazsa mail gönderimi exception ile patlardı.
+     *
+     * Bu yüzden bağlantı config'deki şablondan üretilir. Frontend
+     * geldiğinde değişecek tek şey o config satırıdır.
+     *
+     * Token yalnızca bu bağlantının içinde yaşar: veritabanında hash'i
+     * durur, audit'e hiç girmez, hiçbir yanıtta dönmez.
+     */
+    private function configurePasswordResetLink(): void
+    {
+        ResetPassword::createUrlUsing(function (CanResetPassword $notifiable, string $token): string {
+            return str_replace(
+                ['{token}', '{email}'],
+                [$token, urlencode($notifiable->getEmailForPasswordReset())],
+                (string) config('flowtiger.password_reset.url'),
+            );
+        });
     }
 
     /*
@@ -92,10 +167,7 @@ class AppServiceProvider extends ServiceProvider
             // doğrulanmamıştır ve email bir dizi ya da null olabilir.
             // Doğrudan (string) cast'i "Array to string conversion"
             // uyarısı üretirdi.
-            $input = $request->input('email');
-            $email = is_string($input) ? Str::lower($input) : '';
-
-            return Limit::perMinute(5)->by(Str::transliterate($email).'|'.$request->ip());
+            return Limit::perMinute(5)->by($this->emailThrottleKey($request));
         });
 
         /*
@@ -148,6 +220,30 @@ class AppServiceProvider extends ServiceProvider
          */
         RateLimiter::for('password-change', function (Request $request): Limit {
             return Limit::perMinute(6)->by((string) ($request->user()?->getKey() ?? $request->ip()));
+        });
+
+        /*
+         * Parola sıfırlama uçları (Faz 8).
+         *
+         * İkisi de kimlik doğrulaması olmadan çalışır:
+         *
+         *   forgot → mail gönderim yüzeyi. Sınır olmasaydı bir saldırgan
+         *            başkasının gelen kutusunu doldurabilir ve mail
+         *            sağlayıcımızın itibarını yakabilirdi.
+         *   reset  → token TAHMİN ETME yüzeyi. Token 256 bit olduğu için
+         *            kaba kuvvet pratikte imkânsız; sınır otomatik
+         *            taramayı keser.
+         *
+         * ANAHTAR ENUMERATION AÇMAZ: gönderilen e-posta kayıtlı olsun ya
+         * da olmasın aynı biçimde anahtarlanır, dolayısıyla 429 yanıtı da
+         * hesabın varlığı hakkında hiçbir şey söylemez.
+         */
+        RateLimiter::for('password-forgot', function (Request $request): Limit {
+            return Limit::perMinute(5)->by($this->emailThrottleKey($request));
+        });
+
+        RateLimiter::for('password-reset', function (Request $request): Limit {
+            return Limit::perMinute(5)->by($this->emailThrottleKey($request));
         });
     }
 }
