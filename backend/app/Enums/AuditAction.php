@@ -63,6 +63,18 @@ enum AuditAction: string
 
     case PasswordResetCompleted = 'password.reset.completed';
 
+    /*
+     * Oturum yönetimi.
+     *
+     * sessions.revoked_all BİLİNÇLİ OLARAK YOK (§10, §12): "hepsini kapat"
+     * diye ayrı bir uç açılmadı, çünkü aynı sonuç mevcut iki uçla
+     * elde ediliyor (diğerlerini kapat + çıkış yap). Kullanılmayan bir
+     * action, audit sorgularında yanıltıcı bir boşluk bırakırdı.
+     */
+    case SessionRevoked = 'session.revoked';
+
+    case SessionsRevokedOthers = 'sessions.revoked_others';
+
     // Şirket bağlamı
     case CompanySelected = 'company.selected';
 
@@ -120,6 +132,8 @@ enum AuditAction: string
             self::PasswordChanged,
             self::PasswordResetRequested,
             self::PasswordResetCompleted,
+            self::SessionRevoked,
+            self::SessionsRevokedOthers,
         ], true);
     }
 

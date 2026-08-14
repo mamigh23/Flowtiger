@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\AuditAction;
 use App\Models\Scopes\CompanyScope;
 use Database\Factories\AuditLogFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -100,6 +101,41 @@ class AuditLog extends Model
                 'uygulama kodundan değil, açık bir bakım sürecinden geçmelidir.'
             );
         });
+    }
+
+    /**
+     * Kullanıcının KENDİ güvenlik olayları (Faz 9).
+     *
+     * Bu, global tenant scope'un bilinçli olarak kaldırıldığı TEK yerdir
+     * ve öyle kalmalıdır. Gerekçesi:
+     *
+     * Kimlik olayları (login, parola değişimi, oturum kapatma...) hiçbir
+     * şirkete ait DEĞİLDİR; company_id'leri NULL'dır. CompanyScope onları
+     * ya "aktif şirkete eşit değil" diye eler ya da context yokken
+     * fail-closed patlar. Yani bu sorgu için scope yalnızca gereksiz
+     * değil, ANLAMSIZDIR — hiçbir zaman doğru sonucu veremez.
+     *
+     * Scope'un kaldırılması güvenliği ZAYIFLATMAZ, çünkü yerine iki
+     * kısıt AYNI zincirde, ayrılamaz biçimde konur:
+     *
+     *   user_id = $user        → başkasının olayı dönemez
+     *   company_id IS NULL     → hiçbir tenant kaydı dönemez
+     *
+     * İkincisi kritik: şirkete ait bir audit satırının bu sorgudan
+     * çıkması matematiksel olarak imkânsızdır. Tenant izolasyonu
+     * gevşetilmedi, farklı bir eksende yeniden kuruldu.
+     *
+     * Bu yüzden metot MODELDE duruyor: tehlikeli çağrı tek ve
+     * denetlenebilir bir yerde kalsın, controller'lara dağılmasın.
+     *
+     * @return Builder<AuditLog>
+     */
+    public static function securityEventsFor(User $user): Builder
+    {
+        return static::query()
+            ->withoutGlobalScope(CompanyScope::class)
+            ->where('user_id', $user->getKey())
+            ->whereNull('company_id');
     }
 
     /**

@@ -9,6 +9,8 @@ use App\Http\Controllers\Api\V1\InvitationController;
 use App\Http\Controllers\Api\V1\MemberController;
 use App\Http\Controllers\Api\V1\PasswordResetController;
 use App\Http\Controllers\Api\V1\ProfileController;
+use App\Http\Controllers\Api\V1\SecurityEventController;
+use App\Http\Controllers\Api\V1\SessionController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -117,6 +119,37 @@ Route::middleware('auth:sanctum')->name('api.v1.')->group(function (): void {
     Route::put('profile/password', [ProfileController::class, 'updatePassword'])
         ->middleware('throttle:password-change')
         ->name('profile.password.update');
+
+    /*
+    | OTURUM YÖNETİMİ (Faz 9).
+    |
+    | SIRALAMA KRİTİK: 'others' rotası {session} rotasından ÖNCE
+    | tanımlanmalı, aksi halde Laravel 'others' kelimesini bir token
+    | id'si sanardı. whereNumber() ikinci ve yapısal savunmadır — sıra
+    | bir gün bozulsa bile 'others' asla {session} ile eşleşemez.
+    |
+    | 'Hepsini kapat' ucu bilinçli olarak YOK (§10): aynı sonuç
+    | 'diğerlerini kapat' + logout ile zaten elde ediliyor.
+    */
+    Route::get('profile/sessions', [SessionController::class, 'index'])
+        ->name('profile.sessions.index');
+
+    Route::delete('profile/sessions/others', [SessionController::class, 'destroyOthers'])
+        ->name('profile.sessions.destroy-others');
+
+    Route::delete('profile/sessions/{session}', [SessionController::class, 'destroy'])
+        ->whereNumber('session')
+        ->name('profile.sessions.destroy');
+
+    /*
+    | Kullanıcının KENDİ güvenlik olayları.
+    |
+    | GET /audit-logs ile karıştırılmamalı: orası owner'ın ŞİRKET
+    | kayıtlarıdır ve company.context ister. Burası kişinin kendi
+    | hesabıdır; rolden ve şirketten bağımsızdır.
+    */
+    Route::get('profile/security-events', [SecurityEventController::class, 'index'])
+        ->name('profile.security-events.index');
 
     // company.context YOK: kullanıcı şirket seçmeden önce de listeyi
     // görebilmeli ve seçim yapabilmelidir.
