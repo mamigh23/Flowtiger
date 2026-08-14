@@ -1,58 +1,149 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# FlowTiger — Backend
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Çok kiracılı (multi-tenant) SaaS backend'i. Laravel 13 · PHP 8.3+ · PostgreSQL 17 · Sanctum.
 
-## About Laravel
+Faz 0–10 tamamlandı; backend çekirdeği **foundation freeze** durumundadır. Web ve Flutter istemcileri bu API üzerine kurulacaktır.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+---
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Temel güvenlik modeli
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+Her şey tek bir cümleye dayanır:
 
-## Learning Laravel
+> **Authentication ≠ Authorization ≠ Tenant Context**
+>
+> Sisteme giriş yapmış olmak, herhangi bir şirketin verisine erişebilmek anlamına gelmez.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
-
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
-
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
-
-```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+```
+User → Company membership → Active company → CompanyContext → Tenant data
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+Zincirin katmanları:
 
-## Contributing
+| Katman | Nerede | Ne yapar |
+|---|---|---|
+| Kimlik | `auth:sanctum` | Bearer token'ı kullanıcıya çözer |
+| Bağlam | `company.context` | Aktif şirketi çözer, üyeliği **her istekte** yeniden doğrular |
+| Kapsam | `CompanyScope` | Tenant sorgularına `company_id` filtresini otomatik ekler |
+| Yetki | Policy'ler | Rol ve sahiplik kararını verir |
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+Bağlam yoksa tenant sorguları **fail-closed** davranır: boş sonuç değil, istisna.
 
-## Code of Conduct
+---
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+## Kurulum
 
-## Security Vulnerabilities
+```bash
+cp .env.example .env
+composer install
+php artisan key:generate
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+# PostgreSQL: iki veritabanı gerekir
+#   flowtiger_db    → geliştirme
+#   flowtiger_test  → test (yıkıcıdır, ayrı tutulur)
+createdb flowtiger_db
+createdb flowtiger_test
 
-## License
+php artisan migrate
+php artisan db:seed        # opsiyonel geliştirme verisi
+php artisan serve
+```
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+`.env` içindeki `DB_USERNAME` / `DB_PASSWORD` değerlerini kendi PostgreSQL kullanıcınıza göre doldurun. `.env` **repoya girmez**.
+
+---
+
+## Test
+
+```bash
+php artisan test
+```
+
+Test suite'i yalnızca `flowtiger_test` veritabanında çalışır. Bu bir kolaylık değil **güvenlik bariyeridir**: `RefreshDatabase` yıkıcıdır ve yanlış yapılandırılmış bir `.env`, testleri geliştirme veya production veritabanına yöneltebilirdi. `tests/TestCase.php` başka bir veritabanı görürse tek bir test bile çalıştırmaz.
+
+SQLite'a geçmeyin: `lockForUpdate()` SQLite'ta sessizce hiçbir şey yapmaz ve eşzamanlılık korumaları test edilemez hale gelir.
+
+---
+
+## API
+
+Tüm uçlar `/api/v1` altındadır. Yanıt standardı: başarıda `data` zarfı, hatada `message` (+ `errors` / `code`).
+
+### Kimlik doğrulama gerektirmeyenler
+
+| Method | URI |
+|---|---|
+| POST | `/auth/login` |
+| POST | `/auth/password/forgot` |
+| POST | `/auth/password/reset` |
+| POST | `/invitations/accept` |
+| GET | `/auth/email/verify/{id}/{hash}` *(imzalı bağlantı)* |
+
+### Kimlik doğrulamalı (`auth:sanctum`)
+
+| Method | URI |
+|---|---|
+| POST | `/auth/logout` |
+| GET | `/me` |
+| GET · PUT | `/profile` |
+| PUT | `/profile/password` |
+| GET | `/profile/sessions` |
+| DELETE | `/profile/sessions/others` · `/profile/sessions/{id}` |
+| GET | `/profile/security-events` |
+| POST | `/auth/email/verification-notification` |
+| GET | `/companies` |
+| POST | `/companies/{company}/select` |
+
+### Tenant uçları (`auth:sanctum` + `company.context`)
+
+| Method | URI | Kim |
+|---|---|---|
+| GET · POST · GET/PUT/DELETE `{id}` | `/customers` | üye |
+| GET · POST · GET/PUT/DELETE `{user}` | `/members` | **owner** |
+| PATCH | `/members/{user}/role` | **owner** |
+| GET · POST · DELETE `{id}` | `/invitations` | **owner** |
+| GET | `/audit-logs` | **owner** |
+
+---
+
+## Roller
+
+`owner` ve `member` (`App\Enums\Role`). Rol **kullanıcıya değil üyeliğe** aittir: aynı kişi A şirketinde owner, B şirketinde member olabilir.
+
+Bir şirket **asla ownersız kalamaz** — son owner ne silinebilir ne de member'a düşürülebilir.
+
+---
+
+## Sağlık kontrolü
+
+```
+GET /up
+```
+
+`{"status":"up"}` (200) veya `{"status":"down"}` (500). Veritabanı bağlantısını gerçekten dener; hata mesajı sanitize edilir, kimlik bilgisi sızdırmaz.
+
+Yük dengeleyici / konteyner readiness probe'u olarak kullanılabilir.
+
+---
+
+## Production
+
+Dağıtım, yedekleme, güvenlik ve geri alma adımları için: **[docs/PRODUCTION.md](docs/PRODUCTION.md)**
+
+---
+
+## Faz geçmişi
+
+| Faz | İçerik |
+|---|---|
+| 0 | Git, PostgreSQL, factory/seeder altyapısı |
+| 1 | Tenant isolation (scope, context, policy) |
+| 2 | Authentication (Sanctum) + şirket seçimi + HTTP API |
+| 3 | Customer CRUD |
+| 4 | Üyelik ve rol yönetimi |
+| 5 | Audit log |
+| 6 | Davet sistemi |
+| 7 | E-posta doğrulama, profil, parola değiştirme |
+| 8 | Parola sıfırlama |
+| 9 | Oturum yönetimi ve güvenlik olayları |
+| 10 | Production hardening + foundation freeze |

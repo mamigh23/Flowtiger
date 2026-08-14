@@ -8,12 +8,17 @@ use App\Services\CompanyContext;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Contracts\Auth\CanResetPassword;
+use Illuminate\Foundation\Events\DiagnosingHealth;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password as PasswordRule;
+use RuntimeException;
+use Throwable;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -43,6 +48,39 @@ class AppServiceProvider extends ServiceProvider
         $this->registerPolicies();
         $this->configurePasswordPolicy();
         $this->configurePasswordResetLink();
+        $this->configureHealthCheck();
+    }
+
+    /**
+     * /up ucunu gerçek bir HAZIRLIK (readiness) kontrolüne çevirir.
+     *
+     * Laravel'in health route'u varsayılan olarak yalnızca "PHP ayakta mı"
+     * sorusunu yanıtlar; veritabanı çökmüş olsa bile 200 döner ve yük
+     * dengeleyici trafiği ölü bir örneğe göndermeye devam eder.
+     * DiagnosingHealth olayına bağlanmak, Laravel'in bunun için sunduğu
+     * standart yoldur (§13) — ayrı bir health sistemi kurulmadı.
+     *
+     * İSTİSNA MESAJI NEDEN SANİTİZE EDİLİYOR:
+     * PDO'nun bağlantı hataları host, veritabanı adı ve KULLANICI ADI
+     * içerir ("...password authentication failed for user 'flowtiger_app'").
+     * Laravel'in health route'u yakaladığı istisnanın mesajını yanıta
+     * koyar; ham hâliyle bırakılsaydı /up, kimlik doğrulaması olmadan
+     * veritabanı kimlik bilgilerini sızdıran bir uca dönüşürdü.
+     *
+     * Ayrıntılı hata log'a gider (report), dışarıya yalnızca nötr bir
+     * etiket çıkar.
+     */
+    private function configureHealthCheck(): void
+    {
+        Event::listen(DiagnosingHealth::class, function (): void {
+            try {
+                DB::connection()->getPdo();
+            } catch (Throwable $exception) {
+                report($exception);
+
+                throw new RuntimeException('database_unavailable');
+            }
+        });
     }
 
     /**

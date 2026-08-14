@@ -1,0 +1,126 @@
+# ============================================================================
+# FlowTiger — Backend CI
+#
+# ⚠ BU DOSYA REPO KÖKÜNE TAŞINMALIDIR:
+#
+#     mv backend/.github .github
+#
+# GitHub Actions yalnızca repo KÖKÜNDEKİ .github/workflows/ altındaki
+# dosyaları çalıştırır. İçerideki yollar zaten repo kökünden yazıldığı
+# için taşıdıktan sonra hiçbir düzenleme gerekmez.
+#
+# Repository secret GEREKTİRMEZ (§17): veritabanı, iş akışı içinde ayağa
+# kalkan geçici bir PostgreSQL servisidir ve parolası yalnızca o koşuda
+# yaşar. Production kimlik bilgileri CI'ya hiç girmez.
+# ============================================================================
+
+name: backend-ci
+
+on:
+  push:
+    branches: ['**']
+    paths:
+      - 'backend/**'
+      - '.github/workflows/ci.yml'
+  pull_request:
+    paths:
+      - 'backend/**'
+      - '.github/workflows/ci.yml'
+
+# Aynı dal için yeni bir push geldiğinde eski koşuyu iptal et.
+concurrency:
+  group: backend-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    name: PHP ${{ matrix.php }} · PostgreSQL 17
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        # composer.json: "php": "^8.3"
+        php: ['8.3', '8.4']
+
+    defaults:
+      run:
+        working-directory: backend
+
+    services:
+      postgres:
+        # Faz 0'dan beri proje yalnızca PostgreSQL üzerinde çalışır;
+        # test suite'i SQLite'a düşmeyi bir bariyerle reddeder.
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: flowtiger_test
+          POSTGRES_USER: flowtiger_app
+          POSTGRES_PASSWORD: ci-only-not-a-secret
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U flowtiger_app -d flowtiger_test"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+
+    env:
+      # phpunit.xml DB_DATABASE'i flowtiger_test olarak zaten sabitliyor;
+      # bağlantı bilgileri buradan gelir. Laravel'in Dotenv'i gerçek ortam
+      # değişkenlerini EZMEZ, dolayısıyla .env'deki değerler değil bunlar
+      # geçerli olur.
+      DB_CONNECTION: pgsql
+      DB_HOST: 127.0.0.1
+      DB_PORT: 5432
+      DB_DATABASE: flowtiger_test
+      DB_USERNAME: flowtiger_app
+      DB_PASSWORD: ci-only-not-a-secret
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          # pdo_pgsql: proje PostgreSQL'e bağlanır
+          # bcmath/mbstring: Laravel çekirdek gereksinimleri
+          extensions: pdo, pdo_pgsql, mbstring, bcmath, intl
+          coverage: none
+          tools: composer:v2
+
+      - name: Cache Composer packages
+        uses: actions/cache@v4
+        with:
+          path: backend/vendor
+          key: composer-${{ matrix.php }}-${{ hashFiles('backend/composer.lock') }}
+          restore-keys: composer-${{ matrix.php }}-
+
+      - name: Install dependencies
+        # --no-scripts: composer.json'daki setup akışı npm çağırıyor;
+        # API-only CI'da gereksiz. package:discover aşağıda zaten çalışır.
+        run: composer install --prefer-dist --no-interaction --no-progress --no-scripts
+
+      - name: Prepare environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+          php artisan package:discover --ansi
+
+      - name: Verify database connectivity
+        # Migrasyonu ayrı bir adımda çalıştırmak, bağlantı sorununu
+        # test hatalarının arasında aramak yerine burada gösterir.
+        run: php artisan migrate --force
+
+      - name: Run test suite
+        run: php artisan test
+
+      - name: Check code style
+        # Pint zaten require-dev'de; yalnızca rapor eder, düzeltmez.
+        run: vendor/bin/pint --test
+        continue-on-error: true
+
+      - name: Audit dependencies for known vulnerabilities
+        run: composer audit --no-interaction
+        continue-on-error: true
