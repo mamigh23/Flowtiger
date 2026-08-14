@@ -1,6 +1,7 @@
 <?php
 
 use App\Exceptions\ActiveCompanyException;
+use App\Exceptions\InvitationException;
 use App\Exceptions\LastOwnerException;
 use App\Exceptions\TenantContextMissingException;
 use App\Http\Middleware\ResolveCompanyContext;
@@ -143,6 +144,30 @@ return Application::configure(basePath: dirname(__DIR__))
                     'Önce başka bir üyeye owner rolü verin.',
                 'code' => 'company_requires_an_owner',
             ], 422);
+        });
+
+        /*
+         * Davet akışının reddedilme sebepleri.
+         *
+         * Durum ve kod exception'ın kendisinde taşınır; burada tek bir
+         * callback hepsini karşılar. Alternatif — her sebep için ayrı
+         * exception sınıfı ve ayrı callback — aynı bilgiyi iki dosyaya
+         * bölerdi.
+         *
+         * Mesaj istemciye GÖNDERİLİR — çünkü InvitationException'ın
+         * mesajları bu amaçla, kullanıcıya gösterilmeye uygun yazılmıştır:
+         * token, e-posta, kullanıcı ya da şirket kimliği içermezler.
+         * Buraya yeni bir sebep eklenirken aynı kural geçerlidir.
+         */
+        $exceptions->render(function (InvitationException $e, Request $request) {
+            if (! $request->is('api/*')) {
+                return null;
+            }
+
+            return response()->json([
+                'message' => $e->getMessage(),
+                'code' => $e->errorCode,
+            ], $e->status);
         });
 
         /*

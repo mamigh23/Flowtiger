@@ -43,6 +43,18 @@ class AuditLogService
      * kara liste olması bilinçli — payload'lar zaten çağıran tarafından
      * elle seçiliyor; bu katman son savunma hattı.
      *
+     * ⚠ ÇAĞIRANLAR İÇİN TUZAK:
+     * Eşleşme alt dize üzerinden olduğu için, SIR OLMAYAN bir anahtar da
+     * bu kelimelerden birini içeriyorsa SESSİZCE DÜŞÜRÜLÜR. Örneğin
+     * 'revoked_other_tokens' ya da 'active_sessions' gibi masum sayaçlar
+     * audit'e hiç yazılmaz. Bu, bilinçli bir tercihtir: bir sır filtresi
+     * için fazla engellemek, az engellemekten çok daha güvenli bir hata
+     * biçimidir.
+     *
+     * Bu yüzden metadata anahtarları seçilirken yukarıdaki kelimelerden
+     * kaçınılmalıdır (bkz. ProfileService::changePassword →
+     * 'other_logins_revoked').
+     *
      * @var list<string>
      */
     private const SENSITIVE_KEY_FRAGMENTS = [
@@ -58,6 +70,36 @@ class AuditLogService
         'private_key',
         'signature',
         'otp',
+    ];
+
+    /**
+     * Audit'te DÜZ METİN saklanmaması gereken kişisel veri anahtarları.
+     *
+     * SENSITIVE_KEY_FRAGMENTS'tan FARKLI bir kategoridir ve farklı
+     * davranır. Orada listelenenler SIRDIR: düşürülür, hiçbir izi kalmaz.
+     * Buradakiler ise sır değil KİŞİSEL VERİDİR — kaydın kendisi anlamlı
+     * ve gereklidir, ama düz metin hâli saklanmamalıdır. Bu yüzden
+     * düşürülmez, TEK YÖNLÜ ÖZETE çevrilir: `email` → `email_hash`.
+     *
+     * NEDEN GEREKLİ:
+     * Audit tablosu tasarım gereği DEĞİŞMEZ ve KALICIDIR (Faz 5 §23):
+     * satırlar güncellenemez, silinemez, saklama süresi yoktur. Oraya
+     * yazılan bir e-posta adresi, artık hiçbir zaman silinemeyecek bir
+     * kişisel veridir. Bir kullanıcı hesabını sildirse bile adresi audit
+     * geçmişinde sonsuza kadar yaşardı.
+     *
+     * Özet, audit'in değerini korur: "bu adrese ne yapıldı?" sorusu
+     * adayı hash'leyip karşılaştırarak hâlâ yanıtlanabilir; ama tablo,
+     * adres toplayan bir kaynağa dönüşmez.
+     *
+     * Dönüşüm ÇAĞIRANLARDA değil BURADA yapılır. Çağıranlara bırakılsaydı
+     * kural, her yeni audit çağrısında yeniden hatırlanması gereken bir
+     * gelenek olurdu; burada ise bir garantidir.
+     *
+     * @var list<string>
+     */
+    private const HASHED_PII_KEYS = [
+        'email',
     ];
 
     private const MAX_USER_AGENT_LENGTH = 512;
@@ -76,11 +118,16 @@ class AuditLogService
         ?array $oldValues = null,
         ?array $newValues = null,
         array $metadata = [],
+        ?User $actor = null,
     ): AuditLog {
         return $this->write(
             action: $action,
             companyId: $company->getKey(),
-            actorId: Auth::id(),
+            // $actor yalnızca oturumdan okunamayan durumlar için verilir.
+            // Faz 6'daki davet kabulü böyledir: kullanıcı henüz giriş
+            // yapmamıştır (hatta hesabı yeni oluşmuştur) ama olayı kimin
+            // gerçekleştirdiği kesin olarak bilinir.
+            actorId: $actor?->getKey() ?? Auth::id(),
             auditable: $auditable,
             oldValues: $oldValues,
             newValues: $newValues,
@@ -101,14 +148,20 @@ class AuditLogService
         AuditAction $action,
         ?User $actor = null,
         array $metadata = [],
+        ?array $oldValues = null,
+        ?array $newValues = null,
     ): AuditLog {
         return $this->write(
             action: $action,
             companyId: null,
             actorId: $actor?->getKey(),
             auditable: null,
-            oldValues: null,
-            newValues: null,
+            // Faz 7'de eklendi: profil ve e-posta değişiklikleri de
+            // şirketsiz olaylardır ama "neydi / ne oldu" bilgisi taşırlar.
+            // Değerler write() içinde aynı filtreden geçer — e-posta
+            // otomatik olarak özetlenir, sırlar düşürülür.
+            oldValues: $oldValues,
+            newValues: $newValues,
             metadata: $metadata,
         );
     }
@@ -171,11 +224,18 @@ class AuditLogService
     }
 
     /**
-     * Hassas anahtarları payload'dan çıkarır — iç içe dizilerde de.
+     * Payload'ı audit'e yazılabilir hâle getirir — iç içe dizilerde de.
      *
-     * Anahtar REDACTED ile işaretlenmez, tamamen DÜŞÜRÜLÜR. İşaretlemek,
-     * "burada bir parola alanı vardı" bilgisini saklamak demektir; §3
-     * bu konuda mutlak: hiçbir iz kalmasın.
+     * İKİ FARKLI İŞLEM YAPAR:
+     *
+     *   1. SIRLAR DÜŞÜRÜLÜR (parola, token, secret...).
+     *      REDACTED ile işaretlenmez, tamamen silinir. İşaretlemek
+     *      "burada bir parola alanı vardı" bilgisini saklamak olurdu;
+     *      Faz 5 §3 bu konuda mutlaktır: hiçbir iz kalmasın.
+     *
+     *   2. KİŞİSEL VERİ ÖZETLENİR (email → email_hash).
+     *      Düşürülmez, çünkü olayın kime ait olduğu audit'in asıl
+     *      değeridir. Düz metin de saklanmaz, çünkü audit kalıcıdır.
      *
      * @param  array<string, mixed>|null  $values
      * @return array<string, mixed>|null
@@ -189,7 +249,15 @@ class AuditLogService
         $filtered = [];
 
         foreach ($values as $key => $value) {
-            if ($this->isSensitiveKey((string) $key)) {
+            $stringKey = (string) $key;
+
+            if ($this->isSensitiveKey($stringKey)) {
+                continue;
+            }
+
+            if (is_string($value) && $this->isHashedPiiKey($stringKey)) {
+                $filtered[$stringKey.'_hash'] = $this->hashEmail($value);
+
                 continue;
             }
 
@@ -199,6 +267,28 @@ class AuditLogService
         }
 
         return $filtered === [] ? null : $filtered;
+    }
+
+    /**
+     * Bu anahtarın değeri özetlenerek mi saklanmalı?
+     *
+     * Yalnızca TAM eşleşme ('email') ya da sonek eşleşmesi ('user_email')
+     * kabul edilir; alt dize araması BİLİNÇLİ OLARAK KULLANILMAZ.
+     * Kullanılsaydı 'email_hash' anahtarı da yakalanır ve zaten özet olan
+     * bir değer ikinci kez hash'lenirdi — davet akışının açıkça yazdığı
+     * email_hash alanları bozulurdu.
+     */
+    private function isHashedPiiKey(string $key): bool
+    {
+        $normalised = Str::lower($key);
+
+        foreach (self::HASHED_PII_KEYS as $piiKey) {
+            if ($normalised === $piiKey || str_ends_with($normalised, '_'.$piiKey)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function isSensitiveKey(string $key): bool

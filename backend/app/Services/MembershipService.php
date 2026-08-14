@@ -135,6 +135,45 @@ class MembershipService
     }
 
     /**
+     * MEVCUT bir kullanıcıyı şirkete üye yapar.
+     *
+     * create()'ten farkı: burada kullanıcı zaten vardır. Faz 6'daki davet
+     * kabulünün ihtiyaç duyduğu yol budur — hesabı olan biri daveti kabul
+     * ettiğinde yeni kullanıcı YARATILMAZ, sadece üyelik açılır. Parolası,
+     * adı, oturumları hiçbir şekilde değişmez (§17).
+     *
+     * Pivot'a yazan tek kapı hâlâ bu servistir: InvitationService attach/
+     * detach çağırmaz, buraya devreder. İkinci bir yazma yolu, "son owner"
+     * gibi kuralların atlanabileceği bir yol olurdu.
+     *
+     * $actor: olayı gerçekleştiren kişi oturumdan okunamayabilir (davet
+     * kabulünde kullanıcı henüz giriş yapmamıştır), bu yüzden açıkça
+     * geçilebilir.
+     */
+    public function attach(Company $company, User $user, Role $role, ?User $actor = null): User
+    {
+        return DB::transaction(function () use ($company, $user, $role, $actor): User {
+            $company->users()->attach($user->getKey(), ['role' => $role->value]);
+
+            $member = $this->findMemberOrFail($company, $user);
+
+            $this->audit->record(
+                action: AuditAction::MemberCreated,
+                company: $company,
+                auditable: $member,
+                newValues: [
+                    'name' => $member->name,
+                    'email' => $member->email,
+                    'role' => $role->value,
+                ],
+                actor: $actor,
+            );
+
+            return $member;
+        });
+    }
+
+    /**
      * Üyenin adını ve e-postasını günceller.
      *
      * Bu iş Faz 4'te controller'daydı. Faz 5'te buraya taşındı çünkü

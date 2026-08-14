@@ -30,6 +30,24 @@ enum AuditAction: string
 
     case LoggedOut = 'logout';
 
+    /*
+     * Kimlik ve hesap olayları — kimlik doğrulama gibi ŞİRKETSİZ kaydedilir.
+     *
+     * Sebep: bir kullanıcı birden fazla şirketin üyesi olabilir. Parola
+     * değişikliğini "o an aktif olan" şirkete yazmak keyfi bir seçim
+     * olurdu; olayın şirketle hiçbir ilgisi yok, kişinin hesabıyla ilgisi
+     * var. Bu kayıtlar şirket audit API'sinde görünmez (§17, Faz 5).
+     */
+    case ProfileUpdated = 'profile.updated';
+
+    case EmailChanged = 'email.changed';
+
+    case EmailVerificationRequested = 'email.verification_requested';
+
+    case EmailVerified = 'email.verified';
+
+    case PasswordChanged = 'password.changed';
+
     // Şirket bağlamı
     case CompanySelected = 'company.selected';
 
@@ -41,6 +59,21 @@ enum AuditAction: string
     case MemberRemoved = 'member.removed';
 
     case MemberRoleChanged = 'member.role_changed';
+
+    /*
+     * Davet.
+     *
+     * invitation.expired BİLİNÇLİ OLARAK YOK (§23): süre dolması bir
+     * OLAY değil, zamanın geçmesiyle oluşan bir DURUMDUR. Kimse onu
+     * "yapmaz". Kaydetmek için tabloyu tarayan zamanlanmış bir iş
+     * gerekirdi ve o iş, audit'e hiçbir yeni bilgi eklemeden gürültü
+     * üretirdi: expires_at zaten kayıtta duruyor.
+     */
+    case InvitationCreated = 'invitation.created';
+
+    case InvitationRevoked = 'invitation.revoked';
+
+    case InvitationAccepted = 'invitation.accepted';
 
     // Müşteri
     case CustomerCreated = 'customer.created';
@@ -63,6 +96,13 @@ enum AuditAction: string
             self::LoginSucceeded,
             self::LoginFailed,
             self::LoggedOut,
+
+            // Hesabın kendisine ait olaylar; hiçbir şirkete ait değiller.
+            self::ProfileUpdated,
+            self::EmailChanged,
+            self::EmailVerificationRequested,
+            self::EmailVerified,
+            self::PasswordChanged,
         ], true);
     }
 

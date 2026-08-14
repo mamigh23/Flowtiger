@@ -97,5 +97,57 @@ class AppServiceProvider extends ServiceProvider
 
             return Limit::perMinute(5)->by(Str::transliterate($email).'|'.$request->ip());
         });
+
+        /*
+         * Davet kabul ucu kimlik doğrulaması olmadan çalışır ve tek
+         * korunması gereken şey token'dır. 256 bitlik bir token'ı kaba
+         * kuvvetle bulmak pratikte imkânsızdır; bu sınır asıl olarak
+         * otomatik tarama gürültüsünü ve süresi dolmuş token'ların
+         * tekrar tekrar denenmesini keser.
+         *
+         * Anahtar yalnızca IP: token'a göre sınırlamak, saldırganın her
+         * denemede farklı token kullanması nedeniyle işe yaramazdı.
+         */
+        RateLimiter::for('invitation-accept', function (Request $request): Limit {
+            return Limit::perMinute(10)->by((string) $request->ip());
+        });
+
+        /*
+         * Doğrulama maili isteme (Faz 7).
+         *
+         * Kimliği doğrulanmış kullanıcı yalnızca KENDİ adresine mail
+         * ister; burada bir e-posta sayım (enumeration) yüzeyi yoktur.
+         * Sınırın amacı farklı: "gönder" düğmesine defalarca basan bir
+         * kullanıcının kendi gelen kutusunu doldurmasını ve mail
+         * sağlayıcısında itibar kaybı yaratmasını önlemek.
+         *
+         * Anahtar kullanıcı kimliğidir; IP'ye göre sınırlamak, aynı
+         * ofisten çalışan meslektaşları birbirine bağlardı.
+         */
+        RateLimiter::for('verification-notification', function (Request $request): Limit {
+            return Limit::perMinute(6)->by((string) ($request->user()?->getKey() ?? $request->ip()));
+        });
+
+        /*
+         * Doğrulama bağlantısının kendisi (Faz 7).
+         *
+         * Kimlik doğrulaması olmadan çalışır, bu yüzden anahtar IP'dir.
+         * İmza tahmin edilemez olduğu için kaba kuvvet zaten anlamsız;
+         * sınır, otomatik tarama gürültüsünü keser.
+         */
+        RateLimiter::for('email-verification', function (Request $request): Limit {
+            return Limit::perMinute(10)->by((string) $request->ip());
+        });
+
+        /*
+         * Parola değiştirme (Faz 7).
+         *
+         * `current_password` kuralı yüzünden bu uç, oturumu ele geçirmiş
+         * ama parolayı bilmeyen bir saldırgan için parola DENEME yüzeyine
+         * dönüşür. Sınır bu denemeleri keser.
+         */
+        RateLimiter::for('password-change', function (Request $request): Limit {
+            return Limit::perMinute(6)->by((string) ($request->user()?->getKey() ?? $request->ip()));
+        });
     }
 }

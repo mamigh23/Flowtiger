@@ -4,8 +4,10 @@ use App\Http\Controllers\Api\V1\AuditLogController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\CompanyController;
 use App\Http\Controllers\Api\V1\CustomerController;
+use App\Http\Controllers\Api\V1\EmailVerificationController;
 use App\Http\Controllers\Api\V1\InvitationController;
 use App\Http\Controllers\Api\V1\MemberController;
+use App\Http\Controllers\Api\V1\ProfileController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -51,9 +53,50 @@ Route::prefix('auth')->name('api.v1.auth.')->group(function (): void {
         ->name('logout');
 });
 
+/*
+| E-POSTA DOĞRULAMA BAĞLANTISI — kimlik doğrulaması YOK, imza VAR.
+|
+| Bağlantı mail istemcisinden tıklanır; orada Bearer token yoktur.
+| auth:sanctum eklenirse akış mail'den hiç çalışmaz. Kanıt imzadan gelir:
+| Laravel'in temporarySignedRoute'u (süreli) + sha1(email) eşleşmesi.
+|
+| Route adı 'verification.verify' OLMAK ZORUNDA: Laravel'in yerleşik
+| VerifyEmail bildirimi bağlantıyı tam olarak bu isimden üretir. Ad
+| değişirse doğrulama mailleri sessizce kırılır — bu yüzden route
+| bilinçli olarak api.v1.* ad ön ekli grubun DIŞINDADIR.
+*/
+Route::get('auth/email/verify/{id}/{hash}', [EmailVerificationController::class, 'verify'])
+    ->middleware(['signed', 'throttle:email-verification'])
+    ->name('verification.verify');
+
 Route::middleware('auth:sanctum')->name('api.v1.')->group(function (): void {
     Route::get('me', [AuthController::class, 'me'])
         ->name('me');
+
+    /*
+    | KENDİ HESABI — tenant DIŞI.
+    |
+    | company.context YOK ve olmamalı: kullanıcının kendi profilini ve
+    | parolasını yönetmesi hiçbir şirkete üye olmasını gerektirmez.
+    | Davetle gelmiş, henüz hiçbir şirket seçmemiş bir kullanıcı da
+    | hesabını yönetebilmeli.
+    |
+    | Hiçbir uçta {user} parametresi YOKTUR — kimlik daima oturumdan.
+    */
+    Route::post('auth/email/verification-notification', [EmailVerificationController::class, 'send'])
+        ->middleware('throttle:verification-notification')
+        ->name('auth.email.verification-notification');
+
+    Route::get('profile', [ProfileController::class, 'show'])
+        ->name('profile.show');
+
+    Route::put('profile', [ProfileController::class, 'update'])
+        ->name('profile.update');
+
+    // PUT: parola tamamen değiştirilir, kısmen güncellenmez.
+    Route::put('profile/password', [ProfileController::class, 'updatePassword'])
+        ->middleware('throttle:password-change')
+        ->name('profile.password.update');
 
     // company.context YOK: kullanıcı şirket seçmeden önce de listeyi
     // görebilmeli ve seçim yapabilmelidir.
