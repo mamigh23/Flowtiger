@@ -1,0 +1,68 @@
+/**
+ * FlowTiger tasarım token'ları.
+ *
+ * Tek kaynak: renkler, aralıklar, yarıçaplar, tipografi. Bileşenler
+ * sabit değer yazmaz, yalnızca bu değişkenleri kullanır — ürün dili
+ * böylece tek yerden değişir (mobil taraftaki lib/core/theme/tokens.dart
+ * bunun Dart karşılığıdır ve aynı ölçekleri taşır).
+ *
+ * Bilinçli olarak sıfır bağımlılık: Tailwind/MUI eklemek kolay,
+ * çıkarmak zordur. Foundation aşamasında henüz ekran yokken bir CSS
+ * framework'ünün kazanımı sınırlı.
+ */
+
+:root {
+  /* Renk — nötr */
+  --ft-color-bg: #f7f7f8;
+  --ft-color-surface: #ffffff;
+  --ft-color-border: #e3e3e7;
+  --ft-color-text: #17171a;
+  --ft-color-text-muted: #6b6b76;
+
+  /* Renk — anlam */
+  --ft-color-primary: #b8460e;
+  --ft-color-primary-hover: #9a3a0b;
+  --ft-color-primary-contrast: #ffffff;
+  --ft-color-danger: #b3261e;
+  --ft-color-danger-bg: #fdecea;
+  --ft-color-focus: #b8460e;
+
+  /* Aralık — 4px ölçeği */
+  --ft-space-1: 0.25rem;
+  --ft-space-2: 0.5rem;
+  --ft-space-3: 0.75rem;
+  --ft-space-4: 1rem;
+  --ft-space-5: 1.5rem;
+  --ft-space-6: 2rem;
+  --ft-space-7: 3rem;
+
+  /* Yarıçap */
+  --ft-radius-sm: 4px;
+  --ft-radius-md: 8px;
+  --ft-radius-lg: 12px;
+
+  /* Tipografi */
+  --ft-font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --ft-font-size-sm: 0.875rem;
+  --ft-font-size-md: 1rem;
+  --ft-font-size-lg: 1.25rem;
+  --ft-font-size-xl: 1.75rem;
+  --ft-line-height: 1.5;
+  --ft-font-weight-medium: 500;
+  --ft-font-weight-bold: 600;
+
+  /* Yükseklik */
+  --ft-shadow-sm: 0 1px 2px rgb(0 0 0 / 0.06);
+  --ft-control-height: 2.5rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ft-color-bg: #131316;
+    --ft-color-surface: #1c1c21;
+    --ft-color-border: #2e2e36;
+    --ft-color-text: #f2f2f4;
+    --ft-color-text-muted: #a1a1ad;
+    --ft-color-danger-bg: #3a1c1a;
+  }
+}

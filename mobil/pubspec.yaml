@@ -1,0 +1,38 @@
+name: flowtiger
+description: FlowTiger mobil istemcisi (Android + iOS).
+publish_to: "none"
+version: 0.1.0+1
+
+environment:
+  sdk: ">=3.4.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # State management — Riverpod.
+  #
+  # Bloc'a göre çok daha az boilerplate (her akış için event+state sınıfı
+  # gerekmiyor), Provider'a göre derleme zamanı güvenli ve BuildContext'e
+  # bağımlı değil. Testte ProviderContainer ile widget ağacı kurmadan
+  # controller doğrulanabiliyor — foundation için belirleyici oldu.
+  flutter_riverpod: ^2.5.1
+
+  # HTTP — dio yerine resmi http paketi.
+  # İhtiyacımız olan tek "interceptor" davranışı (token ekleme, 401
+  # yakalama) kendi ApiClient sınıfımızda zaten var; dio'nun getirdiği
+  # ek yüzey bu aşamada gereksiz.
+  http: ^1.2.2
+
+  # Token için işletim sistemi güvenli deposu:
+  # Android Keystore / iOS Keychain. SharedPreferences DÜZ METİN saklar
+  # ve root'lu/jailbreak'li cihazda okunabilir — token oraya konmaz.
+  flutter_secure_storage: ^9.2.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true

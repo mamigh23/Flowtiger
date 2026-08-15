@@ -1,0 +1,29 @@
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  language:
+    strict-casts: true
+    strict-raw-types: true
+  errors:
+    # Foundation aşamasında bile bunlar hata sayılır.
+    avoid_print: error
+    unawaited_futures: warning
+  exclude:
+    - build/**
+    - android/**
+    - ios/**
+    - web/**
+    - windows/**
+    - macos/**
+    - linux/**
+
+linter:
+  rules:
+    - always_declare_return_types
+    - avoid_dynamic_calls
+    # Loglara sır sızmasının en yaygın yolu print() — CI'da hata.
+    - avoid_print
+    - prefer_const_constructors
+    - prefer_final_locals
+    - require_trailing_commas
+    - unnecessary_lambdas
