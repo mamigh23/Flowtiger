@@ -285,13 +285,14 @@ flutter analyze ✅
 
 ---
 
-# 6. ŞU ANKİ AKTİF İŞ
+# 6. AKTİF CHECKPOINT — FIRST PRODUCT UI TAMAMLANDI
 
-**Tarih:** 16.08.2026
+**Tarih:** 16.08.2026  
+**Son commit:** `f240a5b`  
+**Commit:** `feat(client): first product ui - login company selection and dashboard`  
+**Push:** ✅ `master` → `origin/master`
 
-Aktif iş:
-
-## FIRST PRODUCT UI
+## Tamamlanan ürün akışı
 
 ```text
 Login
@@ -301,26 +302,69 @@ Company Selection
 Dashboard Shell
 ```
 
-Web tarafında bu çalışma sırasında foundation üzerine gerçek ürün UI'ı ekleniyor.
+### Web
 
-Son görülen web durumu:
+- Login ekranı ürün UI'ına taşındı.
+- Password göster/gizle ve submit davranışı tamamlandı.
+- Company Selection ayrı route olarak oluşturuldu.
+- Tek şirketli kullanıcı için otomatik seçim davranışı korundu.
+- Çoklu şirketli kullanıcı için gerçek şirket seçim ekranı eklendi.
+- Active company seçimi yalnızca backend endpointi üzerinden yapılıyor.
+- Dashboard Shell gerçek navigation yapısına dönüştürüldü.
+- Dashboard metrikleri gerçek backend uçlarından yükleniyor.
+- Loading / empty / error / 403 durumları ayrı ele alındı.
+- Customers / Team / Profile için sonraki ürün ekranlarına uygun shell/placeholder yapısı hazırlandı.
+- Mobile preview için Coming Soon yüzeyi hazırlandı.
+
+### Flutter
+
+- Login akışı ürün UI'ına taşındı.
+- Company Selection ekranı ayrı oluşturuldu.
+- AuthGate → CompanyGate → Company Selection / AppShell akışı tamamlandı.
+- Dashboard ekranı gerçek backend uçlarından veri alıyor.
+- Company selection istemci tarafından `active_company_id` göndermeden yapılıyor.
+- Secure token storage korunuyor.
+
+### Yakalanan ve düzeltilen gerçek production bug'ları
+
+1. `Size.fromHeight()` kullanımı `FilledButton` için sonsuz minimum genişlik oluşturuyordu. `Row` içindeki Company Selection butonu layout/semantics hatasına neden oluyordu. `Size(64, controlHeight)` ile düzeltildi.
+2. Dashboard'daki eşzamanlı `await` + stale state değerlendirme sırası, bir panelin güncellemesinin başka panel güncellemesini ezmesine neden oluyordu. Await sonucu önce local değişkene alınıp sonra güncel state'e yazıldı.
+
+Bu iki hata testlerle yakalandı; testler gevşetilmedi.
+
+## Test / Build Gate
+
+### Web
 
 ```text
-42/42 tests GREEN
-typecheck GREEN
-build GREEN
+54/54 tests GREEN
+Typecheck GREEN
+Build GREEN
 ```
 
-Flutter tarafı bunun devamında:
+### Flutter
 
-- CompanySelectionScreen
-- DashboardScreen
-- AppShell
-- AuthGate routing
+```text
+flutter analyze → No issues found
+42/42 tests passed
+```
 
-ile tamamlanacak.
+### Backend
 
-Bu iş bitmeden yeni ürün modülüne geçilmez.
+```text
+452 tests
+1494 assertions
+GREEN
+```
+
+## Scope kontrolü
+
+- `backend/` → değişmedi ✅
+- `FLOWTIGER_PROJECT_PLAYBOOK.md` → bu checkpoint güncellemesi yalnızca ChatGPT tarafından yapılıyor ✅
+- Web + Mobile → aktif görev kapsamı ✅
+- Geçici diagnostic testleri/artifacts → kaldırıldı ✅
+- Commit → `f240a5b` ✅
+- Push → `origin/master` ✅
 
 ---
 
@@ -393,15 +437,11 @@ Backend foundation tamamlandığı için öncelik **client productization**.
 
 ## AŞAMA 1 — First Product UI
 
-Şu an:
-
-- Login
-- Company Selection
-- Dashboard Shell
-
-Tamamlandıktan sonra test + build GREEN.
+✅ Tamamlandı — `f240a5b`
 
 ## AŞAMA 2 — Customer UI
+
+**Sıradaki aktif görev.**
 
 Web + Mobile:
 
@@ -763,17 +803,6 @@ Her commit/push sonrasında ChatGPT aşağıdaki bilgileri günceller:
 8. Tarih
 9. Gerekirse görevli AI / çalışma oturumu notu
 
-Örnek:
-
-```text
-16.08.2026
-Commit: abc1234
-Scope: client/customer-ui
-Web: 55 tests GREEN
-Flutter: 31 tests GREEN
-Next: team UI
-```
-
 **Bu güncelleme ChatGPT tarafından yapılır ve ardından AI çalışanlara yalnızca okunması için devredilir.**
 
 ---
@@ -1048,50 +1077,54 @@ P2:
 
 ---
 
-# 25. ŞU ANDAKİ CHECKPOINT
+# 25. SON CHECKPOINT
 
-**Tarih:** 16.08.2026 13:00
+**Tarih:** 16.08.2026 22:33  
+**HEAD:** `f240a5b`  
+**origin/master:** `f240a5b`  
+**Working tree:** `desktop.ini` haricinde temiz (OneDrive dosyası, commit edilmedi)
 
-Son sabit client foundation:
-
-```text
-549f25e
-feat(client): initial web and mobile foundation
-```
-
-Backend:
+## Son doğrulamalar
 
 ```text
-6ffeb79
-chore(backend): faz 10 - production hardening and foundation freeze
+Backend: 452 tests / 1494 assertions GREEN
+Web: 54/54 tests GREEN
+Web: typecheck GREEN
+Web: build GREEN
+Flutter: flutter analyze → No issues found
+Flutter: 42/42 tests passed
 ```
 
-En son kalıcı test kayıtları:
+## Tamamlanan son iş
 
 ```text
-Backend: 452 tests / 1494 assertions
-Web foundation: 24 tests
-Flutter foundation: 19 tests
+f240a5b
+feat(client): first product ui - login company selection and dashboard
 ```
 
-Aktif görev:
+## Sıradaki aktif iş
 
 ```text
-FIRST PRODUCT UI
-Login
-→ Company Selection
-→ Dashboard Shell
+CUSTOMER UI
 ```
 
-Geçici çalışma durumunda Web tarafı:
+İlk hedef:
 
 ```text
-42/42 tests GREEN
-typecheck GREEN
-build GREEN
+Customer List
+   ↓
+Pagination
+   ↓
+Create Customer
+   ↓
+Customer Detail
+   ↓
+Edit Customer
+   ↓
+Delete Customer
 ```
 
-Flutter tarafı devam ediyor.
+Öncelik: mevcut backend customer API'sini değiştirmeden gerçek API ile tamamlamak.
 
 ---
 
@@ -1172,11 +1205,20 @@ Her değişiklik bu zinciri mümkün olduğunca korur.
 
 # 28. BİR SONRAKİ ADIM
 
-Aktif iş tamamlandığında:
+First Product UI tamamlandı.
 
-1. Web Login/Company/Dashboard GREEN
-2. Flutter Login/Company/Dashboard GREEN
-3. Commit
-4. Push
-5. **ChatGPT playbook'u günceller**
-6. Customer UI'ya geç
+Sıradaki görev:
+
+**Customer UI — Web + Flutter**
+
+Aktif görev başlamadan önce:
+
+1. Playbook okunur.
+2. Son commit `f240a5b` doğrulanır.
+3. Backend freeze korunur.
+4. Customer endpointleri mevcut API sözleşmesinden doğrulanır.
+5. Önce testler yazılır.
+6. Sonra implementation yapılır.
+7. Web + Flutter test gate'leri GREEN olur.
+8. Commit / push yapılır.
+9. **Playbook checkpoint'i ChatGPT tarafından güncellenir.**
