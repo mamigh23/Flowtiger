@@ -6,6 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/theme/app_theme.dart';
 import 'features/auth/auth_controller.dart';
 import 'features/auth/login_screen.dart';
+import 'features/companies/company_controller.dart';
+import 'features/companies/company_select_screen.dart';
 import 'features/shell/app_shell.dart';
 import 'widgets/ui.dart';
 
@@ -54,15 +56,68 @@ class _AuthGateState extends ConsumerState<_AuthGate> {
 
   @override
   Widget build(BuildContext context) {
+    // Oturum kapandığında şirket durumu SIFIRLANIR. Aksi hâlde bir
+    // sonraki kullanıcı, önceki oturumun aktif şirketiyle açılırdı.
+    ref.listen<AuthState>(authControllerProvider, (AuthState? previous, AuthState next) {
+      if (next.status == AuthStatus.unauthenticated) {
+        ref.read(companyControllerProvider.notifier).reset();
+      }
+    });
+
     final AuthState auth = ref.watch(authControllerProvider);
 
     switch (auth.status) {
       case AuthStatus.loading:
         return const Scaffold(body: FtLoading());
       case AuthStatus.authenticated:
-        return const AppShell();
+        return const _CompanyGate();
       case AuthStatus.unauthenticated:
         return const LoginScreen();
+    }
+  }
+}
+
+/// Aktif şirket yoksa ürüne girilmez.
+///
+/// Bu da bir güvenlik sınırı değildir: aktif şirketi olmayan bir
+/// kullanıcının istekleri zaten backend'de no_active_company ile
+/// reddedilir. Buradaki amaç, kullanıcıyı boş ve bozuk görünen bir
+/// panele düşürmemek.
+class _CompanyGate extends ConsumerStatefulWidget {
+  const _CompanyGate();
+
+  @override
+  ConsumerState<_CompanyGate> createState() => _CompanyGateState();
+}
+
+class _CompanyGateState extends ConsumerState<_CompanyGate> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Zaten yüklenmişse (ör. şirket değiştirme sonrası) tekrar istenmez.
+      if (ref.read(companyControllerProvider).status == CompanyStatus.idle) {
+        unawaited(ref.read(companyControllerProvider.notifier).load());
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final CompanyState companies = ref.watch(companyControllerProvider);
+
+    switch (companies.status) {
+      case CompanyStatus.idle:
+      case CompanyStatus.loading:
+        return const Scaffold(body: FtLoading());
+
+      case CompanyStatus.error:
+      case CompanyStatus.ready:
+        // Tek şirket varsa controller otomatik seçer ve bu ekran
+        // hiç görünmez; seçim sürerken de burada kalınır.
+        return companies.activeCompanyId == null
+            ? const CompanySelectScreen()
+            : const AppShell();
     }
   }
 }

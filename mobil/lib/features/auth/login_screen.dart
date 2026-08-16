@@ -24,6 +24,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final TextEditingController _password = TextEditingController();
 
   bool _submitting = false;
+  bool _passwordVisible = false;
   String? _formError;
   String? _emailError;
   String? _passwordError;
@@ -60,7 +61,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     } on NetworkException catch (error) {
       setState(() => _formError = error.userMessage);
     } finally {
-      if (mounted) setState(() => _submitting = false);
+      // Parola arayüzde bırakılmaz — başarıda da, hatada da.
+      _password.clear();
+
+      if (mounted) {
+        setState(() {
+          _submitting = false;
+          _passwordVisible = false;
+        });
+      }
     }
   }
 
@@ -89,9 +98,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       const SizedBox(height: FtTokens.space4),
                     ],
                     TextField(
+                      key: const Key('login-email'),
                       controller: _email,
                       keyboardType: TextInputType.emailAddress,
                       autocorrect: false,
+                      enableSuggestions: false,
+                      textInputAction: TextInputAction.next,
                       decoration: InputDecoration(
                         labelText: 'E-posta',
                         errorText: _emailError,
@@ -99,11 +111,26 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     ),
                     const SizedBox(height: FtTokens.space4),
                     TextField(
+                      key: const Key('login-password'),
                       controller: _password,
-                      obscureText: true,
+                      obscureText: !_passwordVisible,
+                      // Parola alanında otomatik düzeltme ve öneri
+                      // KAPALI: klavye sözlüğüne parola sızmamalı.
+                      autocorrect: false,
+                      enableSuggestions: false,
                       decoration: InputDecoration(
                         labelText: 'Parola',
                         errorText: _passwordError,
+                        suffixIcon: IconButton(
+                          tooltip: _passwordVisible ? 'Parolayı gizle' : 'Parolayı göster',
+                          icon: Icon(
+                            _passwordVisible
+                                ? Icons.visibility_off_outlined
+                                : Icons.visibility_outlined,
+                          ),
+                          onPressed: () =>
+                              setState(() => _passwordVisible = !_passwordVisible),
+                        ),
                       ),
                       onSubmitted: (_) => _submitting ? null : _submit(),
                     ),

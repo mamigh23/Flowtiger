@@ -55,7 +55,19 @@ class AppTheme {
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          minimumSize: const Size.fromHeight(FtTokens.controlHeight),
+          // DİKKAT: Size.fromHeight KULLANILMAZ.
+          //
+          // Size.fromHeight(48) aslında Size(double.infinity, 48) demektir;
+          // yani yüksekliği değil, minimum GENİŞLİĞİ sonsuz yapar. Bu tema
+          // uygulamadaki her FilledButton'a uygulandığından, Row gibi ana
+          // eksende sınırsız kısıt veren bir ebeveynin altındaki her düğme
+          // sonsuz genişlikte ölçülür ve düzen çöker.
+          //
+          // Buradaki amaç yalnızca ortak kontrol YÜKSEKLİĞİ. Genişlik
+          // kararı düğmenin bulunduğu yere aittir: giriş ekranındaki düğme
+          // Column(crossAxisAlignment: stretch) içinde olduğu için zaten
+          // tam genişlik alır; şirket kartındaki düğme ise içeriği kadar.
+          minimumSize: const Size(64, FtTokens.controlHeight),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(FtTokens.radiusMd),
           ),

@@ -71,6 +71,16 @@ class AuthController extends StateNotifier<AuthState> {
     state = AuthState(status: AuthStatus.authenticated, user: result.user);
   }
 
+  /// Backend herhangi bir istekte 401 döndü.
+  ///
+  /// Token ApiClient tarafından zaten silindi; burada yalnızca oturum
+  /// durumu düşürülür. Sunucuya çıkış isteği GÖNDERİLMEZ — o istek de
+  /// 401 alacaktı.
+  void sessionExpired() {
+    if (state.status == AuthStatus.unauthenticated) return;
+    state = const AuthState.unauthenticated();
+  }
+
   Future<void> logout() async {
     try {
       await _api.post<void>('auth/logout');

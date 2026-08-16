@@ -1,97 +1,129 @@
 import { describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
-import { App } from './App';
+import { screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { fixtures, jsonResponse, mockApi, renderApp } from '@/test/harness';
 import { tokenStorage } from '@/lib/auth/tokenStorage';
 
 /**
- * Foundation testleri: uygulama açılıyor mu, rota koruması çalışıyor mu,
- * oturum düştüğünde istemci temizleniyor mu.
+ * Yönlendirme kuralları (playbook §6 akışı):
  *
- * fetch her testte taklit edilir; gerçek backend'e bağımlılık yok.
+ *   kimliksiz                        → /login
+ *   kimlikli, aktif şirket yok       → /app/company-select
+ *   kimlikli, aktif şirket var       → /app
+ *
+ * Bu yönlendirmeler bir GÜVENLİK SINIRI DEĞİLDİR; yetki kararı her
+ * istekte backend'de verilir. Buradaki amaç kullanıcıyı gereksiz bir
+ * 403 duvarına çarptırmamaktır.
  */
-function renderApp(initialPath: string) {
-  return render(
-    <MemoryRouter initialEntries={[initialPath]}>
-      <App />
-    </MemoryRouter>,
-  );
-}
+describe('App yönlendirme', () => {
+  const activeCompanyRoutes = {
+    '/me': () => jsonResponse(200, { data: fixtures.user() }),
+    '/companies': () =>
+      jsonResponse(200, { data: [fixtures.company()], meta: { active_company_id: 7 } }),
+    '/customers': () => jsonResponse(200, fixtures.paginated([], 0)),
+    '/members': () => jsonResponse(200, fixtures.paginated([], 0)),
+    '/audit-logs': () => jsonResponse(200, fixtures.paginated([], 0)),
+  };
 
-function jsonResponse(status: number, body: unknown) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'Content-Type': 'application/json' },
-  });
-}
-
-describe('App', () => {
-  it('token yokken korumalı rotadan login\'e yönlendirir', async () => {
-    vi.stubGlobal('fetch', vi.fn());
+  it('token yokken korumalı alandan giriş ekranına yönlendirir', async () => {
+    vi.stubGlobal('fetch', mockApi({}));
 
     renderApp('/app');
 
     expect(await screen.findByRole('button', { name: 'Giriş yap' })).toBeInTheDocument();
   });
 
-  it('kök yolu /app\'e yönlendirir (ve oradan login\'e)', async () => {
-    vi.stubGlobal('fetch', vi.fn());
+  it('token yokken şirket seçim ekranına da izin vermez', async () => {
+    vi.stubGlobal('fetch', mockApi({}));
 
-    renderApp('/');
+    renderApp('/app/company-select');
 
     expect(await screen.findByRole('button', { name: 'Giriş yap' })).toBeInTheDocument();
   });
 
-  it('geçerli token ile korumalı alanı gösterir', async () => {
-    tokenStorage.set('gecerli-token');
+  it('kök yolu uygulamaya yönlendirir', async () => {
+    vi.stubGlobal('fetch', mockApi(activeCompanyRoutes));
 
+    renderApp('/', { token: 'gecerli-token' });
+
+    expect(await screen.findByRole('heading', { name: /Hoş geldin/ })).toBeInTheDocument();
+  });
+
+  it('aktif şirket varken panel açılır', async () => {
+    vi.stubGlobal('fetch', mockApi(activeCompanyRoutes));
+
+    renderApp('/app', { token: 'gecerli-token' });
+
+    expect(await screen.findByRole('heading', { name: /Hoş geldin/ })).toBeInTheDocument();
+  });
+
+  it('aktif şirket yokken ve birden fazla şirket varken seçim ekranına gider', async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn(async (input: string | URL) => {
-        const url = String(input);
-
-        if (url.endsWith('/me')) {
-          return jsonResponse(200, {
-            data: { id: 1, name: 'Ada', email: 'ada@flowtiger.test', active_company_id: 7 },
-          });
-        }
-
-        if (url.endsWith('/companies')) {
-          return jsonResponse(200, {
-            data: [{ id: 7, name: 'Sirket A', role: 'owner' }],
-            meta: { active_company_id: 7 },
-          });
-        }
-
-        return jsonResponse(404, { message: 'not found' });
+      mockApi({
+        '/me': () => jsonResponse(200, { data: fixtures.user({ active_company_id: null }) }),
+        '/companies': () =>
+          jsonResponse(200, {
+            data: [fixtures.company({ id: 7 }), fixtures.company({ id: 9, name: 'İkinci' })],
+            meta: { active_company_id: null },
+          }),
       }),
     );
 
-    renderApp('/app');
+    renderApp('/app', { token: 'gecerli-token' });
 
-    expect(await screen.findByText('ada@flowtiger.test')).toBeInTheDocument();
-    expect(await screen.findByText('Sirket A')).toBeInTheDocument();
-    expect(await screen.findByText('aktif')).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Şirket seçin' })).toBeInTheDocument();
+  });
+
+  it('aktif şirket varken seçim ekranı panele geri yönlendirir', async () => {
+    vi.stubGlobal('fetch', mockApi(activeCompanyRoutes));
+
+    renderApp('/app/company-select', { token: 'gecerli-token' });
+
+    expect(await screen.findByRole('heading', { name: /Hoş geldin/ })).toBeInTheDocument();
+  });
+
+  it('hazır olmayan ürün bölümleri için yer tutucu gösterir', async () => {
+    vi.stubGlobal('fetch', mockApi(activeCompanyRoutes));
+
+    renderApp('/app/customers', { token: 'gecerli-token' });
+
+    expect(await screen.findByRole('heading', { name: 'Müşteriler' })).toBeInTheDocument();
+    expect(screen.getByText(/yakında/i)).toBeInTheDocument();
   });
 
   /**
-   * En kritik davranış: backend 401 döndüğünde istemci oturumu
-   * kendiliğinden temizlemeli ve kullanıcıyı login'e almalı (§12).
+   * Merkezi 401 davranışı (foundation'dan devralındı): herhangi bir
+   * istek 401 alırsa token silinir ve oturum kapanır. Bu davranış her
+   * bileşende tekrar yazılmaz.
    */
-  it('backend 401 döndüğünde oturumu temizler ve login\'e döner', async () => {
-    tokenStorage.set('artik-gecersiz-token');
-
+  it('oturum geçersizse token silinir ve giriş ekranına dönülür', async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn(async () => jsonResponse(401, { message: 'Unauthenticated.' })),
+      mockApi({ '/me': () => jsonResponse(401, { message: 'Unauthenticated.' }) }),
     );
 
-    renderApp('/app');
+    renderApp('/app', { token: 'artik-gecersiz' });
 
     expect(await screen.findByRole('button', { name: 'Giriş yap' })).toBeInTheDocument();
+    await waitFor(() => expect(tokenStorage.get()).toBeNull());
+  });
 
-    await waitFor(() => {
-      expect(tokenStorage.get()).toBeNull();
-    });
+  it('çıkış yapıldığında oturum temizlenir', async () => {
+    vi.stubGlobal(
+      'fetch',
+      mockApi({ ...activeCompanyRoutes, '/auth/logout': () => new Response(null, { status: 204 }) }),
+    );
+
+    const user = userEvent.setup();
+    renderApp('/app', { token: 'gecerli-token' });
+
+    await screen.findByRole('heading', { name: /Hoş geldin/ });
+
+    await user.click(screen.getByRole('button', { name: /Hesap menüsü/ }));
+    await user.click(await screen.findByRole('menuitem', { name: 'Çıkış yap' }));
+
+    expect(await screen.findByRole('button', { name: 'Giriş yap' })).toBeInTheDocument();
+    await waitFor(() => expect(tokenStorage.get()).toBeNull());
   });
 });

@@ -1,83 +1,152 @@
+import { useEffect, useRef, useState } from 'react';
+import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '@/lib/auth/AuthContext';
 import { useCompanies } from '@/lib/company/CompanyContext';
-import { Button, Card, ErrorState, Spinner } from '@/components/ui';
+import { Badge } from '@/components/ui';
+import { roleLabel } from '@/lib/company/roleLabel';
 
 /**
- * Kimlik doğrulanmış alanın kabuğu.
+ * Ürün kabuğu: kenar çubuğu + üst bar + içerik.
  *
- * Bu fazda ekran YOK (§20) — burada yalnızca foundation'ın çalıştığını
- * gösteren asgari yüzey var: kim giriş yaptı, hangi şirketler var,
- * aktif şirket hangisi ve nasıl değiştiriliyor.
+ * Masaüstünde kenar çubuğu sabit açık; dar ekranda çekmece olarak
+ * açılır (CSS ile; JavaScript yalnızca açık/kapalı durumunu tutar).
  */
+
+const NAV_ITEMS = [
+  { to: '/app', label: 'Panel', end: true },
+  { to: '/app/customers', label: 'Müşteriler' },
+  { to: '/app/team', label: 'Ekip' },
+  { to: '/app/invitations', label: 'Davetler' },
+  { to: '/app/audit', label: 'Denetim' },
+  { to: '/app/profile', label: 'Profil' },
+] as const;
+
 export function AppShell() {
   const { user, logout } = useAuth();
-  const { companies, activeCompanyId, loading, error, select } = useCompanies();
+  const { activeCompany } = useCompanies();
+  const location = useLocation();
+
+  const [navOpen, setNavOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  /** Gezinme sonrası çekmece kapanır. */
+  useEffect(() => {
+    setNavOpen(false);
+    setMenuOpen(false);
+  }, [location.pathname]);
+
+  /** Menü dışına tıklama ve Esc ile kapanır — klavye kullanıcısı kilitlenmez. */
+  useEffect(() => {
+    if (!menuOpen) return;
+
+    function handlePointer(event: MouseEvent) {
+      if (!menuRef.current?.contains(event.target as Node)) setMenuOpen(false);
+    }
+
+    function handleKey(event: KeyboardEvent) {
+      if (event.key === 'Escape') setMenuOpen(false);
+    }
+
+    document.addEventListener('mousedown', handlePointer);
+    document.addEventListener('keydown', handleKey);
+
+    return () => {
+      document.removeEventListener('mousedown', handlePointer);
+      document.removeEventListener('keydown', handleKey);
+    };
+  }, [menuOpen]);
 
   return (
-    <div>
-      <header className="ft-shell__header">
-        <strong>FlowTiger</strong>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--ft-space-4)' }}>
-          <span className="ft-muted">{user?.email}</span>
-          <Button variant="secondary" onClick={() => void logout()}>
-            Çıkış
-          </Button>
+    <div className={`ft-shell${navOpen ? ' ft-shell--nav-open' : ''}`}>
+      <aside className="ft-shell__sidebar">
+        <div className="ft-shell__brand">
+          <span className="ft-auth__mark" aria-hidden="true">
+            FT
+          </span>
+          <span>FlowTiger</span>
         </div>
-      </header>
 
-      <main className="ft-shell__main">
-        <div className="ft-stack" style={{ maxWidth: '40rem' }}>
-          <Card>
-            <div className="ft-stack">
-              <h2 style={{ fontSize: 'var(--ft-font-size-lg)' }}>Aktif şirket</h2>
+        <nav className="ft-nav" aria-label="Ana gezinme">
+          {NAV_ITEMS.map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              end={'end' in item ? item.end : undefined}
+              className={({ isActive }) => `ft-nav__link${isActive ? ' ft-nav__link--active' : ''}`}
+            >
+              {item.label}
+            </NavLink>
+          ))}
+        </nav>
+      </aside>
 
-              {loading && <Spinner />}
-              {error && <ErrorState message={error} />}
+      {/* Çekmece açıkken içeriği karartan katman. */}
+      <div
+        className="ft-shell__scrim"
+        onClick={() => setNavOpen(false)}
+        aria-hidden="true"
+      />
 
-              {!loading && !error && companies.length === 0 && (
-                <p className="ft-muted">Henüz hiçbir şirkete üye değilsiniz.</p>
-              )}
+      <div className="ft-shell__body">
+        <header className="ft-topbar">
+          <button
+            type="button"
+            className="ft-topbar__toggle"
+            onClick={() => setNavOpen((open) => !open)}
+            aria-label="Gezinmeyi aç/kapat"
+            aria-expanded={navOpen}
+          >
+            ☰
+          </button>
 
-              {companies.map((company) => {
-                const isActive = company.id === activeCompanyId;
+          <div className="ft-topbar__company">
+            {activeCompany && (
+              <>
+                <span className="ft-topbar__company-name">{activeCompany.name}</span>
+                {activeCompany.role && <Badge tone="accent">{roleLabel(activeCompany.role)}</Badge>}
+              </>
+            )}
+          </div>
 
-                return (
-                  <div
-                    key={company.id}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      gap: 'var(--ft-space-4)',
-                    }}
-                  >
-                    <span>
-                      {company.name}
-                      {company.role && <span className="ft-muted"> · {company.role}</span>}
-                    </span>
+          <div className="ft-menu" ref={menuRef}>
+            <button
+              type="button"
+              className="ft-menu__trigger"
+              onClick={() => setMenuOpen((open) => !open)}
+              aria-label="Hesap menüsü"
+              aria-haspopup="menu"
+              aria-expanded={menuOpen}
+            >
+              <span className="ft-avatar" aria-hidden="true">
+                {(user?.name ?? '?').slice(0, 1).toUpperCase()}
+              </span>
+              <span className="ft-menu__name">{user?.name}</span>
+            </button>
 
-                    {isActive ? (
-                      <span className="ft-muted">aktif</span>
-                    ) : (
-                      /*
-                       * Şirket değişimi YALNIZCA backend ucu üzerinden.
-                       * İstemci hiçbir yerde active_company_id yazmaz.
-                       */
-                      <Button variant="secondary" onClick={() => void select(company.id)}>
-                        Seç
-                      </Button>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </Card>
+            {menuOpen && (
+              <div className="ft-menu__panel" role="menu">
+                <span className="ft-menu__email">{user?.email}</span>
+                <NavLink to="/app/profile" className="ft-menu__item" role="menuitem">
+                  Profil
+                </NavLink>
+                <button
+                  type="button"
+                  className="ft-menu__item"
+                  role="menuitem"
+                  onClick={() => void logout()}
+                >
+                  Çıkış yap
+                </button>
+              </div>
+            )}
+          </div>
+        </header>
 
-          <p className="ft-muted">
-            Foundation aşaması: müşteri, ekip, davet ve denetim ekranları henüz yok.
-          </p>
-        </div>
-      </main>
+        <main className="ft-shell__main">
+          <Outlet />
+        </main>
+      </div>
     </div>
   );
 }

@@ -70,3 +70,65 @@ class FtCard extends StatelessWidget {
         ),
       );
 }
+
+/// Küçük etiket — rol, durum vb.
+class FtBadge extends StatelessWidget {
+  const FtBadge({required this.label, super.key});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme colors = Theme.of(context).colorScheme;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: FtTokens.space2,
+        vertical: FtTokens.space1,
+      ),
+      decoration: BoxDecoration(
+        color: colors.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(FtTokens.radiusSm),
+      ),
+      child: Text(label, style: Theme.of(context).textTheme.labelSmall),
+    );
+  }
+}
+
+/// Tek bir sayının kartı.
+///
+/// `value` metni çağıran tarafından verilir; kart durum (yükleniyor,
+/// yetki yok, hata) ayrımını bilmez — o karar controller'a aittir.
+class FtStatCard extends StatelessWidget {
+  const FtStatCard({
+    required this.label,
+    required this.value,
+    this.loading = false,
+    super.key,
+  });
+
+  final String label;
+  final String value;
+  final bool loading;
+
+  @override
+  Widget build(BuildContext context) {
+    return FtCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Text(label, style: Theme.of(context).textTheme.bodySmall),
+          const SizedBox(height: FtTokens.space2),
+          if (loading)
+            const SizedBox(
+              height: 24,
+              width: 24,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          else
+            Text(value, style: Theme.of(context).textTheme.headlineSmall),
+        ],
+      ),
+    );
+  }
+}
