@@ -1,9 +1,9 @@
 # FLOWTIGER — PROJECT PLAYBOOK / ANA YÖNETİM BELGESİ
 
-**Belge amacı:** FlowTiger projesinin mimarisini, mevcut durumunu, geliştirme sırasını, kalite kapılarını, AI çalışanlarının (Claude vb.) görev ve sınırlarını ve proje yönetim kurallarını tek bir yerde tutmak.
+**Belge amacı:** FlowTiger projesinin mimarisini, ürün vizyonunu, mevcut durumunu, geliştirme sırasını, kalite kapılarını, AI çalışanlarının görev ve sınırlarını ve proje yönetim kurallarını tek bir yerde tutmak.
 
 **Belge sahibi / koordinasyon:** ChatGPT — Başkomutan / tek yetkili editör ve teknik kalite denetimi  
-**Tarih:** 16.08.2026  
+**Tarih:** 21.08.2026  
 **Lansman tarihi:** 30.08.2026  
 **Planlanan resmi uygulama çıkışı:** 01.10.2026  
 **Repository:** `https://github.com/mamigh23/Flowtiger`  
@@ -42,6 +42,8 @@ FlowTiger'ın güvenlik modeli client'a değil backend'e dayanır.
 - PostgreSQL
 - Laravel Sanctum
 - REST API
+- Policies / Middleware / Service layer
+- API Resources / Form Requests
 - PHPUnit / Laravel test altyapısı
 
 Temel request zinciri:
@@ -69,8 +71,9 @@ PostgreSQL
 - Vite
 - React Router
 - React Context
-- `fetch` tabanlı merkezi API client
-- CSS custom properties / kendi design token sistemi
+- merkezi API client
+- CSS custom properties / design tokens
+- Vitest / Testing Library
 
 ## Mobile
 
@@ -79,6 +82,7 @@ PostgreSQL
 - Riverpod
 - `http`
 - `flutter_secure_storage`
+- Flutter test / analyzer
 
 Android + iOS:
 
@@ -91,7 +95,7 @@ iPhone / iPad
 
 ---
 
-# 3. KALICI MİMARİ KURALLAR
+# 3. KALICI MİMARİ VE GÜVENLİK KURALLARI
 
 Bu kurallar fazlardan bağımsızdır.
 
@@ -110,7 +114,7 @@ Client sadece doğru endpointi çağırır.
 
 ## 3.2 Tenant isolation
 
-Tenant izolasyonu bir UI özelliği değildir.
+Tenant izolasyonu UI özelliği değildir.
 
 Backend katmanında korunur:
 
@@ -124,30 +128,25 @@ Backend katmanında korunur:
 
 Başka tenant verisini client'ta gizlemek güvenlik sayılmaz.
 
-## 3.3 Secrets
+## 3.3 Secrets / PII
 
-Asla:
+Asla loglanmaz veya audit'e yazılmaz:
 
-- password
-- password hash
+- password / password hash
 - Sanctum token
 - invitation token
 - password reset token
 - verification token
 - Authorization header
-- API key
-- secret
+- API key / secret
 - DB password
+- cookie / session secret
 
-loglanmaz veya audit'e yazılmaz.
+Audit tarafında düz e-posta yerine gerekiyorsa güvenli hash yaklaşımı kullanılır; client hassas alanları beyaz liste dışından göstermez.
 
 ## 3.4 Test gate
 
-Bir faz:
-
-> “Kod yazıldı”
-
-diye tamamlanmaz.
+Bir faz “kod yazıldı” diye tamamlanmaz.
 
 Başarı kriteri:
 
@@ -170,43 +169,13 @@ yaklaşım kullanılır.
 
 ## 3.6 Gereksiz abstraction yok
 
-YAGNI uygulanır.
-
-Bir iş kuralı gerçekten gerektirmiyorsa:
-
-- ikinci service
-- gereksiz repository
-- gereksiz observer sistemi
-- gereksiz package
-- gereksiz abstraction
-
-eklenmez.
-
-Ancak transaction/audit/authorization bütünlüğü gerektiriyorsa business logic service katmanına taşınabilir.
+YAGNI uygulanır. Transaction/audit/authorization bütünlüğü gerektirmedikçe gereksiz service, repository, observer, package veya abstraction eklenmez.
 
 ---
 
-# 4. BACKEND FAZ DURUMU
+# 4. BACKEND FOUNDATION DURUMU
 
-Aşağıdaki backend foundation tamamlanmıştır.
-
-| Faz | Durum | Sonraki kontrol |
-|---|---|---|
-| Faz 0 | ✅ | Git / PostgreSQL / test foundation |
-| Faz 1 | ✅ | Tenant isolation |
-| Faz 2.1 | ✅ | Authentication / Sanctum |
-| Faz 2.2 | ✅ | Company selection |
-| Faz 2.3 | ✅ | API auth + context |
-| Faz 3 | ✅ | Customer CRUD |
-| Faz 4 | ✅ | Team / Membership / Roles |
-| Faz 5 | ✅ | Audit log |
-| Faz 6 | ✅ | Invitation |
-| Faz 7 | ✅ | Email verification / profile / password |
-| Faz 8 | ✅ | Password reset |
-| Faz 9 | ✅ | Session / account security |
-| Faz 10 | ✅ | Production hardening / foundation freeze |
-
-Faz 10 sonucu:
+Faz 0–10 backend foundation tamamlandı ve freeze durumundadır.
 
 ```text
 452 tests passed
@@ -221,150 +190,170 @@ Son backend commit:
 chore(backend): faz 10 - production hardening and foundation freeze
 ```
 
-Bu noktadan sonra backend foundation **freeze** kabul edilir.
+Yeni backend özelliği için önce şu sorular cevaplanır:
 
-Yeni backend özelliği gerekiyorsa:
-
-1. gerçekten gerekli mi?
-2. mevcut API ile çözülemiyor mu?
-3. web/mobile ihtiyacından mı doğdu?
-4. mevcut güvenlik modelini koruyor mu?
-
-soruları cevaplanmadan backend açılmaz.
+1. Gerçekten gerekli mi?
+2. Mevcut API ile çözülemiyor mu?
+3. Web/mobile ihtiyacından mı doğdu?
+4. Mevcut güvenlik modelini koruyor mu?
 
 ---
 
-# 5. CLIENT FOUNDATION DURUMU
+# 5. CLIENT FOUNDATION VE ÜRÜN DURUMU
 
-## Client foundation commit
+Client foundation commit:
 
 ```text
 549f25e
 feat(client): initial web and mobile foundation
 ```
 
-## Web foundation
-
-- React + TypeScript + Vite
-- AuthContext
-- CompanyContext
-- ProtectedRoute
-- PublicOnlyRoute
-- merkezi API client
-- in-memory token storage
-- temel design tokens
-- temel UI components
-
-Son doğrulanmış foundation:
+Tamamlanan ürün alanları:
 
 ```text
-24 web tests passed
-typecheck ✅
-build ✅
+✅ First Product UI
+✅ Customer UI
+✅ Team UI
+✅ Invitation UI
+✅ Audit UI
+🔄 Profile + Security UI
 ```
 
-## Mobile foundation
-
-- Flutter
-- Riverpod
-- AuthGate
-- LoginScreen
-- Company controller
-- AppShell
-- secure token storage
-- centralized HTTP client
-- Android project
-- iOS project
-
-Son doğrulanmış foundation:
+Son doğrulanmış kapılar:
 
 ```text
-19 Flutter tests passed
-flutter analyze ✅
+Web Audit: 211/211 GREEN + typecheck + build GREEN
+Flutter Audit: 189/189 GREEN + flutter analyze GREEN
+Flutter Invitation: 128/128 GREEN + flutter analyze GREEN
+Web Profile Subphase A: implementation tamam; Windows ortamında node_modules yeniden kurulduktan sonra kapılar doğrulanacak
 ```
+
+GitHub playbook checkpoint'i resmi durum kaydıdır; gerçek ortam çıktısı görülmeden GREEN ilan edilmez.
 
 ---
 
-# 6. AKTİF CHECKPOINT — FIRST PRODUCT UI TAMAMLANDI
+# 6. ÜRÜN VİZYONU — OPERATIONS + FINANCE / ACCOUNTING LAYER
 
-**Tarih:** 16.08.2026  
-**Son commit:** `f240a5b`  
-**Commit:** `feat(client): first product ui - login company selection and dashboard`  
-**Push:** ✅ `master` → `origin/master`
+FlowTiger yalnızca müşteri, ekip, şirket, davet, denetim ve profil ekranlarından oluşan bir SaaS değildir.
 
-## Tamamlanan ürün akışı
+Uzun vadeli ana vizyon:
+
+> **İşletme sahibinin operasyonunu ve finansal durumunu tek yerden anlamasını, yönetmesini ve zamanında aksiyon almasını sağlayan işletme merkezi.**
+
+**Finans / muhasebe katmanı ilk ürün planının parçasıdır ve roadmap'ten çıkarılamaz.** Lansman takvimi nedeniyle aşamalı olarak devreye alınacaktır.
+
+## 6.1 Finans ve muhasebe hedefi
+
+Hedeflenen ana yetenekler:
+
+- Fatura oluşturma ve fatura yönetimi
+- Gelir kaydı ve gelir takibi
+- Gider kaydı ve gider takibi
+- Tahsilat / ödeme takibi
+- Alacak / borç görünümü
+- Finansal dashboard
+- KDV özeti
+- Vergi ve diğer mali yükümlülükler için takvim / hatırlatma
+- Dönemsel finans özeti
+- Mali müşavir için kontrollü paylaşım / çalışma yüzeyi
+- Dışa aktarma ve raporlama
+- Uygun zamanda e-Fatura / e-Arşiv ve diğer resmi e-belge entegrasyonları
+
+## 6.2 “Para nereye gidiyor?” işletme görünümü
+
+FlowTiger gerçek kayıtlara dayanarak mümkün olduğunda şunları anlaşılır biçimde göstermelidir:
+
+- Para hangi gider kategorilerine gidiyor?
+- Hangi giderler artıyor / azalıyor?
+- Hangi müşterilerden tahsilat bekleniyor?
+- Hangi ödemeler yaklaşmakta?
+- Hangi faturalar kesilmiş / tahsil edilmiş / bekliyor?
+- Yaklaşan mali yükümlülükler neler?
+- İşletmenin dönemsel nakit görünümü nasıl?
+
+Uydurma KPI veya fake finansal sonuç üretilemez.
+
+## 6.3 Fatura kesme açık ürün gereksinimidir
+
+“Fatura kesme” FlowTiger için yalnızca PDF üreten bir özellik değildir.
+
+İleride hedeflenen akış:
 
 ```text
-Login
+Müşteri seç
    ↓
-Company Selection
+Ürün / hizmet kalemleri
    ↓
-Dashboard Shell
+Miktar / birim fiyat
+   ↓
+KDV / iskonto / toplam
+   ↓
+Fatura oluştur
+   ↓
+Fatura durumu
+   ↓
+Tahsilat durumu
+   ↓
+Uygun e-belge / sağlayıcı entegrasyonu
 ```
 
-### Web
+PDF / yazdırılabilir belge görünümü desteklenecek; gerçek elektronik belge ihtiyacı oluştuğunda mevzuata ve uygun sağlayıcılara göre entegrasyon ayrıca planlanacaktır.
 
-- Login ekranı ürün UI'ına taşındı.
-- Password göster/gizle ve submit davranışı tamamlandı.
-- Company Selection ayrı route olarak oluşturuldu.
-- Tek şirketli kullanıcı için otomatik seçim davranışı korundu.
-- Çoklu şirketli kullanıcı için gerçek şirket seçim ekranı eklendi.
-- Active company seçimi yalnızca backend endpointi üzerinden yapılıyor.
-- Dashboard Shell gerçek navigation yapısına dönüştürüldü.
-- Dashboard metrikleri gerçek backend uçlarından yükleniyor.
-- Loading / empty / error / 403 durumları ayrı ele alındı.
-- Customers / Team / Profile için sonraki ürün ekranlarına uygun shell/placeholder yapısı hazırlandı.
-- Mobile preview için Coming Soon yüzeyi hazırlandı.
+## 6.4 Vergi ve muhasebe bilgilendirme asistanı
 
-### Flutter
+FlowTiger mevcut kayıtlarından hareketle kullanıcıya:
 
-- Login akışı ürün UI'ına taşındı.
-- Company Selection ekranı ayrı oluşturuldu.
-- AuthGate → CompanyGate → Company Selection / AppShell akışı tamamlandı.
-- Dashboard ekranı gerçek backend uçlarından veri alıyor.
-- Company selection istemci tarafından `active_company_id` göndermeden yapılıyor.
-- Secure token storage korunuyor.
+- tahmini KDV görünümü
+- tahmini vergi / mali yükümlülük görünümü
+- gelir / gider etkisi
+- yaklaşan beyan / ödeme tarihleri
+- olağandışı gider artışları
+- nakit akışı uyarıları
+- muhasebe açısından dikkat edilmesi gereken noktalar
 
-### Yakalanan ve düzeltilen gerçek production bug'ları
+sunmayı hedefler.
 
-1. `Size.fromHeight()` kullanımı `FilledButton` için sonsuz minimum genişlik oluşturuyordu. `Row` içindeki Company Selection butonu layout/semantics hatasına neden oluyordu. `Size(64, controlHeight)` ile düzeltildi.
-2. Dashboard'daki eşzamanlı `await` + stale state değerlendirme sırası, bir panelin güncellemesinin başka panel güncellemesini ezmesine neden oluyordu. Await sonucu önce local değişkene alınıp sonra güncel state'e yazıldı.
+### Kritik doğruluk kuralı
 
-Bu iki hata testlerle yakalandı; testler gevşetilmedi.
+FlowTiger kesin muhasebe, vergi veya hukuki danışman olarak konumlandırılmaz.
 
-## Test / Build Gate
+Mali sonuçlarda:
 
-### Web
+- mümkün olduğunda **tahmini** etiketi kullanılır
+- oran / varsayım / tarih gösterilir
+- hesaplanamayan noktalar açıkça belirtilir
+- şirket türü, istisna, indirim ve mevzuat farklılıkları dikkate alınır
+- gerektiğinde mali müşavir / yetkili uzman doğrulaması önerilir
+- mevzuat değişebildiği için oranlar ve yasal takvimler sabit kodlanmış gerçekler olarak kabul edilmez; güncel/ doğrulanmış kaynak gerekir
 
-```text
-54/54 tests GREEN
-Typecheck GREEN
-Build GREEN
-```
+## 6.5 Mali müşavir çalışma modeli
 
-### Flutter
+Hedef mali müşaviri sistemin dışına itmek değil, şirket sahibi ↔ mali müşavir bilgi akışını kolaylaştırmaktır.
 
-```text
-flutter analyze → No issues found
-42/42 tests passed
-```
+Planlanan yüzeyler:
 
-### Backend
+- finansal rapor paylaşımı
+- kontrollü erişim
+- belge / veri dışa aktarma
+- mali açıklama notları
+- belge / veri akışı
 
-```text
-452 tests
-1494 assertions
-GREEN
-```
+## 6.6 AI finans yardımcısı
 
-## Scope kontrolü
+AI finans katmanının yardımcı katmanıdır; finansal kayıtların kaynağı veya yetki makamı değildir.
 
-- `backend/` → değişmedi ✅
-- `FLOWTIGER_PROJECT_PLAYBOOK.md` → bu checkpoint güncellemesi yalnızca ChatGPT tarafından yapılıyor ✅
-- Web + Mobile → aktif görev kapsamı ✅
-- Geçici diagnostic testleri/artifacts → kaldırıldı ✅
-- Commit → `f240a5b` ✅
-- Push → `origin/master` ✅
+İleride gerçek FlowTiger verilerine dayanarak:
+
+- “Bu ay para nereye gitti?”
+- “Giderler neden arttı?”
+- “Hangi müşterilerden para bekliyorum?”
+- “Yakında hangi ödemelerim var?”
+- “Bu ay yaklaşık KDV durumum nedir?”
+- “Hangi faturalar tahsil edilmedi?”
+
+gibi sorulara cevap verebilir.
+
+AI cevabı ile muhasebe/vergi mevzuatı arasındaki sınır açık tutulur.
 
 ---
 
@@ -372,25 +361,30 @@ GREEN
 
 Uygulamanın mağazada yayınlanması lansman için şart değildir.
 
-30.08.2026 lansmanında gösterilecek akış:
+Lansman yalnızca yapay zekâ ile üretilmiş tek bir video olmayacaktır. Profesyonel bir ürün tanıtımı ve canlı/gerçek ürün gösterimi hedeflenir.
+
+Hedeflenen hikâye:
 
 ```text
-Landing Page
-      ↓
-Dashboard Demo
-      ↓
-Customer Management
-      ↓
-Team Management
-      ↓
-Company Switching
-      ↓
-Audit History
-      ↓
-Mobile App Preview
-      ↓
-Coming Soon
-Launching 01.10.2026
+Problem
+   ↓
+FlowTiger'ın işletme yaklaşımı
+   ↓
+Dashboard
+   ↓
+Müşteriler
+   ↓
+Ekip / Davetler
+   ↓
+Şirket yönetimi
+   ↓
+Denetim geçmişi
+   ↓
+Finans vizyonu / “yakında”
+   ↓
+Mobile preview
+   ↓
+01.10.2026 resmi çıkış
 ```
 
 Lansman için:
@@ -398,14 +392,14 @@ Lansman için:
 - gerçek UI
 - gerçek navigasyon
 - gerçek API'ye bağlı demo akışları
-- gerçek uygulama tasarımı
+- profesyonel sunum / anlatım
 - cihaz mockup'ları
 - ekran görüntüleri
 - kısa demo video
+- gerektiğinde canlı ürün gösterimi
+- işletme sahibinin anlayacağı problem / çözüm anlatısı
 
-hazır olmalı.
-
-Uygulama mağazada henüz yayınlanmamış olabilir.
+hazır olmalıdır.
 
 ---
 
@@ -421,248 +415,265 @@ Beklenen platformlar:
 - Android
 - iPhone / iPad
 
-## iOS kritik bağımlılık
-
-Flutter kodu Windows'ta geliştirilebilir.
-
-Ancak iOS production signing / archive / App Store süreçleri macOS + Xcode gerektirir.
-
-Bu nedenle iOS yayın planı ayrıca takip edilmelidir.
+iOS production signing / archive / App Store süreçleri macOS + Xcode gerektirdiğinden ayrıca takip edilir.
 
 ---
 
-# 9. BUNDAN SONRAKİ GELİŞTİRME SIRASI
+# 9. GELİŞTİRME ROADMAP'İ
 
-Backend foundation tamamlandığı için öncelik **client productization**.
+Backend foundation tamamlandığı için öncelik client productization'dır.
 
 ## AŞAMA 1 — First Product UI
 
-✅ Tamamlandı — `f240a5b`
+✅ Tamamlandı.
 
 ## AŞAMA 2 — Customer UI
 
-**Sıradaki aktif görev.**
+✅ Tamamlandı.
 
-Web + Mobile:
-
-- Customer list
-- Pagination
-- Customer create
-- Customer detail
-- Customer update
-- Customer delete
-- Validation
-- Loading/empty/error states
-- Tenant-aware UI
-
-Backend mevcut endpointleri kullanılır.
-Yeni endpoint gerekmiyorsa backend açılmaz.
+- list
+- pagination
+- create
+- detail
+- update
+- delete
+- validation
+- loading/empty/error
 
 ## AŞAMA 3 — Team UI
 
-- Member list
-- Member detail
-- Add/invite
-- Role change
-- Remove
-- Owner-only UI controls
-- Last-owner güvenlik davranışlarının görünür UI karşılığı
+✅ Tamamlandı.
 
-Frontend role check yalnızca UX'tir.
-Gerçek authorization backend'dedir.
+- member list/detail
+- role change
+- remove
+- owner-only backend davranışının UI karşılığı
 
 ## AŞAMA 4 — Invitation UI
 
-- Invitation list
-- Invite member
-- Role selection
-- Revoke
-- Accept invitation flow
-- Loading/error/expired states
+✅ Web + Flutter owner tarafı tamamlandı.
 
-Token hiçbir yere loglanmaz.
+- invitation list
+- invite member
+- role selection
+- revoke
+- durumlar / hata yönetimi
+
+Public accept flow ayrı subphase olarak tutulur.
 
 ## AŞAMA 5 — Audit UI
 
-- Audit history
-- Pagination
-- Action badge
-- Actor
-- timestamp
-- safe metadata display
+✅ Tamamlandı.
 
-Secret ve PII kuralları korunur.
+- history
+- pagination
+- actions
+- actor
+- timestamp
+- safe metadata / change display
 
 ## AŞAMA 6 — Profile + Security UI
+
+🔄 Aktif.
+
+### Subphase A
 
 - Profile
 - Email verification
 - Password change
-- Password reset
+
+### Subphase B
+
 - Sessions
-- Revoke session
 - Security events
+- Revoke session
 
-## AŞAMA 7 — Web/Mobile parity
+### Subphase C
 
-Web ve Flutter feature parity kontrolü.
+- Forgot password
+- Password reset
 
-Her iki istemci için:
+## AŞAMA 7 — Finance Foundation
 
-- loading
-- empty
-- error
-- 401
-- 403
-- 404
-- 422
-- 429
+🔜 İlk büyük ürün genişlemesi.
 
-durumları gözden geçirilir.
+- güvenli finansal veri modeli
+- gelir / gider kayıtları
+- ödeme / tahsilat kayıtları
+- dönem özeti
+- finansal dashboard temeli
+- KDV / mali yükümlülükler için açıklanabilir tahmini hesaplama altyapısı
 
-## AŞAMA 8 — Product polish
+## AŞAMA 8 — Invoice Management
 
+- fatura oluşturma
+- müşteri ilişkilendirme
+- fatura kalemleri
+- KDV / toplam hesaplama
+- fatura durumu
+- tahsilat durumu
+- PDF / yazdırma
+- uygun e-belge entegrasyon planı
+
+## AŞAMA 9 — Payments, Collections & Tax Assistant
+
+- alacak / tahsilat görünümü
+- ödeme takibi
+- yaklaşan mali yükümlülükler
+- veriye dayalı vergi / KDV özeti
+- hatırlatmalar
+- açıklanabilir hesaplamalar
+
+## AŞAMA 10 — Accountant Workspace
+
+- mali müşavir paylaşımı
+- kontrollü erişim
+- rapor paylaşımı
+- dışa aktarma
+- belge / veri akışı
+
+## AŞAMA 11 — Web/Mobile parity + Product polish
+
+- feature parity
 - responsive
 - typography
 - spacing
-- design consistency
 - accessibility
-- animations (gerektiği kadar)
-- empty states
-- skeletons
+- loading/error/empty/skeleton
 - navigation polish
+- gerektiği kadar animation
 
-Aşırı animation / glassmorphism / gereksiz görsel yük yok.
+## AŞAMA 12 — Launch Demo / Marketing Readiness
 
-## AŞAMA 9 — Launch Demo
-
-30.08 lansmanına yönelik:
+30.08 lansmanı için:
 
 - gerçek ekran görüntüleri
+- ürün anlatısı
 - dashboard demo
-- customer demo
-- team demo
-- company switching
-- audit demo
+- customer/team/invitation/audit demo
 - mobile preview
 - landing page integration
+- profesyonel lansman videosu
+- sahne / sunum akışı
+- satış konuşması / demo senaryosu
 
-## AŞAMA 10 — Production candidate
+## AŞAMA 13 — Production Candidate / Release
 
 01.10 çıkışı için:
 
 - production deploy
+- web production
 - Android build
 - iOS build
-- web production
-- mail
-- queue
+- mail / queue
 - monitoring
-- backup
+- backups
+- CI
 - release QA
+- smoke tests
+
+### Roadmap öncelik kuralı
+
+Finance / accounting / invoice katmanı ürünün ana vizyonunun parçasıdır; unutulamaz veya “sonradan belki” özelliği olarak roadmap'ten çıkarılamaz.
+
+Ancak 30.08 lansmanı ve 01.10 release hedefleri riske atılmadan aşamalı teslim edilir.
 
 ---
 
-# 10. AI ÇALIŞANLARIN GÖREV TANIMI
+# 10. ÜRÜN GELİŞTİRME KURALLARI
 
-Bu proje farklı AI hesaplarında devam ettirilebilir.
+## 10.1 Gerçek ürün değeri
 
-Claude, Gemini, Codex veya başka bir AI çalışanı:
+Her yeni ekran veya özellik şu soruya cevap vermelidir:
 
-### Yapabilir
+> “Bu işletme sahibinin hayatını gerçekten kolaylaştırıyor mu?”
 
-- repository incelemek
-- mevcut mimariyi öğrenmek
-- test yazmak
-- UI yazmak
-- API client yazmak
-- mevcut endpointleri kullanmak
-- bug araştırmak
-- küçük refactorlar yapmak
-- dokümantasyon hazırlamak
-- static analysis yapmak
-- test çalıştırmak
-- build çalıştırmak
-- sonucu raporlamak
+Özellikle finans tarafında FlowTiger yalnızca kayıt tutmaz; mümkün olduğunda **anlam** verir:
 
-### Tek başına karar vermemesi gereken konular
+- ne oldu?
+- neden oldu?
+- şimdi ne yapmalıyım?
+- yaklaşan risk ne?
+- para nerede?
+- kesilecek / tahsil edilecek / ödenecek ne var?
 
-Şunlarda önce yöneticinin kararı gerekir:
+## 10.2 Fake feature yasağı
 
-- backend mimarisini değiştirmek
-- yeni auth sistemi
-- yeni tenant modeli
-- database schema'yı büyük ölçüde değiştirmek
-- yeni dependency eklemek
-- mevcut security modelini gevşetmek
-- `CompanyContext` / tenant isolation mantığını değiştirmek
-- Sanctum'u değiştirmek
-- token storage güvenliğini gevşetmek
-- client'ta security authority oluşturmak
-- migration geçmişini değiştirmek
-- production secret eklemek
-- destructive migration
-- mevcut endpoint contractını kırmak
-- **`FLOWTIGER_PROJECT_PLAYBOOK.md` dosyasını değiştirmek**
+Çalışmayan entegrasyon, sahte fatura, sahte vergi hesabı veya uydurma finansal sonuç production özelliği gibi gösterilmez.
 
-AI çalışanının temel prensibi:
+Demo verisi kullanılıyorsa demo olduğu açık olmalıdır.
 
-> Önce incele, sonra planla, sonra test yaz, sonra kodla, sonra test et, sonra raporla.
+## 10.3 Vergi ve muhasebe doğruluğu
 
-“Çalışıyor gibi” görmek yeterli değildir.
+Mali sonuçlar açıklanabilir olmalıdır.
+
+Mümkünse kullanıcı:
+
+- hangi kayıtların hesaba girdiğini
+- hangi oranların kullanıldığını
+- hangi tarih / dönem varsayımının yapıldığını
+- sonucun tahmini olup olmadığını
+
+görebilmelidir.
 
 ---
 
-# 10.1 PLAYBOOK YETKİ KURALI
+# 11. AI ÇALIŞAN GÖREV TANIMI
 
-`FLOWTIGER_PROJECT_PLAYBOOK.md` proje için **yönetim ve handover kaynağıdır**.
+AI çalışanlar:
 
-## Tek yetkili editör
+- repository inceleyebilir
+- test yazabilir
+- UI yazabilir
+- API client yazabilir
+- mevcut endpointleri kullanabilir
+- bug araştırabilir
+- refactor yapabilir
+- static analysis / test / build çalıştırabilir
+- dokümantasyon hazırlayabilir
 
-Bu dosyayı yalnızca **ChatGPT — Başkomutan** güncelleyebilir.
+Tek başına karar veremez:
 
-Claude, Gemini, Codex veya başka herhangi bir AI çalışanı:
+- backend mimarisi
+- yeni auth / tenant modeli
+- büyük DB schema değişikliği
+- security modelini gevşetme
+- migration geçmişini değiştirme
+- mevcut API contractını kırma
+- production secret ekleme
+- `FLOWTIGER_PROJECT_PLAYBOOK.md` değişikliği
+- roadmap / faz sırası değişikliği
 
-- dosyayı okuyabilir
+Ana prensip:
+
+> Önce incele → planla → test yaz → kodla → test et → raporla.
+
+---
+
+# 12. PLAYBOOK YETKİ KURALI
+
+Bu dosya proje yönetim ve handover kaynağıdır.
+
+**Tek yetkili editör: ChatGPT — Başkomutan.**
+
+AI çalışanlar:
+
+- okuyabilir
 - kuralları uygulayabilir
-- checkpoint'i referans alabilir
-- fakat dosyaya **yazamaz / değiştiremez / commit edemez**
-- roadmap'i değiştiremez
-- faz sırasını değiştiremez
-- mimari karar ekleyemez
-- lansman tarihlerini değiştiremez
-- test gate'lerini değiştiremez
-- kendi yaptığı işi playbook'a resmi gerçek olarak kaydedemez
-
-AI çalışan bir playbook değişikliğine ihtiyaç olduğunu düşünürse bunu **raporlar**. Kararı ve değişikliği ChatGPT yapar.
-
-## Yetki modeli
-
-```text
-Kullanıcı
-   ↓ ürün / launch kararları
-ChatGPT — Başkomutan
-   ↓ kapsam + sıra + güvenlik + kalite + playbook
-AI çalışanları (Claude / Gemini / Codex vb.)
-   ↓ implementasyon + test + rapor
-Repository
-```
-
-## Kritik kural
-
-> AI çalışan kodu uygular; ChatGPT projenin resmi durumunu yönetir.
-
-Bu ayrım, farklı AI hesapları arasında geçişte projenin kontrolünü kaybetmemek için zorunludur.
+- değişiklik ihtiyacını raporlayabilir
+- fakat dosyayı değiştiremez
+- roadmap'i kendi başına değiştiremez
+- kendi işini resmi checkpoint olarak kaydedemez
 
 ---
 
-# 11. AI ÇALIŞAN SINIRLARI
+# 13. AI ÇALIŞAN SINIRLARI
 
-Her görev başlangıcında AI çalışana şu sınırlar hatırlatılır:
+Her görev başlangıcında:
 
 ```text
-Backend'e dokunma
-gerekmiyorsa migration oluşturma
+Backend'e dokunma gerekmiyorsa backend'e dokunma
+Gereksiz migration oluşturma
 gereksiz dependency ekleme
 secret kullanma
 token/password loglama
@@ -674,32 +685,11 @@ commit/push yapma
 FLOWTIGER_PROJECT_PLAYBOOK.md dosyasını değiştirme
 ```
 
-## Özellikle yasak
-
-Bir test başarısız olduğunda:
-
-- assertion kaldırmak
-- test kapsamını azaltmak
-- `skip` eklemek
-- timeout artırarak problemi gizlemek
-- test datasını değiştirmeden problemi saklamak
-- production bug'ını test beklentisini gevşeterek kapatmak
-
-yapılmaz.
-
-Önce kök neden bulunur.
+Test başarısız olduğunda assertion silme, skip ekleme, timeout ile problemi gizleme veya gerçek production bug'ını test beklentisini gevşeterek kapatma yapılmaz.
 
 ---
 
-# 12. TEST GATE PROSEDÜRÜ
-
-Bir AI çalışanı:
-
-```text
-kod yazdı
-```
-
-demesiyle görev bitmez.
+# 14. TEST GATE PROSEDÜRÜ
 
 ## Web
 
@@ -709,7 +699,7 @@ npm run typecheck
 npm run build
 ```
 
-Üçü de GREEN.
+Üçü GREEN.
 
 ## Flutter
 
@@ -718,7 +708,7 @@ flutter analyze
 flutter test
 ```
 
-İkisi de GREEN.
+İkisi GREEN.
 
 ## Backend
 
@@ -728,163 +718,21 @@ php artisan test
 
 GREEN.
 
-## Faz kapanış şartı
+Faz kapanışında:
 
-- beklenen testler GREEN
+- test
 - scope kontrolü
-- git status kontrolü
-- dosya değişikliği kontrolü
-- security sanity check
+- git status
+- security sanity
 - commit
 - push
-- **ChatGPT tarafından playbook checkpoint güncellemesi**
+- ChatGPT playbook checkpoint güncellemesi
+
+gerekir.
 
 ---
 
-# 13. COMMIT / PUSH PROSEDÜRÜ
-
-Her iş tamamlandığında:
-
-### 1
-
-```bash
-git status --short
-```
-
-### 2
-
-Sadece görev kapsamındaki dosyalar stage edilir.
-
-### 3
-
-Test sonucu kontrol edilir.
-
-### 4
-
-Commit mesajı:
-
-```text
-feat(backend): ...
-feat(client): ...
-chore(backend): ...
-chore(client): ...
-fix(client): ...
-fix(backend): ...
-```
-
-### 5
-
-Commit alınır.
-
-### 6
-
-GitHub'a push yapılır.
-
-### 7
-
-**ChatGPT playbook'u günceller. AI çalışan playbook'u güncellemez.**
-
----
-
-# 14. HER COMMIT SONRASI PLAYBOOK GÜNCELLEME KURALI
-
-Bu belge yaşayan bir belgedir; ancak **tek yetkili editör ChatGPT'dir.**
-Claude ve diğer AI çalışanları bu dosyayı yalnızca okuyabilir. Onlar tarafından yapılan playbook değişiklikleri kabul edilmez.
-
-Her commit/push sonrasında ChatGPT aşağıdaki bilgileri günceller:
-
-1. Son commit hash
-2. Yapılan iş
-3. Test sonucu
-4. Build sonucu
-5. Yeni açılan mimari karar
-6. Kalan riskler
-7. Sıradaki görev
-8. Tarih
-9. Gerekirse görevli AI / çalışma oturumu notu
-
-**Bu güncelleme ChatGPT tarafından yapılır ve ardından AI çalışanlara yalnızca okunması için devredilir.**
-
----
-
-# 15. FAZ GEÇİŞ KURALI
-
-Yeni faza:
-
-- eski faz GREEN değilse
-- working tree kontrol edilmemişse
-- migration belirsizse
-- auth/tenant regresyonu varsa
-- test kırmızıysa
-
-geçilmez.
-
----
-
-# 16. YENİ AI HESABINA PROJE DEVRİ
-
-AI limiti dolduğunda yeni Claude hesabı kullanılabilir.
-
-Yeni AI'a projeyi sıfırdan anlatmak yerine:
-
-1. GitHub repository bağlanır.
-2. `FLOWTIGER_PROJECT_PLAYBOOK.md` okunur.
-3. `README.md` okunur.
-4. `docs/PRODUCTION.md` okunur.
-5. Son commit incelenir.
-6. Son görev checkpoint'i okunur.
-7. Sadece aktif görev promptu verilir.
-
-**AI çalışan playbook'u yalnızca okur. Değişiklik ihtiyacını raporlar; dosyayı ChatGPT günceller.**
-
-Yeni AI önce:
-
-> “Repository'yi inceledim ve mevcut mimariyi anladım.”
-
-demeden kod yazmaya başlamamalıdır.
-
----
-
-# 17. YENİ AI İÇİN HANDOVER TEMPLATE
-
-Her yeni AI oturumunun başına:
-
-```text
-FLOWTIGER HANDOVER
-
-Repository:
-https://github.com/mamigh23/Flowtiger
-
-Önce:
-README / docs / FLOWTIGER_PROJECT_PLAYBOOK.md
-ve son commit'i incele.
-
-Backend freeze:
-Faz 0–10 tamamlandı.
-
-Backend foundation:
-452 tests / 1494 assertions GREEN
-
-Client foundation:
-Web + Flutter hazır.
-
-Şu anki aktif görev:
-[AKTİF GÖREV]
-
-Kurallar:
-- mevcut mimariyi bozma
-- backend'e gerekmedikçe dokunma
-- önce test
-- sonra implementation
-- GREEN olmadan tamamlandı deme
-- commit/push yapma
-- FLOWTIGER_PROJECT_PLAYBOOK.md dosyasını değiştirme
-- playbook değişikliği gerekiyorsa ChatGPT'ye raporla
-```
-
----
-
-# 18. GÜVENLİK KONTROL LİSTESİ
+# 15. GÜVENLİK KONTROL LİSTESİ
 
 Her büyük değişiklikte:
 
@@ -904,12 +752,12 @@ Her büyük değişiklikte:
 - [ ] 429 rate limit doğru
 - [ ] audit güvenli
 - [ ] PII kuralları korunuyor
+- [ ] mali/vergi çıktıları tahminse açıkça etiketli
+- [ ] finansal hesaplamalar açıklanabilir
 
 ---
 
-# 19. PERFORMANCE KURALLARI
-
-Gereksiz optimization yok.
+# 16. PERFORMANCE KURALLARI
 
 Öncelik:
 
@@ -919,7 +767,7 @@ Gereksiz optimization yok.
 4. maintainability
 5. performance
 
-Ama şu risklere dikkat edilir:
+Dikkat:
 
 - N+1
 - unbounded list
@@ -928,40 +776,11 @@ Ama şu risklere dikkat edilir:
 - sınırsız pagination
 - devasa audit listesi
 - client infinite retry
+- finans dashboard'larında gereksiz tekrar sorgulama
 
 ---
 
-# 20. FRONTEND AUTH STORAGE KARARI
-
-## Web
-
-Şu an:
-
-**token sadece memory'de**
-
-Kullanıcı refresh yaptığında session kaybolabilir.
-
-Bu bilinçli güvenlik kararıdır.
-
-İleride backend httpOnly cookie / uygun refresh modeline geçilecekse:
-
-`web/src/lib/auth/tokenStorage.ts`
-
-tek adaptör noktası olarak kullanılmalıdır.
-
-**localStorage'a token yazılması için acil gerekçe olmadan geçiş yapılmaz.**
-
-## Mobile
-
-`flutter_secure_storage`
-
-kullanılır.
-
-Plain `SharedPreferences` token storage yapılmaz.
-
----
-
-# 21. UI GELİŞTİRME KURALLARI
+# 17. UI GELİŞTİRME KURALLARI
 
 FlowTiger tasarım dili:
 
@@ -981,23 +800,21 @@ Kaçınılacak:
 - gereksiz motion
 - her yere kart
 - veri yokken fake KPI
+- sahte finansal sonuç
 - yapay demo data'yı production davranışı gibi sunma
-
-Lansman ekranlarında demo verisi gösterilecekse bunun demo olduğu netleşmelidir.
 
 ---
 
-# 22. BACKEND FREEZE İSTİSNASI
+# 18. BACKEND FREEZE İSTİSNASI
 
-Backend freeze değişmez bir kilit değildir.
-
-Aşağıdaki durumda backend tekrar açılabilir:
+Backend şu durumlarda yeniden açılabilir:
 
 - gerçek client ihtiyacı mevcut API ile çözülemiyorsa
 - bug/security düzeltmesi gerekiyorsa
 - production release zorunluluğu varsa
+- Finance / Invoice gibi yeni ürün katmanı gerçekten yeni API/schema gerektiriyorsa
 
-Ama yeni endpoint öncesi:
+Yeni endpoint/migration öncesi:
 
 1. neden gerekli?
 2. client workaround neden kötü?
@@ -1010,49 +827,51 @@ belirlenir.
 
 ---
 
-# 23. LANSMAN İÇİN ÖNCELİK MATRİSİ
+# 19. LANSMAN İÇİN ÖNCELİK MATRİSİ
 
-30.08.2026 lansmanına kadar öncelik:
+30.08.2026 lansmanına kadar:
 
-## P0 — kesinlikle gerekli
+## P0
 
 - Login
 - Company Selection
 - Dashboard
 - Customer Management
 - Team Management
-- Company Switching
+- Invitation owner flow
 - Audit History
+- Profile temel akışı
 - Mobile Preview
+- profesyonel lansman tanıtımı
 
 ## P1
 
-- Profile
-- Security
-- Invitation UI
+- Security UI
+- Invite accept flow
 - polished empty/error/loading states
+- satış/demo materyalleri
+- işletme sahibine ürün anlatım senaryosu
 
 ## P2
 
+- Finance foundation'ın lansman sonrası hazırlığı
 - advanced dashboard analytics
 - notifications
-- AI
+- advanced AI
 - billing
 - advanced reports
 
-P2 özellikleri lansmanı geciktirmez.
+P2 özellikleri 30.08 lansmanını geciktirmez; ancak Finance / Accounting vizyonu roadmap'ten çıkarılamaz.
 
 ---
 
-# 24. 01.10.2026 RELEASE ÖNCELİKLERİ
-
-Resmi çıkış öncesi:
+# 20. 01.10.2026 RELEASE ÖNCELİKLERİ
 
 P0:
 
 - production deploy
 - domain / HTTPS
-- mail
+- mail / queue
 - Android build
 - iOS build
 - app store assets
@@ -1061,6 +880,7 @@ P0:
 - backups
 - CI
 - smoke tests
+- release QA
 
 P1:
 
@@ -1071,66 +891,64 @@ P1:
 
 P2:
 
+- Finance / Invoice production layer (gerçek kapsamına göre)
 - advanced AI
 - complex reports
 - advanced automation
 
 ---
 
-# 25. SON CHECKPOINT
+# 21. SON CHECKPOINT
 
-**Tarih:** 16.08.2026 22:33  
-**HEAD:** `f240a5b`  
-**origin/master:** `f240a5b`  
-**Working tree:** `desktop.ini` haricinde temiz (OneDrive dosyası, commit edilmedi)
+**Tarih:** 21.08.2026  
+**Aktif çalışma hattı:** Profile + Security / Subphase A
 
-## Son doğrulamalar
+## Son doğrulanmış veriler
 
 ```text
 Backend: 452 tests / 1494 assertions GREEN
-Web: 54/54 tests GREEN
-Web: typecheck GREEN
-Web: build GREEN
-Flutter: flutter analyze → No issues found
-Flutter: 42/42 tests passed
+Web Audit: 211/211 GREEN + typecheck + build GREEN
+Flutter Audit: 189/189 GREEN + flutter analyze GREEN
+Flutter Invitation: 128/128 GREEN + flutter analyze GREEN
 ```
 
-## Tamamlanan son iş
+Profile + Security Web Subphase A implementation tamamlandı; Windows ortamında gerçek `npm test`, `npm run typecheck`, `npm run build` kapısı ayrıca doğrulanmalıdır.
+
+## Ürün roadmap checkpoint
 
 ```text
-f240a5b
-feat(client): first product ui - login company selection and dashboard
+Operations
+   ↓
+Customer / Team / Invitation / Audit
+   ↓
+Profile + Security
+   ↓
+Finance Foundation
+   ↓
+Invoice Management
+   ↓
+Payments & Collections
+   ↓
+Tax / Obligation Assistant
+   ↓
+Accountant Workspace
+   ↓
+Official e-Document integrations
+   ↓
+Advanced AI / Automation
 ```
 
-## Sıradaki aktif iş
+## Çok önemli ürün kararı
 
-```text
-CUSTOMER UI
-```
+> **FlowTiger'ın ilk planındaki finans/muhasebe katmanı resmi ürün vizyonunun parçasıdır.**
+>
+> Kullanıcının işletmesinde ne kadar gelir, gider, tahsilat, ödeme, KDV ve diğer mali yükümlülük bulunduğunu anlamasına yardım etmek; fatura kesme/yönetme; finansal özet sunmak; ve uygun aşamada mali müşavir ile çalışma yüzeyi sağlamak roadmap'in temel parçalarıdır.
 
-İlk hedef:
-
-```text
-Customer List
-   ↓
-Pagination
-   ↓
-Create Customer
-   ↓
-Customer Detail
-   ↓
-Edit Customer
-   ↓
-Delete Customer
-```
-
-Öncelik: mevcut backend customer API'sini değiştirmeden gerçek API ile tamamlamak.
+Bu karar yalnızca “gelecekte fikir olabilir” notu değildir. Uygulama geliştirme planında korunacak ürün gereksinimidir.
 
 ---
 
-# 26. BAŞKOMUTANIN YÖNETİM KURALI
-
-Bu belge ile birlikte şu yönetim modeli geçerlidir:
+# 22. BAŞKOMUTANIN YÖNETİM KURALI
 
 **AI çalışan kod yazar.**
 
@@ -1139,41 +957,35 @@ Bu belge ile birlikte şu yönetim modeli geçerlidir:
 - kapsamı belirler
 - sırayı belirler
 - güvenlik sınırlarını korur
-- test gate'i kontrol eder
+- test gate'ini kontrol eder
+- roadmap'i yönetir
 - commit/push kararını denetler
 - yeni AI hesabına handover hazırlar
-- proje dokümantasyonunu güncel tutar
-- lansman tarihine göre önceliklendirme yapar
-- **`FLOWTIGER_PROJECT_PLAYBOOK.md` dosyasının tek editörüdür**
-- **resmi checkpoint'i doğrular ve günceller**
-
-**AI çalışan:**
-
-- repository'yi inceler
-- verilen görevi uygular
-- testleri yazar ve çalıştırır
-- sonucu raporlar
-- playbook değişikliği gerekiyorsa ChatGPT'ye bildirir
-- **playbook'u değiştirmez**
+- playbook'u güncel tutar
+- resmi checkpoint'i doğrular
+- lansman / release önceliklerini yönetir
 
 **Kullanıcı:**
 
-- gerçek Windows/macOS ortamında komutları çalıştırır
+- gerçek ortamda komutları çalıştırır
 - test çıktılarını sağlar
-- gerektiğinde ürün kararlarını verir
-- launch / release kararlarını onaylar
+- ürün / launch kararlarını onaylar
+
+Yönetim zinciri:
+
+```text
+Kullanıcı
+   ↓ ürün / launch kararları
+ChatGPT — Başkomutan
+   ↓ kapsam + sıra + güvenlik + kalite + playbook
+AI çalışanları
+   ↓ implementation + test + rapor
+Repository
+```
 
 ---
 
-# 26.1 PLAYBOOK KORUMA KURALI
-
-Bu dosya proje yönetiminde **salt-okunur AI handover belgesi** olarak kabul edilir.
-
-AI çalışan tarafından üretilen yeni bilgi önce ChatGPT'ye raporlanır. ChatGPT doğruladıktan sonra playbook'a işler ve bir sonraki resmi checkpoint'i oluşturur.
-
----
-
-# 27. EN ÖNEMLİ KURAL
+# 23. EN ÖNEMLİ KURAL
 
 > Hızlı gitmek = güvenliği veya testleri atlamak değildir.
 
@@ -1199,26 +1011,34 @@ ChatGPT playbook update
 Yeni checkpoint
 ```
 
-Her değişiklik bu zinciri mümkün olduğunca korur.
-
 ---
 
-# 28. BİR SONRAKİ ADIM
+# 24. BİR SONRAKİ ADIM
 
-First Product UI tamamlandı.
+Şu anda:
 
-Sıradaki görev:
+```text
+Profile + Security / Subphase A
+```
 
-**Customer UI — Web + Flutter**
+Sıradaki teknik akış:
 
-Aktif görev başlamadan önce:
+```text
+Profile + Security web doğrulama
+   ↓
+Profile + Security Flutter
+   ↓
+Sessions / Security Events
+   ↓
+Forgot / Reset
+   ↓
+Web/Mobile parity + polish
+   ↓
+Launch Demo / Marketing Readiness
+   ↓
+Finance Foundation tasarım ve API sözleşmesi
+   ↓
+Invoice / Payments / Tax Assistant
+```
 
-1. Playbook okunur.
-2. Son commit `f240a5b` doğrulanır.
-3. Backend freeze korunur.
-4. Customer endpointleri mevcut API sözleşmesinden doğrulanır.
-5. Önce testler yazılır.
-6. Sonra implementation yapılır.
-7. Web + Flutter test gate'leri GREEN olur.
-8. Commit / push yapılır.
-9. **Playbook checkpoint'i ChatGPT tarafından güncellenir.**
+Her aşama kendi test gate'i GREEN olmadan kapanmaz.
