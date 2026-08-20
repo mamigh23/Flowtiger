@@ -10,6 +10,7 @@ import '../auth/auth_controller.dart';
 import '../companies/company_controller.dart';
 import 'audit_labels.dart';
 import 'dashboard_controller.dart';
+import 'password_change_screen.dart';
 
 /// Panel.
 ///
@@ -165,6 +166,25 @@ class ProfileSection extends ConsumerWidget {
             ],
           ),
         ),
+        const SizedBox(height: FtTokens.space4),
+
+        // Hesap güvenliği — parola değişikliği profil içinden açılır.
+        FtCard(
+          child: ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.lock_outline),
+            title: const Text('Parola değiştir'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => unawaited(
+              Navigator.of(context).push<void>(
+                MaterialPageRoute<void>(
+                  builder: (_) => const PasswordChangeScreen(),
+                ),
+              ),
+            ),
+          ),
+        ),
+
         const SizedBox(height: FtTokens.space4),
 
         // Birden fazla şirket varsa değiştirme imkânı sunulur; seçim
