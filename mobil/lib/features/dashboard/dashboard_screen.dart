@@ -6,11 +6,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme/app_theme.dart';
 import '../../models/models.dart';
 import '../../widgets/ui.dart';
+import '../audit/audit_labels.dart';
+import '../audit/audit_screen.dart';
 import '../auth/auth_controller.dart';
 import '../companies/company_controller.dart';
-import 'audit_labels.dart';
+import '../profile/password_change_screen.dart';
+import '../profile/profile_edit_screen.dart';
 import 'dashboard_controller.dart';
-import 'password_change_screen.dart';
 
 /// Panel.
 ///
@@ -168,18 +170,64 @@ class ProfileSection extends ConsumerWidget {
         ),
         const SizedBox(height: FtTokens.space4),
 
-        // Hesap güvenliği — parola değişikliği profil içinden açılır.
+        // HESAP VE GÜVENLİK — ayrı ekranlara açılır.
+        //
+        // Hepsini bu sekmeye yığmak, parola alanlarını küçük ekranın
+        // altına düşürürdü: kullanıcı formu görmek için kaydırmak zorunda
+        // kalır ve "kaydet" düğmesi hiç görünmezdi. Ayırmanın ikinci
+        // sebebi görev sınırı — parola değiştirmek, adını düzeltmekten
+        // farklı bir iştir.
+        //
+        // GİRİŞLER ROL İLE GİZLENMEZ: bu uçların hiçbiri owner-only
+        // değil, kullanıcı kendi hesabını yönetiyor.
+        FtCard(
+          child: Column(
+            children: <Widget>[
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.person_outline),
+                title: const Text('Hesap bilgileri'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => unawaited(
+                  Navigator.of(context).push<void>(
+                    MaterialPageRoute<void>(builder: (_) => const ProfileEditScreen()),
+                  ),
+                ),
+              ),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.lock_outline),
+                title: const Text('Parola değiştir'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => unawaited(
+                  Navigator.of(context).push<void>(
+                    MaterialPageRoute<void>(builder: (_) => const PasswordChangeScreen()),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: FtTokens.space4),
+
+        // Denetim geçmişi BURADAN açılır, alt gezinme çubuğundan değil:
+        // beş sekme dolu ve altıncısında etiketler sıkışırdı; üstelik
+        // denetim günlük bir iş değil, ara sıra bakılan bir kayıt.
+        //
+        // GİRİŞ ROL İLE GİZLENMEZ. Uç owner'a özeldir ama bu karar
+        // istemcide verilmez (playbook §3.1): giriş herkese görünür,
+        // yetkisi olmayan kullanıcı backend'in 403'ünü ve açıklamasını
+        // görür.
         FtCard(
           child: ListTile(
             contentPadding: EdgeInsets.zero,
-            leading: const Icon(Icons.lock_outline),
-            title: const Text('Parola değiştir'),
+            leading: const Icon(Icons.history),
+            title: const Text('Denetim Geçmişi'),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => unawaited(
               Navigator.of(context).push<void>(
-                MaterialPageRoute<void>(
-                  builder: (_) => const PasswordChangeScreen(),
-                ),
+                MaterialPageRoute<void>(builder: (_) => const AuditScreen()),
               ),
             ),
           ),

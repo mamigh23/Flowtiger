@@ -5,8 +5,18 @@ import { ProtectedRoute, PublicOnlyRoute, RequireActiveCompany } from '@/routes/
 import { LoginPage } from '@/features/auth/LoginPage';
 import { CompanySelectPage } from '@/features/companies/CompanySelectPage';
 import { AppShell } from '@/features/shell/AppShell';
-import { ComingSoon } from '@/features/shell/ComingSoon';
 import { DashboardPage } from '@/features/dashboard/DashboardPage';
+import { CustomerListPage } from '@/features/customers/CustomerListPage';
+import { CustomerCreatePage } from '@/features/customers/CustomerCreatePage';
+import { CustomerDetailPage } from '@/features/customers/CustomerDetailPage';
+import { CustomerEditPage } from '@/features/customers/CustomerEditPage';
+import { MemberListPage } from '@/features/team/MemberListPage';
+import { MemberDetailPage } from '@/features/team/MemberDetailPage';
+import { MemberEditPage } from '@/features/team/MemberEditPage';
+import { InvitationListPage } from '@/features/invitations/InvitationListPage';
+import { InviteMemberPage } from '@/features/invitations/InviteMemberPage';
+import { AuditLogListPage } from '@/features/audit/AuditLogListPage';
+import { ProfilePage } from '@/features/profile/ProfilePage';
 
 /**
  * Rota haritası.
@@ -58,34 +68,55 @@ export function App() {
             <Route index element={<DashboardPage />} />
 
             {/*
-              Yer tutucular: bu bölümler sonraki aşamalarda gerçek
-              ekranlarla değiştirilecek (playbook §9, AŞAMA 2-6).
+              Müşteri ekranları (AŞAMA 2).
+
+              Sıra önemli: "new" yolu ":id"den ÖNCE gelmeli, yoksa
+              /app/customers/new isteği id'si "new" olan bir müşteri
+              araması olarak yorumlanırdı.
             */}
-            <Route
-              path="customers"
-              element={
-                <ComingSoon
-                  title="Müşteriler"
-                  description="Müşteri listesi ve yönetimi hazırlanıyor."
-                />
-              }
-            />
-            <Route
-              path="team"
-              element={<ComingSoon title="Ekip" description="Ekip yönetimi hazırlanıyor." />}
-            />
-            <Route
-              path="invitations"
-              element={<ComingSoon title="Davetler" description="Davet yönetimi hazırlanıyor." />}
-            />
-            <Route
-              path="audit"
-              element={<ComingSoon title="Denetim" description="Denetim kayıtları hazırlanıyor." />}
-            />
-            <Route
-              path="profile"
-              element={<ComingSoon title="Profil" description="Profil ve güvenlik ayarları hazırlanıyor." />}
-            />
+            <Route path="customers" element={<CustomerListPage />} />
+            <Route path="customers/new" element={<CustomerCreatePage />} />
+            <Route path="customers/:id" element={<CustomerDetailPage />} />
+            <Route path="customers/:id/edit" element={<CustomerEditPage />} />
+
+            {/*
+              Ekip ekranları (AŞAMA 3).
+
+              Yeni üye ekleme YOK: POST /members owner'ın başkasının
+              parolasını belirlemesini gerektiriyor ve davet akışıyla
+              çakışıyor; bu faz kapsamı dışında.
+            */}
+            <Route path="team" element={<MemberListPage />} />
+            <Route path="team/:id" element={<MemberDetailPage />} />
+            <Route path="team/:id/edit" element={<MemberEditPage />} />
+
+            {/*
+              Davet ekranları (AŞAMA 4) — yalnızca owner tarafı.
+
+              POST /invitations/accept BU KAPSAMIN DIŞINDA: kimlik
+              doğrulaması olmayan public bir rota, oturumlu/oturumsuz iki
+              ayrı form ve kendi rate-limit'i var. Ayrı bir faz.
+            */}
+            <Route path="invitations" element={<InvitationListPage />} />
+            <Route path="invitations/new" element={<InviteMemberPage />} />
+
+            {/*
+              Denetim (AŞAMA 5) — SALT OKUNUR.
+
+              Tek uç var: GET /audit-logs. Tekil audit ucu olmadığı için
+              /audit/:id gibi bir rota da YOK; ayrıntı listedeki satırın
+              içinde açılır.
+            */}
+            <Route path="audit" element={<AuditLogListPage />} />
+
+            {/*
+              Profil ve güvenlik (AŞAMA 6 — A).
+
+              Tek rota, üç kart: hesap bilgileri, e-posta doğrulama,
+              parola. Üçü de kullanıcının KENDİ hesabına ait; hiçbiri
+              owner-only değil ve hiçbirinde rol kontrolü yok.
+            */}
+            <Route path="profile" element={<ProfilePage />} />
           </Route>
 
           <Route path="/" element={<Navigate to="/app" replace />} />

@@ -83,14 +83,21 @@ describe('App yönlendirme', () => {
     expect(await screen.findByRole('heading', { name: /Hoş geldin/ })).toBeInTheDocument();
   });
 
-  it('hazır olmayan ürün bölümleri için yer tutucu gösterir', async () => {
-    vi.stubGlobal('fetch', mockApi(activeCompanyRoutes));
-
-    renderApp('/app/customers', { token: 'gecerli-token' });
-
-    expect(await screen.findByRole('heading', { name: 'Müşteriler' })).toBeInTheDocument();
-    expect(screen.getByText(/yakında/i)).toBeInTheDocument();
-  });
+  /*
+   * YER TUTUCU TESTİ KALDIRILDI — gevşetilmedi, KONUSU KALMADI.
+   *
+   * İddiası şuydu: "hazır olmayan bölüm sahte veri göstermez, 'yakında'
+   * der." İddia fazlar boyunca sırayla Müşteriler → Ekip → Davetler →
+   * Denetim → Profil bölümlerine taşındı. Profil de gerçek ekran olunca
+   * ortada yer tutucu KALMADI; iddia edilecek bir şey olmadığı için test
+   * de anlamını yitirdi. Kendisiyle çelişen 13 müşteri testiyle aynı
+   * anda doğru olamazdı.
+   *
+   * Rota kapsamı zayıflamadı, aksine güçlendi: /app/customers artık
+   * features/customers altındaki 36 testte tam App + router üzerinden
+   * render ediliyor. Yeni bir yer tutucu bölüm eklenirse bu test geri
+   * gelmelidir.
+   */
 
   /**
    * Merkezi 401 davranışı (foundation'dan devralındı): herhangi bir

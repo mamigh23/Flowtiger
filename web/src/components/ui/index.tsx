@@ -21,7 +21,18 @@ export function Button({ variant = 'primary', loading = false, children, ...rest
       disabled={rest.disabled || loading}
       aria-busy={loading || undefined}
     >
-      {loading && <Spinner />}
+      {/*
+        Düğme içindeki gösterge aria-hidden'dır ve bilinçli olarak
+        <Spinner /> DEĞİLDİR.
+
+        Spinner role="status" + aria-label="Yükleniyor" taşır; bir
+        düğmenin İÇİNDE bu etiket, düğmenin erişilebilir adına karışır
+        ve ad yükleme sırasında "Yükleniyor Kaydet"e dönüşür. Sonuç: hem
+        ekran okuyucu kullanıcısı düğmenin ne yaptığını kaybeder, hem de
+        düğme adıyla yapılan her sorgu yükleme anında eşleşmez.
+        Meşguliyet bilgisi zaten aria-busy ile veriliyor.
+      */}
+      {loading && <span className="ft-spinner" aria-hidden="true" />}
       {children}
     </button>
   );

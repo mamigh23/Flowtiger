@@ -36,6 +36,17 @@ class FlowTigerApp extends StatelessWidget {
 /// kullanıcı hangi ekranda olursa olsun giriş ekranına döner ve arkada
 /// açık kalmış korumalı bir sayfa kalmaz.
 ///
+/// DURUM DEĞİŞİMİ TEK BAŞINA YETMEZ. `home` yeniden çizildiğinde yalnızca
+/// yığının EN ALTINDAKİ rota değişir; `Navigator.push` ile açılmış bir
+/// ekran (müşteri detayı, davet formu, denetim geçmişi, hesap bilgileri)
+/// üstte durmaya devam eder ve kullanıcı oturumu düşmüş hâlde korumalı
+/// bir sayfaya bakmayı sürdürürdü. Bu yüzden oturum düştüğünde yığın da
+/// köke indirilir.
+///
+/// Bu, denetim ekranı `push` ile açılan ilk korumalı sayfa olduğunda
+/// ortaya çıktı: daha önceki bütün 401 senaryoları sekme ekranlarındaydı
+/// ve boşluk görünmüyordu.
+///
 /// BU BİR GÜVENLİK SINIRI DEĞİLDİR — kullanışlılık katmanıdır. Gerçek
 /// yetki kararı her istekte backend'de verilir.
 class _AuthGate extends ConsumerStatefulWidget {
@@ -59,9 +70,19 @@ class _AuthGateState extends ConsumerState<_AuthGate> {
     // Oturum kapandığında şirket durumu SIFIRLANIR. Aksi hâlde bir
     // sonraki kullanıcı, önceki oturumun aktif şirketiyle açılırdı.
     ref.listen<AuthState>(authControllerProvider, (AuthState? previous, AuthState next) {
-      if (next.status == AuthStatus.unauthenticated) {
-        ref.read(companyControllerProvider.notifier).reset();
-      }
+      if (next.status != AuthStatus.unauthenticated) return;
+
+      ref.read(companyControllerProvider.notifier).reset();
+
+      // Kare içinde pop edilmez: bu geri çağrı bir build sırasında
+      // tetiklenebilir ve Navigator o anda değiştirilemez.
+      final NavigatorState navigator = Navigator.of(context);
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (navigator.mounted) {
+          navigator.popUntil((Route<dynamic> route) => route.isFirst);
+        }
+      });
     });
 
     final AuthState auth = ref.watch(authControllerProvider);

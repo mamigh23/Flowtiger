@@ -6,7 +6,10 @@ import '../../models/models.dart';
 import '../../widgets/ui.dart';
 import '../companies/company_controller.dart';
 import '../companies/company_select_screen.dart' show roleLabel;
+import '../customers/customers_screen.dart';
 import '../dashboard/dashboard_screen.dart';
+import '../invitations/invitations_screen.dart';
+import '../team/members_screen.dart';
 
 /// Aktif şirketi olan kullanıcının kabuğu.
 ///
@@ -70,6 +73,11 @@ class _AppShellState extends ConsumerState<AppShell> {
             label: 'Ekip',
           ),
           NavigationDestination(
+            icon: Icon(Icons.mail_outline),
+            selectedIcon: Icon(Icons.mail),
+            label: 'Davetler',
+          ),
+          NavigationDestination(
             icon: Icon(Icons.person_outline),
             selectedIcon: Icon(Icons.person),
             label: 'Profil',
@@ -79,48 +87,21 @@ class _AppShellState extends ConsumerState<AppShell> {
     );
   }
 
+  /// BEŞ SEKME — altıncısı eklenmez.
+  ///
+  /// Denetim geçmişi ve hesap ekranları bilinçli olarak burada değil,
+  /// Profil sekmesinin içinde: NavigationBar altıncı destinasyonda
+  /// etiketleri sıkıştırır, üstelik ikisi de günlük iş değil ara sıra
+  /// bakılan bölümler.
+  ///
+  /// _ComingSoon KALDIRILDI: bütün sekmeler gerçek ekranlara bağlandı ve
+  /// kullanılmayan bir yer tutucu, bir sonraki fazda "burada ne vardı?"
+  /// sorusunu doğuran ölü koda dönüşürdü.
   Widget _section(int index) => switch (index) {
-        1 => const _ComingSoon(
-            title: 'Müşteriler',
-            description: 'Müşteri listesi ve kayıt ekranı bir sonraki aşamada geliyor.',
-          ),
-        2 => const _ComingSoon(
-            title: 'Ekip',
-            description: 'Ekip üyeleri ve davetler bir sonraki aşamada geliyor.',
-          ),
-        3 => const ProfileSection(),
+        1 => const CustomersScreen(),
+        2 => const MembersScreen(),
+        3 => const InvitationsScreen(),
+        4 => const ProfileSection(),
         _ => const DashboardScreen(),
       };
-}
-
-/// Henüz yapılmamış bölüm.
-///
-/// Boş bir sekme yerine ne olacağını söyleyen bir yüzey gösterilir —
-/// ama SAHTE VERİ ile doldurulmaz.
-class _ComingSoon extends StatelessWidget {
-  const _ComingSoon({required this.title, required this.description});
-
-  final String title;
-  final String description;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(FtTokens.space5),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            Text(title, style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: FtTokens.space2),
-            Text(
-              description,
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }

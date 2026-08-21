@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '@/lib/auth/AuthContext';
 import { useCompanies } from '@/lib/company/CompanyContext';
 import { Card, Skeleton } from '@/components/ui';
-import { auditActionLabel, relativeTime } from './auditLabels';
+import { auditActionLabel, relativeTime } from '@/features/audit/auditLabels';
 import { useDashboardData } from './useDashboardData';
 import type { Panel } from './useDashboardData';
 

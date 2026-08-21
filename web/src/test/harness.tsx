@@ -38,16 +38,70 @@ export const fixtures = {
     ...overrides,
   }),
 
-  /** Laravel paginator meta'sı. */
-  paginated: (items: unknown[], total: number) => ({
+  /**
+   * Üye — backend MemberResource ile birebir alanlar.
+   *
+   * `role` pivot'tan gelir ve pivot yüklenmemişse alan HİÇ görünmez;
+   * o durum `fixtures.member({ role: undefined })` ile değil, alanı
+   * hiç taşımayan bir nesneyle kurulur (bkz. MemberListPage testleri).
+   */
+  member: (overrides: Record<string, unknown> = {}) => ({
+    id: 21,
+    name: 'Ada Lovelace',
+    email: 'ada@flowtiger.test',
+    role: 'owner',
+    created_at: '2026-07-01T08:00:00+00:00',
+    updated_at: '2026-08-01T12:00:00+00:00',
+    ...overrides,
+  }),
+
+  /**
+   * Davet — backend InvitationResource ile birebir alanlar.
+   *
+   * `email` MASKELİ gelir; gerçek adres backend'den hiç çıkmaz.
+   * `status` hesaplanan alandır, veritabanında yoktur.
+   * `token` yanıtta ASLA yer almaz.
+   */
+  invitation: (overrides: Record<string, unknown> = {}) => ({
+    id: 41,
+    email: 'a***@flowtiger.test',
+    role: 'member',
+    status: 'pending',
+    expires_at: '2026-08-24T09:00:00+00:00',
+    created_at: '2026-08-17T09:00:00+00:00',
+    ...overrides,
+  }),
+
+  customer: (overrides: Record<string, unknown> = {}) => ({
+    id: 501,
+    customer_no: 1,
+    name: 'Zeynep Kaya',
+    phone: '05551112233',
+    created_at: '2026-08-10T08:00:00+00:00',
+    updated_at: '2026-08-12T14:30:00+00:00',
+    ...overrides,
+  }),
+
+  /**
+   * Laravel paginator meta'sı.
+   *
+   * Varsayılanlar tek sayfalık bir sonuç üretir; sayfalama testleri
+   * `page` seçenekleriyle çok sayfalı yanıtı kurar. Varsayılan değerler
+   * bilinçli olarak DEĞİŞTİRİLMEDİ — mevcut testler bunlara dayanıyor.
+   */
+  paginated: (
+    items: unknown[],
+    total: number,
+    page: { currentPage?: number; lastPage?: number; perPage?: number } = {},
+  ) => ({
     data: items,
     links: { first: null, last: null, prev: null, next: null },
     meta: {
-      current_page: 1,
+      current_page: page.currentPage ?? 1,
       from: items.length ? 1 : null,
-      last_page: 1,
+      last_page: page.lastPage ?? 1,
       path: '/',
-      per_page: 1,
+      per_page: page.perPage ?? 1,
       to: items.length ? items.length : null,
       total,
     },
@@ -68,25 +122,45 @@ export const fixtures = {
 };
 
 /**
+ * Yanıt üreticisi.
+ *
+ * `init` verilir ki aynı yola gelen farklı metodlar (GET / PUT / DELETE)
+ * ayrıştırılabilsin — müşteri detayında üçü de aynı yolu kullanıyor.
+ * `url` verilir ki sorgu parametrelerine göre gerçekçi yanıt üretilebilsin;
+ * sayfalama testinde sunucu gerçekten istenen sayfayı döndürmeli, yoksa
+ * test yalnızca isteğin gittiğini doğrular, sonucunu değil.
+ *
+ * İki parametre de İSTEĞE BAĞLIDIR: onları kullanmayan mevcut kayıtlar
+ * (`() => jsonResponse(...)`) olduğu gibi çalışmaya devam eder.
+ */
+export type RouteResponder = (init?: RequestInit, url?: string) => Response;
+
+/**
  * Yol → yanıt eşlemesi ile fetch taklidi.
  *
  * Eşleşmeyen yol 404 döner; böylece testin beklemediği bir çağrı
  * sessizce başarılı olmaz.
  */
-export function mockApi(routes: Record<string, () => Response>) {
+export function mockApi(routes: Record<string, RouteResponder>) {
   // İmza gerçek fetch ile aynı tutulur; böylece testler
   // mock.calls[i][1] üzerinden gönderilen gövdeyi tipli okuyabilir.
-  return vi.fn(async (input: RequestInfo | URL, _init?: RequestInit) => {
+  return vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = String(input);
 
     for (const [pattern, respond] of Object.entries(routes)) {
       // Sorgu parametrelerini yok sayarak yol eşleştirmesi.
       const [path] = url.split('?');
-      if (path?.endsWith(pattern)) return respond();
+      if (path?.endsWith(pattern)) return respond(init, url);
     }
 
     return jsonResponse(404, { message: `Taklit edilmemiş uç: ${url}` });
   });
+}
+
+/** Bir isteğin JSON gövdesini tipli okur. */
+export function bodyOf(init: RequestInit | undefined): unknown {
+  const body = init?.body;
+  return typeof body === 'string' ? JSON.parse(body) : undefined;
 }
 
 /** Uygulamayı belirli bir yolda ve isteğe bağlı token ile açar. */

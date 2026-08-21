@@ -79,16 +79,22 @@ http.Response Function(http.Request) routes(Map<String, ApiRoute> table) {
 /// sorusunun cevabına göre durulur. Böylece her durum değişimi kendi
 /// karesinde, düzen ile semantics doğru sırada işlenir.
 ///
+/// [advance] verilirse saat her karede o kadar ilerletilir. YALNIZCA ekran
+/// geçişi olan testlerde gerekir: MaterialPageRoute animasyonu zaman
+/// geçmeden tamamlanmaz, eski ekran ağaçta asılı kalır ve `findsOneWidget`
+/// iddiaları iki eşleşme görür. Geçiş olmayan testlerde verilmez —
+/// yukarıdaki parentDataDirty gerekçesi orada hâlâ geçerli.
+///
 /// [maxFrames] bir zaman aşımı emniyetidir: çözülmeyen bir Future testi
 /// sonsuza kadar askıda bırakmasın diye. Ulaşılması beklenen bir sınır
 /// değildir.
-Future<void> settle(WidgetTester tester, {int maxFrames = 60}) async {
+Future<void> settle(WidgetTester tester, {int maxFrames = 60, Duration? advance}) async {
   int quietFrames = 0;
 
   for (int i = 0; i < maxFrames; i++) {
     // Süresiz pump: kare çizilir ve microtask kuyruğu boşaltılır,
-    // ama sahte saat yerinde kalır.
-    await tester.pump();
+    // ama sahte saat yerinde kalır (advance verilmedikçe).
+    await tester.pump(advance);
 
     quietFrames = tester.binding.hasScheduledFrame ? 0 : quietFrames + 1;
 
@@ -118,10 +124,30 @@ class RecordingHandler {
       requests.any((http.Request request) => request.url.path.endsWith(suffix));
 }
 
+/// [asyncHandler], yanıtı BİLEREK askıda tutabilmek içindir.
+///
+/// Yükleme durumunu ve çift gönderim kilidini sınamanın başka yolu yok:
+/// eşzamanlı bir [handler] ile yanıt aynı olay turunda çözülür ve ekran
+/// yükleme karesini hiç göstermeden sonuca geçebilir. Askıda bir Completer
+/// döndürmek, göstergenin gerçekten çıktığını VE veri gelince kalktığını
+/// kanıtlamayı mümkün kılar.
+///
+/// İkisinden yalnızca biri verilir; ikisi de verilirse [asyncHandler]
+/// kazanır.
 Widget appWith({
   required TokenStorage storage,
   http.Response Function(http.Request request)? handler,
+  Future<http.Response> Function(http.Request request)? asyncHandler,
 }) {
+  Future<http.Response> Function(http.Request)? send = asyncHandler;
+
+  if (send == null && handler != null) {
+    // Yerel değişkene alınır: kapanış içinde tip yükseltmesine
+    // güvenilmez, kural değişirse sessizce bozulurdu.
+    final http.Response Function(http.Request) sync = handler;
+    send = (http.Request request) async => sync(request);
+  }
+
   return ProviderScope(
     overrides: <Override>[
       appConfigProvider.overrideWithValue(testConfig),
@@ -130,10 +156,7 @@ Widget appWith({
       // YALNIZCA ağ katmanı değiştirilir. apiClientProvider override
       // EDİLMEZ: 401 davranışı orada kuruluyor ve testlerde de gerçekten
       // çalışması gerekiyor.
-      if (handler != null)
-        httpClientProvider.overrideWithValue(
-          MockClient((http.Request request) async => handler(request)),
-        ),
+      if (send != null) httpClientProvider.overrideWithValue(MockClient(send)),
     ],
     child: const FlowTigerApp(),
   );
@@ -165,25 +188,124 @@ Map<String, dynamic> companyFixture({
 }) =>
     <String, dynamic>{'id': id, 'name': name, 'role': role};
 
+/// Denetim kaydı — backend AuditLogResource ile birebir alanlar.
+///
+/// Yanıtın TAM alan listesi (backend testiyle sabitlenmiş):
+///   id, action, actor?, auditable?, old_values, new_values, metadata,
+///   ip_address, created_at
+///
+/// `company_id` ve `user_agent` yanıtta HİÇ YOKTUR; burada da yok.
+/// `actor` yalnızca id + name taşır — e-posta backend'de bilinçli olarak
+/// dışarıda bırakılmıştır.
+///
+/// `actor` ve `auditable` KOŞULLU alanlardır ($this->when): aktörü olmayan
+/// bir kayıtta anahtar hiç gelmez. [includeActor] / [includeAuditable] bu
+/// durumu sınamak içindir — alanı null göndermek DEĞİL, hiç göndermemek.
+///
+/// [extra], sözleşmede olmayan bir alan gelse bile arayüzün onu ekrana
+/// basmadığını sınamak için vardır (company_id regresyonu).
 Map<String, dynamic> auditLogFixture({
   int id = 1,
   String action = 'customer.created',
+  int actorId = 21,
+  String actorName = 'Ada Lovelace',
+  bool includeActor = true,
+  String auditableType = 'customer',
+  int auditableId = 5,
+  bool includeAuditable = true,
+  Map<String, dynamic>? oldValues,
+  Map<String, dynamic>? newValues,
+  Map<String, dynamic>? metadata,
+  String? ipAddress = '198.51.100.4',
+  String? createdAt = '2026-08-16T09:15:00Z',
+  Map<String, dynamic> extra = const <String, dynamic>{},
 }) =>
     <String, dynamic>{
       'id': id,
       'action': action,
-      'ip_address': '198.51.100.4',
-      'created_at': '2026-08-16T09:15:00Z',
+      if (includeActor)
+        'actor': <String, dynamic>{'id': actorId, 'name': actorName},
+      if (includeAuditable)
+        'auditable': <String, dynamic>{'type': auditableType, 'id': auditableId},
+      'old_values': oldValues,
+      'new_values': newValues,
+      'metadata': metadata,
+      'ip_address': ipAddress,
+      'created_at': createdAt,
+      ...extra,
+    };
+
+/// Üye — backend MemberResource ile birebir alanlar.
+///
+/// `role` pivot'tan gelir ve pivot yüklenmemişse alan HİÇ görünmez;
+/// [includeRole] false verilerek bu durum sınanabilir.
+Map<String, dynamic> memberFixture({
+  int id = 21,
+  String name = 'Ada Lovelace',
+  String email = 'ada@flowtiger.test',
+  String role = 'owner',
+  bool includeRole = true,
+}) =>
+    <String, dynamic>{
+      'id': id,
+      'name': name,
+      'email': email,
+      if (includeRole) 'role': role,
+      'created_at': '2026-07-01T08:00:00+00:00',
+      'updated_at': '2026-08-01T12:00:00+00:00',
+    };
+
+/// Davet — backend InvitationResource ile birebir alanlar.
+///
+/// `email` MASKELİ gelir; gerçek adres backend'den hiç çıkmaz.
+/// `status` hesaplanan alandır. `token` yanıtta ASLA yer almaz.
+Map<String, dynamic> invitationFixture({
+  int id = 41,
+  String email = 'a***@flowtiger.test',
+  String role = 'member',
+  String status = 'pending',
+}) =>
+    <String, dynamic>{
+      'id': id,
+      'email': email,
+      'role': role,
+      'status': status,
+      'expires_at': '2026-08-24T09:00:00+00:00',
+      'created_at': '2026-08-17T09:00:00+00:00',
+    };
+
+Map<String, dynamic> customerFixture({
+  int id = 501,
+  int customerNo = 1,
+  String name = 'Zeynep Kaya',
+  String? phone = '05551112233',
+}) =>
+    <String, dynamic>{
+      'id': id,
+      'customer_no': customerNo,
+      'name': name,
+      'phone': phone,
+      'created_at': '2026-08-10T08:00:00+00:00',
+      'updated_at': '2026-08-12T14:30:00+00:00',
     };
 
 /// Sayfalı liste zarfı — sayımlar meta.total üzerinden okunur.
-Map<String, dynamic> paginated(List<Map<String, dynamic>> data, int total) =>
+///
+/// Varsayılanlar tek sayfalık bir sonuç üretir; sayfalama testleri
+/// [currentPage] / [lastPage] / [perPage] ile çok sayfalı yanıtı kurar.
+Map<String, dynamic> paginated(
+  List<Map<String, dynamic>> data,
+  int total, {
+  int currentPage = 1,
+  int lastPage = 1,
+  int perPage = 15,
+}) =>
     <String, dynamic>{
       'data': data,
       'meta': <String, dynamic>{
-        'current_page': 1,
-        'last_page': 1,
-        'per_page': 15,
+        'current_page': currentPage,
+        'last_page': lastPage,
+        'per_page': perPage,
         'total': total,
       },
     };

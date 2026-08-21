@@ -1,26 +1,21 @@
-/// Denetim kaydı eylem kodlarının okunabilir karşılıkları.
+/// BU DOSYA SİLİNECEK — içeriği features/audit/audit_labels.dart'a TAŞINDI.
 ///
-/// Backend makine-okunur kodlar döndürür (customer.created). Kullanıcıya
-/// bu kodlar gösterilmez. Eşleşmeyen bir kod GİZLENMEZ — ham hâliyle
-/// gösterilir; aksi hâlde yeni bir eylem türü eklendiğinde kullanıcı
-/// hareketin olduğunu hiç göremezdi.
-const Map<String, String> _labels = <String, String>{
-  'customer.created': 'Müşteri oluşturuldu',
-  'customer.updated': 'Müşteri güncellendi',
-  'customer.deleted': 'Müşteri silindi',
-  'member.invited': 'Üye davet edildi',
-  'member.joined': 'Üye katıldı',
-  'member.removed': 'Üye çıkarıldı',
-  'member.role_changed': 'Üye rolü değiştirildi',
-  'invitation.created': 'Davet gönderildi',
-  'invitation.accepted': 'Davet kabul edildi',
-  'invitation.revoked': 'Davet iptal edildi',
-  'auth.login': 'Giriş yapıldı',
-  'auth.logout': 'Çıkış yapıldı',
-  'auth.password_changed': 'Parola değiştirildi',
-  'company.created': 'Şirket oluşturuldu',
-  'company.updated': 'Şirket güncellendi',
-  'session.revoked': 'Oturum sonlandırıldı',
-};
+/// Buradaki eski tablo backend'de HİÇ OLMAYAN kodlar içeriyordu
+/// ('auth.login', 'auth.logout', 'auth.password_changed',
+/// 'member.invited', 'member.joined', 'company.created',
+/// 'company.updated') ve gerçekten gelen on iki kodu kaçırıyordu. Sonuç:
+/// panelde bazı hareketler ham kod olarak görünüyordu.
+///
+/// Doğru tablo backend'in AuditAction enum'ıyla birebirdir (23 değer) ve
+/// features/audit/audit_labels.dart'ta yaşar. Eski içerik buraya geri
+/// KONMAMALIDIR; iki kopya tutmak, bir gün yalnızca birinin
+/// güncellenmesi demekti.
+///
+/// Sınıf/sabit tanımı buradan kaldırıldı, yalnızca yönlendirme bırakıldı;
+/// çalıştığım ortamda dosya silme yetkisi yoktu.
+///
+/// Bu dosyayı hiçbir yer import etmiyor. Silinmesi güvenlidir ve
+/// silinmelidir.
+library;
 
-String auditActionLabel(String action) => _labels[action] ?? action;
+export '../audit/audit_labels.dart';
