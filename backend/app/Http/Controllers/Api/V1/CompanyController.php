@@ -3,9 +3,13 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\CompanyBillingRequest;
+use App\Http\Resources\CompanyBillingResource;
 use App\Http\Resources\CompanyResource;
 use App\Models\Company;
+use App\Services\CompanyBillingService;
 use App\Services\CompanySelectionService;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
@@ -24,8 +28,11 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
  */
 class CompanyController extends Controller
 {
+    use AuthorizesRequests;
+
     public function __construct(
         private readonly CompanySelectionService $companySelection,
+        private readonly CompanyBillingService $companyBilling,
     ) {}
 
     /**
@@ -75,5 +82,33 @@ class CompanyController extends Controller
         $selected = $this->companySelection->select($request->user(), $company);
 
         return CompanyResource::make($selected);
+    }
+
+    /**
+     * Şirketin mali kimliğini günceller (Faz 7 / Adım 2).
+     *
+     * PATCH'TİR: gövde kaydın tamamını değil, DEĞİŞTİRİLECEK ALANLARI
+     * tanımlar. Yalnızca vergi dairesini düzeltmek isteyen bir istek,
+     * göndermediği vergi numarasını silmemelidir.
+     *
+     * OWNER-ONLY. Yetki sorusu AKTİF ŞİRKETE değil, route'tan çözülen
+     * ŞİRKETE sorulur — bu uç bilinçli olarak company.context'in
+     * dışındadır ve kullanıcı henüz şirket seçmemiş olabilir.
+     *
+     * Üye olmayan kullanıcı da 403 alır, 404 değil: 404 dönmek "böyle
+     * bir şirket var mı?" sorusunu yanıtlardı (select ucundaki kararla
+     * aynı).
+     *
+     * Yanıt CompanyResource DEĞİL CompanyBillingResource'tur: liste
+     * ucunun şekli web ve Flutter tarafından kullanılıyor ve oraya mali
+     * kimlik alanı eklemek gereksiz bir kırılma olurdu.
+     */
+    public function updateBilling(CompanyBillingRequest $request, Company $company): CompanyBillingResource
+    {
+        $this->authorize('updateBilling', $company);
+
+        return CompanyBillingResource::make(
+            $this->companyBilling->update($company, $request->validated())
+        );
     }
 }

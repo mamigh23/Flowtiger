@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\CustomerBillingRequest;
 use App\Http\Requests\Api\V1\CustomerStoreRequest;
 use App\Http\Requests\Api\V1\CustomerUpdateRequest;
+use App\Http\Resources\CustomerBillingResource;
 use App\Http\Resources\CustomerResource;
 use App\Models\Customer;
 use App\Services\CompanyContext;
@@ -145,6 +147,35 @@ class CustomerController extends Controller
         );
 
         return CustomerResource::make($customer);
+    }
+
+    /**
+     * Müşterinin FATURA KİMLİĞİNİ günceller (Faz 7 / Adım 2).
+     *
+     * update()'ten AYRI bir uçtur ve ayrı kalmalıdır. update() PUT'tur ve
+     * gönderilmeyen alanı temizler; mevcut web ve Flutter istemcileri ona
+     * yalnızca {name, phone} gönderiyor. Fatura alanları o gövdeye
+     * eklenseydi, arayüzden yapılan her müşteri düzenlemesi vergi
+     * numarasını ve fatura adresini SESSİZCE SİLERDİ.
+     *
+     * Aynı gerekçe rol değişiminin PUT /members/{user}'dan ayrılıp
+     * PATCH /members/{user}/role yapılmasında da geçerliydi.
+     *
+     * Yetki mevcut CustomerPolicy::update kuralıdır: fatura bilgisi
+     * müşteri kaydının parçasıdır, şirketin mali kimliği gibi bir
+     * yapılandırma değildir.
+     */
+    public function updateBilling(CustomerBillingRequest $request, Customer $customer): CustomerBillingResource
+    {
+        $this->authorize('update', $customer);
+
+        $customer = $this->customers->updateBilling(
+            $this->context->getOrFail(),
+            $customer,
+            $request->validated(),
+        );
+
+        return CustomerBillingResource::make($customer);
     }
 
     /**

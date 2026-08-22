@@ -13,6 +13,19 @@ class Company extends Model
     /** @use HasFactory<CompanyFactory> */
     use HasFactory;
 
+    /**
+     * MALİ KİMLİK ALANLARI BİLİNÇLİ OLARAK DIŞARIDA (Faz 7 / Adım 2).
+     *
+     * legal_name, tax_number, tax_office, billing_address, country,
+     * timezone ve default_currency buraya EKLENMEMELİDİR. Bunlar kendi
+     * ucundan (PATCH /companies/{company}/billing) ve kendi
+     * doğrulamasından geçerek yazılır. Fillable olsalardı, gövdesine
+     * fazladan alan koyan herhangi bir istek şirketin vergi numarasını
+     * sessizce değiştirebilirdi — company_id ve customer_no için verilen
+     * kararla aynı gerekçe (Anayasa §9).
+     *
+     * @var list<string>
+     */
     protected $fillable = [
         'name',
     ];

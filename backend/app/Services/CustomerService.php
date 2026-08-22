@@ -113,6 +113,57 @@ class CustomerService
     }
 
     /**
+     * Müşterinin FATURA KİMLİĞİNİ günceller (Faz 7 / Adım 2).
+     *
+     * update()'ten AYRI bir metottur ve öyle kalmalıdır. update() PUT
+     * semantiğindedir — gönderilmeyen alanı temizler. Bu metot ise
+     * yalnızca VERİLEN alanları yazar; dizide bulunmayan alan okunmaz,
+     * yazılmaz ve audit'e girmez.
+     *
+     * İkisini birleştirmek, mevcut web ve Flutter istemcilerinin
+     * PUT /customers/{id}'ye yalnızca {name, phone} göndermesi yüzünden
+     * her müşteri düzenlemesinde vergi numarasını silerdi.
+     *
+     * `billing_email` audit'e DÜZ METİN GİRMEZ: AuditLogService'in PII
+     * kuralı `email` ile biten anahtarları tek yönlü özete çevirir
+     * (`billing_email` → `billing_email_hash`). Anahtar adı bu yüzden
+     * bilinçli olarak `_email` ile bitiyor.
+     *
+     * @param  array<string, mixed>  $attributes
+     */
+    public function updateBilling(Company $company, Customer $customer, array $attributes): Customer
+    {
+        $this->guardAgainstCrossTenantWrite($company);
+
+        if ($attributes === []) {
+            return $customer;
+        }
+
+        return DB::transaction(function () use ($company, $customer, $attributes): Customer {
+            $oldValues = [];
+
+            foreach ($attributes as $key => $value) {
+                $oldValues[$key] = $customer->getAttribute($key);
+                // setAttribute: fatura alanları bilinçli olarak fillable
+                // DEĞİLDİR; sistem tarafından açıkça atanır.
+                $customer->setAttribute($key, $value);
+            }
+
+            $customer->save();
+
+            $this->audit->record(
+                action: AuditAction::CustomerBillingUpdated,
+                company: $company,
+                auditable: $customer,
+                oldValues: $oldValues,
+                newValues: $attributes,
+            );
+
+            return $customer;
+        });
+    }
+
+    /**
      * Müşteriyi siler ve silinen halini audit'e bırakır.
      *
      * old_values burada özellikle değerli: kayıt artık yok, geriye

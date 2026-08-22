@@ -109,6 +109,19 @@ enum AuditAction: string
 
     case CustomerDeleted = 'customer.deleted';
 
+    /*
+     * Mali kimlik (Faz 7 / Adım 2).
+     *
+     * customer.updated'dan AYRI olmalarının sebebi, ayrı uçlara sahip
+     * olmalarıyla aynı: vergi numarası fatura kesiminde yasal olarak
+     * bağlayıcıdır. "Bu şirketin vergi numarasını kim değiştirdi?"
+     * sorusu, fatura kesildikten sonra tek başına aranabilir olmalı —
+     * bir ad düzenlemesinin izleri arasında kaybolmamalı.
+     */
+    case CompanyBillingUpdated = 'company.billing_updated';
+
+    case CustomerBillingUpdated = 'customer.billing_updated';
+
     /**
      * Bu olay tenant'a mı ait?
      *

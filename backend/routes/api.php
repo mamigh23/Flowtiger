@@ -158,6 +158,23 @@ Route::middleware('auth:sanctum')->name('api.v1.')->group(function (): void {
 
     Route::post('companies/{company}/select', [CompanyController::class, 'select'])
         ->name('companies.select');
+
+    /*
+    | ŞİRKETİN MALİ KİMLİĞİ (Faz 7 / Adım 2).
+    |
+    | company.context YOK ve olmamalı — bu grup zaten tenant dışıdır ve
+    | kullanıcı henüz şirket seçmemişken de kendi şirketinin mali
+    | kimliğini düzenleyebilmelidir. Yetki sorusu aktif şirkete değil,
+    | route'tan çözülen ŞİRKETE sorulur (CompanyPolicy::updateBilling).
+    |
+    | PATCH: gövde kaydın tamamını değil, değiştirilecek alanları
+    | tanımlar. PUT olsaydı, yalnızca vergi dairesini düzelten bir istek
+    | göndermediği vergi numarasını silerdi.
+    |
+    | 'select' rotasıyla çakışma yok: farklı metod, farklı son ek.
+    */
+    Route::patch('companies/{company}/billing', [CompanyController::class, 'updateBilling'])
+        ->name('companies.billing.update');
 });
 
 /*
@@ -208,6 +225,20 @@ Route::middleware(['auth:sanctum', 'company.context'])->name('api.v1.')->group(f
 
     Route::delete('customers/{customer}', [CustomerController::class, 'destroy'])
         ->name('customers.destroy');
+
+    /*
+    | MÜŞTERİNİN FATURA KİMLİĞİ (Faz 7 / Adım 2).
+    |
+    | PUT customers/{customer} ucundan AYRI ve öyle kalmalı: o uç tam
+    | değiştirme semantiğindedir ve mevcut web/Flutter istemcileri ona
+    | yalnızca {name, phone} gönderiyor. Fatura alanları o gövdeye
+    | eklenseydi her düzenleme vergi numarasını silerdi.
+    |
+    | Rol değişiminin PATCH members/{user}/role olarak ayrılmasıyla aynı
+    | desen, aynı gerekçe.
+    */
+    Route::patch('customers/{customer}/billing', [CustomerController::class, 'updateBilling'])
+        ->name('customers.billing.update');
 
     /*
     | ÜYELİK YÖNETİMİ

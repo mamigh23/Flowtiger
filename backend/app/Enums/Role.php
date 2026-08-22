@@ -56,6 +56,22 @@ enum Role: string
     }
 
     /**
+     * Bu rol şirketin MALİ KİMLİĞİNİ değiştirebilir mi? (Faz 7 / Adım 2)
+     *
+     * viewsAuditLogs() ile aynı sebeple ayrı bir metot: bunlar farklı
+     * sorular. İleride bir "muhasebeci" rolü mali kimliği OKUYABİLİP
+     * değiştiremeyebilir, ya da üye yönetemeden fatura kesebilir. İki
+     * soruyu tek metoda bağlamak, o ayrımı ileride imkânsız kılardı.
+     *
+     * Vergi numarası ve unvan fatura kesiminde yasal olarak bağlayıcıdır;
+     * bu yüzden owner'a ait.
+     */
+    public function managesBilling(): bool
+    {
+        return $this === self::Owner;
+    }
+
+    /**
      * Şirketin en az bir tanesine sahip olmak ZORUNDA olduğu rol mü?
      *
      * "Bir şirket asla ownersız kalamaz" kuralının (§5, §19) tek
