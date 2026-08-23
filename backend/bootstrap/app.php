@@ -1,6 +1,7 @@
 <?php
 
 use App\Exceptions\ActiveCompanyException;
+use App\Exceptions\FinanceEntryException;
 use App\Exceptions\InvitationException;
 use App\Exceptions\LastOwnerException;
 use App\Exceptions\TenantContextMissingException;
@@ -160,6 +161,31 @@ return Application::configure(basePath: dirname(__DIR__))
          * Buraya yeni bir sebep eklenirken aynı kural geçerlidir.
          */
         $exceptions->render(function (InvitationException $e, Request $request) {
+            if (! $request->is('api/*')) {
+                return null;
+            }
+
+            return response()->json([
+                'message' => $e->getMessage(),
+                'code' => $e->errorCode,
+            ], $e->status);
+        });
+
+        /*
+         * Finans kaydının durum kuralları (Faz 7 / Adım 3).
+         *
+         * InvitationException ile aynı desen: durum ve kod exception'ın
+         * kendisinde taşınır, tek callback hepsini karşılar.
+         *
+         * Bunlar YETKİ hatası DEĞİLDİR — isteği yapanın yetkisi tamdır,
+         * policy zaten geçmiştir. Kaydın DURUMU işleme izin vermiyor
+         * (iptal edilmiş kayıt değiştirilemez, iptal ikinci kez
+         * yapılamaz). Bu yüzden 403 değil 422.
+         *
+         * Mesajlar istemciye gönderilir: kullanıcıya gösterilmeye uygun
+         * yazılmışlardır ve hiçbir kimlik ya da iç ayrıntı içermezler.
+         */
+        $exceptions->render(function (FinanceEntryException $e, Request $request) {
             if (! $request->is('api/*')) {
                 return null;
             }

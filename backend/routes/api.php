@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\CompanyController;
 use App\Http\Controllers\Api\V1\CustomerController;
 use App\Http\Controllers\Api\V1\EmailVerificationController;
+use App\Http\Controllers\Api\V1\FinanceEntryController;
 use App\Http\Controllers\Api\V1\InvitationController;
 use App\Http\Controllers\Api\V1\MemberController;
 use App\Http\Controllers\Api\V1\PasswordResetController;
@@ -239,6 +240,36 @@ Route::middleware(['auth:sanctum', 'company.context'])->name('api.v1.')->group(f
     */
     Route::patch('customers/{customer}/billing', [CustomerController::class, 'updateBilling'])
         ->name('customers.billing.update');
+
+    /*
+    | FİNANS KAYITLARI — gelir ve gider (Faz 7 / Adım 3).
+    |
+    | DELETE UCU YOK VE OLMAYACAK. Finans kaydı fiziksel olarak silinmez;
+    | POST {id}/void ile iptal edilir. Silinmiş bir gelir kaydı geçmiş bir
+    | dönemin toplamını sessizce değiştirirdi ve "buradaki tutar neden
+    | değişti?" sorusunun cevabı yalnızca audit'te kalırdı.
+    |
+    | SIRALAMA: 'void' alt rotası {financeEntry} rotasından SONRA gelse de
+    | çakışma yok — farklı metod ve farklı son ek. Yine de members/role
+    | ile aynı okunabilirlik için alt rota en sonda tutuluyor.
+    |
+    | Yetki owner-only'dir (FinanceEntryPolicy); member 403, başka
+    | tenant'ın kaydı 404 alır.
+    */
+    Route::get('finance-entries', [FinanceEntryController::class, 'index'])
+        ->name('finance-entries.index');
+
+    Route::post('finance-entries', [FinanceEntryController::class, 'store'])
+        ->name('finance-entries.store');
+
+    Route::get('finance-entries/{financeEntry}', [FinanceEntryController::class, 'show'])
+        ->name('finance-entries.show');
+
+    Route::put('finance-entries/{financeEntry}', [FinanceEntryController::class, 'update'])
+        ->name('finance-entries.update');
+
+    Route::post('finance-entries/{financeEntry}/void', [FinanceEntryController::class, 'void'])
+        ->name('finance-entries.void');
 
     /*
     | ÜYELİK YÖNETİMİ

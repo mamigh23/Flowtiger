@@ -72,6 +72,27 @@ enum Role: string
     }
 
     /**
+     * Bu rol şirketin finans kayıtlarını GÖREBİLİR mi? (Faz 7 / Adım 3)
+     */
+    public function viewsFinance(): bool
+    {
+        return $this === self::Owner;
+    }
+
+    /**
+     * Bu rol finans kaydı OLUŞTURABİLİR / DEĞİŞTİREBİLİR mi?
+     *
+     * viewsFinance()'tan ayrı: ileride bir "muhasebeci" rolü kayıtları
+     * okuyup değiştiremeyebilir. İki soruyu tek metoda bağlamak o ayrımı
+     * imkânsız kılardı — viewsAuditLogs()/managesMembers() ayrımıyla aynı
+     * gerekçe.
+     */
+    public function managesFinance(): bool
+    {
+        return $this === self::Owner;
+    }
+
+    /**
      * Şirketin en az bir tanesine sahip olmak ZORUNDA olduğu rol mü?
      *
      * "Bir şirket asla ownersız kalamaz" kuralının (§5, §19) tek

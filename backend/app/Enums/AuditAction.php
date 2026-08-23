@@ -122,6 +122,23 @@ enum AuditAction: string
 
     case CustomerBillingUpdated = 'customer.billing_updated';
 
+    /*
+     * Finans kaydı (Faz 7 / Adım 3).
+     *
+     * `finance_entry.deleted` YOKTUR ve olmayacak: finans kaydı fiziksel
+     * olarak silinmez, iptal edilir. Silme olayı için bir audit değeri
+     * tanımlamak, bir gün o yolu açmanın davetiyesi olurdu.
+     *
+     * `voided` ile `updated` AYRI olaylardır: iptal, tutarların
+     * düzeltilmesi değil kaydın mali geçerliliğinin sonlandırılmasıdır
+     * ve bir incelemede tek başına aranabilir olmalıdır.
+     */
+    case FinanceEntryCreated = 'finance_entry.created';
+
+    case FinanceEntryUpdated = 'finance_entry.updated';
+
+    case FinanceEntryVoided = 'finance_entry.voided';
+
     /**
      * Bu olay tenant'a mı ait?
      *
