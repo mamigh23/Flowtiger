@@ -1,4 +1,10 @@
-import type { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode } from 'react';
+import type {
+  ButtonHTMLAttributes,
+  InputHTMLAttributes,
+  ReactNode,
+  SelectHTMLAttributes,
+  TextareaHTMLAttributes,
+} from 'react';
 import { useId, useState } from 'react';
 
 /**
@@ -106,6 +112,82 @@ export function PasswordInput({ label, error, id, ...rest }: InputProps) {
         </button>
       </div>
 
+      {error && (
+        <span className="ft-field__error" id={errorId}>
+          {error}
+        </span>
+      )}
+    </div>
+  );
+}
+
+type SelectProps = SelectHTMLAttributes<HTMLSelectElement> & {
+  label: string;
+  error?: string;
+};
+
+/**
+ * Seçim alanı — Input ile AYNI iskelet.
+ *
+ * Ayrı bir yapı kurulmadı: etiket/hata/aria bağlantısı her alanda aynı
+ * şekilde çalışmalı, yoksa bir alanda unutulan `aria-describedby` fark
+ * edilmeden kalır.
+ *
+ * Seçenekler children olarak verilir. Bileşen bir seçenek listesi
+ * ÜRETMEZ — hangi seçeneklerin olduğu ekranın bilgisidir, ortak dilin
+ * değil.
+ */
+export function Select({ label, error, id, children, ...rest }: SelectProps) {
+  const generatedId = useId();
+  const selectId = id ?? generatedId;
+  const errorId = `${selectId}-error`;
+
+  return (
+    <div className="ft-field">
+      <label className="ft-field__label" htmlFor={selectId}>
+        {label}
+      </label>
+      <select
+        {...rest}
+        id={selectId}
+        className="ft-select"
+        aria-invalid={error ? 'true' : undefined}
+        aria-describedby={error ? errorId : undefined}
+      >
+        {children}
+      </select>
+      {error && (
+        <span className="ft-field__error" id={errorId}>
+          {error}
+        </span>
+      )}
+    </div>
+  );
+}
+
+type TextareaProps = TextareaHTMLAttributes<HTMLTextAreaElement> & {
+  label: string;
+  error?: string;
+};
+
+/** Çok satırlı metin — Input ile aynı iskelet, aynı gerekçe. */
+export function Textarea({ label, error, id, ...rest }: TextareaProps) {
+  const generatedId = useId();
+  const textareaId = id ?? generatedId;
+  const errorId = `${textareaId}-error`;
+
+  return (
+    <div className="ft-field">
+      <label className="ft-field__label" htmlFor={textareaId}>
+        {label}
+      </label>
+      <textarea
+        {...rest}
+        id={textareaId}
+        className="ft-textarea"
+        aria-invalid={error ? 'true' : undefined}
+        aria-describedby={error ? errorId : undefined}
+      />
       {error && (
         <span className="ft-field__error" id={errorId}>
           {error}

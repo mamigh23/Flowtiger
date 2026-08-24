@@ -119,6 +119,45 @@ a {
   border-color: var(--ft-color-danger);
 }
 
+/* Seçim ve çok satırlı metin: ft-input ile aynı kutu dili. */
+.ft-select {
+  width: 100%;
+  min-height: var(--ft-control-height);
+  padding: 0 var(--ft-space-3);
+  border: 1px solid var(--ft-color-border);
+  border-radius: var(--ft-radius-md);
+  background: var(--ft-color-surface);
+  color: inherit;
+  font: inherit;
+}
+
+.ft-textarea {
+  width: 100%;
+  min-height: calc(var(--ft-control-height) * 2);
+  padding: var(--ft-space-2) var(--ft-space-3);
+  border: 1px solid var(--ft-color-border);
+  border-radius: var(--ft-radius-md);
+  background: var(--ft-color-surface);
+  color: inherit;
+  font: inherit;
+  resize: vertical;
+}
+
+.ft-select[aria-invalid='true'],
+.ft-textarea[aria-invalid='true'] {
+  border-color: var(--ft-color-danger);
+}
+
+/*
+ * İptal edilmiş finans kaydı.
+ *
+ * Renk TEK BAŞINA taşıyıcı değildir: satırda ayrıca "İptal edildi"
+ * rozeti var. Rengi ayırt edemeyen kullanıcı da farkı görür.
+ */
+[data-voided='true'] {
+  color: var(--ft-color-text-muted);
+}
+
 .ft-input-group {
   position: relative;
   display: flex;

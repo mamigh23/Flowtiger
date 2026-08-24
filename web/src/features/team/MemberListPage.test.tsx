@@ -83,6 +83,27 @@ describe('MemberListPage', () => {
   it('yüklenirken bekleme durumu gösterir, veri gelince kaldırır', async () => {
     const deferred: { resolve?: (response: Response) => void } = {};
 
+    /**
+     * ASKIDAKİ YANIT İSTEK GELMEDEN ÖNCE KURULUR.
+     *
+     * Promise mock'un içinde kurulsaydı `deferred.resolve` ancak istek
+     * GERÇEKTEN ATILDIĞINDA atanırdı — yani testin çözücüye sahip olması,
+     * React'in passive effect'i ne zaman boşalttığına bağlı kalırdı.
+     * Bekleme karesi DOM'a mount anında yazılır, isteği atan useEffect ise
+     * commit'ten SONRA çalışır; bu iki an arasında `findByTestId` çözülüp
+     * `deferred.resolve?.(...)` sessizce hiçbir şey yapmadan geçebiliyordu
+     * (`?.` çözücünün yokluğunu yutuyor). O durumda istek sonsuza kadar
+     * askıda kalır, bekleme karesi hiç kalkmaz ve tablo hiç doğmaz.
+     *
+     * Promise'i burada kurmak testi SIRADAN BAĞIMSIZ yapar: çözücü render
+     * başlamadan vardır ve yanıt istekten önce çözülse bile bileşen zaten
+     * çözülmüş bir promise alır. İddia gevşemedi — aksine, artık her iki
+     * sırada da geçerli.
+     */
+    const pendingMembers = new Promise<Response>((resolve) => {
+      deferred.resolve = resolve;
+    });
+
     vi.stubGlobal(
       'fetch',
       vi.fn(async (input: RequestInfo | URL) => {
@@ -95,11 +116,7 @@ describe('MemberListPage', () => {
             meta: { active_company_id: 7 },
           });
         }
-        if (url.includes('/members')) {
-          return new Promise<Response>((resolve) => {
-            deferred.resolve = resolve;
-          });
-        }
+        if (url.includes('/members')) return pendingMembers;
 
         return jsonResponse(404, { message: 'Taklit edilmemiş uç' });
       }),

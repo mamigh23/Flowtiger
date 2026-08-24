@@ -107,6 +107,40 @@ export const fixtures = {
     },
   }),
 
+  /**
+   * Finans kaydı — backend FinanceEntryResource ile birebir alanlar.
+   *
+   * VARSAYILAN DEĞERLER KENDİ İÇİNDE TUTARLIDIR:
+   *   net 100000 + KDV 20000 = brüt 120000, oran 2000bp (%20).
+   * Tutarsız bir varsayılan, testlerin gerçekte olmayan bir yanıtı
+   * doğrulaması demek olurdu.
+   *
+   * `calculation` SAKLANMAZ, backend her okumada hesaplar. Override
+   * verilirken blok BÜTÜN olarak değiştirilir (mevcut fixture'ların
+   * spread davranışı).
+   *
+   * `customer` TAM KAYIT DEĞİL, özettir: id + customer_no + name.
+   */
+  financeEntry: (overrides: Record<string, unknown> = {}) => ({
+    id: 900,
+    direction: 'in',
+    financial_date: '2026-08-20',
+    category: 'Danışmanlık',
+    note: null,
+    net_minor: 100000,
+    vat_rate_bp: 2000,
+    vat_minor: 20000,
+    gross_minor: 120000,
+    currency: 'TRY',
+    customer: null,
+    calculation: { basis: 'net', rounding: 'half_up', vat_applicable: true },
+    voided_at: null,
+    void_reason: null,
+    created_at: '2026-08-20T10:00:00+00:00',
+    updated_at: '2026-08-20T10:00:00+00:00',
+    ...overrides,
+  }),
+
   auditLog: (overrides: Record<string, unknown> = {}) => ({
     id: 100,
     action: 'customer.created',

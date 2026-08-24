@@ -2,15 +2,24 @@ import type { ApiClient } from './client';
 import type {
   AuditLog,
   Company,
+  CompanyBilling,
+  CompanyBillingInput,
   Customer,
+  CustomerBilling,
+  CustomerBillingInput,
+  FinanceEntry,
+  FinanceEntryInput,
   Invitation,
   LoginResult,
   Member,
   Paginated,
+  Payment,
+  PaymentInput,
   Role,
   SecurityEvent,
   Session,
   User,
+  VoidInput,
 } from '@/types/api';
 
 /**
@@ -66,6 +75,17 @@ export const companies = {
    */
   select: (api: ApiClient, companyId: number) =>
     api.post<Company>(`companies/${companyId}/select`),
+
+  /**
+   * Şirketin mali kimliği — OWNER-ONLY.
+   *
+   * PATCH'tir: gönderilmeyen alan değişmez, açık null temizler. Ayrı bir
+   * uç olmasının sebebi, `PATCH /members/{user}/role` ile aynı — vergi
+   * numarası fatura kesiminde bağlayıcıdır ve bir ad düzenlemesinin yan
+   * etkisi olarak değişmemelidir.
+   */
+  updateBilling: (api: ApiClient, companyId: number, input: CompanyBillingInput) =>
+    api.patch<CompanyBilling>(`companies/${companyId}/billing`, input),
 };
 
 // ----------------------------------------------------------- customers
@@ -83,6 +103,16 @@ export const customers = {
     api.put<Customer>(`customers/${id}`, input),
 
   remove: (api: ApiClient, id: number) => api.delete(`customers/${id}`),
+
+  /**
+   * Müşterinin fatura kimliği.
+   *
+   * AYRI BİR UÇ ve öyle kalmalı: `update` PUT'tur ve gönderilmeyen alanı
+   * temizler. Fatura alanları o gövdeye eklenseydi, {name, phone}
+   * gönderen her düzenleme vergi numarasını sessizce silerdi.
+   */
+  updateBilling: (api: ApiClient, id: number, input: CustomerBillingInput) =>
+    api.patch<CustomerBilling>(`customers/${id}/billing`, input),
 };
 
 // ------------------------------------------------------------- members
@@ -135,6 +165,64 @@ export const invitations = {
 export const auditLogs = {
   list: (api: ApiClient, params?: { page?: number; per_page?: number }) =>
     api.getPaginated<Paginated<AuditLog>>('audit-logs', { query: params }),
+};
+
+// ------------------------------------------------------- finans kayıtları
+
+/**
+ * Gelir ve gider kayıtları — OWNER-ONLY (AŞAMA 7 / Adım 3).
+ *
+ * DELETE UCU YOKTUR: finans kaydı silinmez, iptal edilir. Silinmiş bir
+ * gelir kaydı geçmiş bir dönemin toplamını sessizce değiştirirdi.
+ *
+ * İSTEMCİ HESAP YAPMAZ: gövde `amount_minor` + `amount_basis` taşır,
+ * net/KDV/brüt üçlüsünü backend üretir. Frontend'de VatCalculator
+ * karşılığı YOKTUR ve olmayacak.
+ */
+export const financeEntries = {
+  list: (api: ApiClient, params?: { page?: number; per_page?: number }) =>
+    api.getPaginated<Paginated<FinanceEntry>>('finance-entries', { query: params }),
+
+  get: (api: ApiClient, id: number) => api.get<FinanceEntry>(`finance-entries/${id}`),
+
+  create: (api: ApiClient, input: FinanceEntryInput) =>
+    api.post<FinanceEntry>('finance-entries', input),
+
+  /** PUT: tam değiştirme; parasal üçlü yeniden hesaplanır. */
+  update: (api: ApiClient, id: number, input: FinanceEntryInput) =>
+    api.put<FinanceEntry>(`finance-entries/${id}`, input),
+
+  /** 204 değil 200 döner: silme değil, durum değişikliği. */
+  void: (api: ApiClient, id: number, input: VoidInput = {}) =>
+    api.post<FinanceEntry>(`finance-entries/${id}/void`, input),
+};
+
+// -------------------------------------------------------------- ödemeler
+
+/**
+ * Tahsilat ve ödemeler — OWNER-ONLY (AŞAMA 7 / Adım 4).
+ *
+ * Ödeme hedefine DOĞRUDAN bağlanmaz; bağlantı `allocations` üzerinden
+ * kurulur. Böylece hedefsiz avans, bir ödemenin iki hedefe bölünmesi ve
+ * bir hedefin iki ödemeyle kapatılması mümkün olur.
+ *
+ * Dağıtımların AYRI BİR UCU YOKTUR: ödemenin gövdesiyle birlikte
+ * yazılırlar ve PUT'ta liste eskisinin TAMAMEN yerine geçer.
+ */
+export const payments = {
+  list: (api: ApiClient, params?: { page?: number; per_page?: number }) =>
+    api.getPaginated<Paginated<Payment>>('payments', { query: params }),
+
+  get: (api: ApiClient, id: number) => api.get<Payment>(`payments/${id}`),
+
+  create: (api: ApiClient, input: PaymentInput) => api.post<Payment>('payments', input),
+
+  update: (api: ApiClient, id: number, input: PaymentInput) =>
+    api.put<Payment>(`payments/${id}`, input),
+
+  /** İptal dağıtımları SİLMEZ; yerinde kalırlar. */
+  void: (api: ApiClient, id: number, input: VoidInput = {}) =>
+    api.post<Payment>(`payments/${id}/void`, input),
 };
 
 // ------------------------------------------------------------- profile

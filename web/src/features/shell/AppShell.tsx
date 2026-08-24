@@ -15,6 +15,13 @@ import { roleLabel } from '@/lib/company/roleLabel';
 const NAV_ITEMS = [
   { to: '/app', label: 'Panel', end: true },
   { to: '/app/customers', label: 'Müşteriler' },
+  /*
+    Finans bağlantısı HERKESE görünür.
+    Uç owner-only ama bu karar backend'de verilir (playbook §3.1); rolüne
+    bakıp bağlantıyı gizlemek, backend'in yetki kararını istemcide yeniden
+    uygulamak olurdu. Member tıklar, istek gider, 403 açıklanır.
+  */
+  { to: '/app/finance', label: 'Finans' },
   { to: '/app/team', label: 'Ekip' },
   { to: '/app/invitations', label: 'Davetler' },
   { to: '/app/audit', label: 'Denetim' },

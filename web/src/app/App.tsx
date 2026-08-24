@@ -16,6 +16,10 @@ import { MemberEditPage } from '@/features/team/MemberEditPage';
 import { InvitationListPage } from '@/features/invitations/InvitationListPage';
 import { InviteMemberPage } from '@/features/invitations/InviteMemberPage';
 import { AuditLogListPage } from '@/features/audit/AuditLogListPage';
+import { FinanceEntryListPage } from '@/features/finance/FinanceEntryListPage';
+import { FinanceEntryCreatePage } from '@/features/finance/FinanceEntryCreatePage';
+import { FinanceEntryDetailPage } from '@/features/finance/FinanceEntryDetailPage';
+import { FinanceEntryEditPage } from '@/features/finance/FinanceEntryEditPage';
 import { ProfilePage } from '@/features/profile/ProfilePage';
 
 /**
@@ -108,6 +112,29 @@ export function App() {
               içinde açılır.
             */}
             <Route path="audit" element={<AuditLogListPage />} />
+
+            {/*
+              Finans (AŞAMA 7 / WEB-02) — gelir ve gider kayıtları.
+
+              SİLME ROTASI YOK: backend'de DELETE ucu yok, kayıt iptal
+              edilir ve iptal ayrıntı ekranından yapılır.
+
+              Yön ROTAYLA belirlenir, prop olarak geçirilir. "Yeni gelir"
+              ve "Yeni gider" iki ayrı kullanıcı niyetidir; tek bir
+              /finance/new rotası olsaydı yön formda ikinci kez sorulurdu.
+
+              Sıra: "new/..." yolları ":id"den ÖNCE gelmeli — yoksa
+              /app/finance/new isteği id'si "new" olan bir kayıt araması
+              olarak yorumlanabilirdi.
+            */}
+            <Route path="finance" element={<FinanceEntryListPage />} />
+            <Route path="finance/new/income" element={<FinanceEntryCreatePage direction="in" />} />
+            <Route
+              path="finance/new/expense"
+              element={<FinanceEntryCreatePage direction="out" />}
+            />
+            <Route path="finance/:id" element={<FinanceEntryDetailPage />} />
+            <Route path="finance/:id/edit" element={<FinanceEntryEditPage />} />
 
             {/*
               Profil ve güvenlik (AŞAMA 6 — A).
