@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\V1\EmailVerificationController;
 use App\Http\Controllers\Api\V1\FinanceEntryController;
 use App\Http\Controllers\Api\V1\InvitationController;
 use App\Http\Controllers\Api\V1\MemberController;
+use App\Http\Controllers\Api\V1\PaymentController;
 use App\Http\Controllers\Api\V1\PasswordResetController;
 use App\Http\Controllers\Api\V1\ProfileController;
 use App\Http\Controllers\Api\V1\SecurityEventController;
@@ -270,6 +271,32 @@ Route::middleware(['auth:sanctum', 'company.context'])->name('api.v1.')->group(f
 
     Route::post('finance-entries/{financeEntry}/void', [FinanceEntryController::class, 'void'])
         ->name('finance-entries.void');
+
+    /*
+    | ÖDEMELER VE TAHSİLAT DAĞITIMI (Faz 7 / Adım 4).
+    |
+    | Dağıtımların AYRI BİR UCU YOKTUR: ödemenin gövdesiyle birlikte
+    | yazılırlar. Ayrı olsaydı "toplam dağıtım ödemeyi aşamaz" kuralı iki
+    | isteğe yayılır ve arada geçersiz bir ara durum oluşurdu.
+    |
+    | DELETE UCU YOK — ödeme iptal edilir, dağıtımları yerinde kalır.
+    |
+    | Yetki owner-only (PaymentPolicy); member 403, başka tenant 404.
+    */
+    Route::get('payments', [PaymentController::class, 'index'])
+        ->name('payments.index');
+
+    Route::post('payments', [PaymentController::class, 'store'])
+        ->name('payments.store');
+
+    Route::get('payments/{payment}', [PaymentController::class, 'show'])
+        ->name('payments.show');
+
+    Route::put('payments/{payment}', [PaymentController::class, 'update'])
+        ->name('payments.update');
+
+    Route::post('payments/{payment}/void', [PaymentController::class, 'void'])
+        ->name('payments.void');
 
     /*
     | ÜYELİK YÖNETİMİ

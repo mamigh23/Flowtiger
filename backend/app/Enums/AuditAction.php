@@ -139,6 +139,23 @@ enum AuditAction: string
 
     case FinanceEntryVoided = 'finance_entry.voided';
 
+    /*
+     * Ödeme ve tahsilat (Faz 7 / Adım 4).
+     *
+     * `payment_allocation.*` OLAYI YOKTUR ve olmayacak: dağıtım kendi
+     * başına bir varlık değil, ödemenin bir özelliğidir ve yalnızca
+     * ödemeyle birlikte değişir. Ayrı olay üretmek, tek bir kullanıcı
+     * eylemini izde iki satıra bölerdi. Dağıtım değişikliği
+     * payment.updated'ın old/new değerlerinde görünür.
+     *
+     * `payment.deleted` de YOKTUR: ödeme silinmez, iptal edilir.
+     */
+    case PaymentCreated = 'payment.created';
+
+    case PaymentUpdated = 'payment.updated';
+
+    case PaymentVoided = 'payment.voided';
+
     /**
      * Bu olay tenant'a mı ait?
      *

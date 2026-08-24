@@ -4,6 +4,7 @@ use App\Exceptions\ActiveCompanyException;
 use App\Exceptions\FinanceEntryException;
 use App\Exceptions\InvitationException;
 use App\Exceptions\LastOwnerException;
+use App\Exceptions\PaymentException;
 use App\Exceptions\TenantContextMissingException;
 use App\Http\Middleware\ResolveCompanyContext;
 use Illuminate\Foundation\Application;
@@ -186,6 +187,23 @@ return Application::configure(basePath: dirname(__DIR__))
          * yazılmışlardır ve hiçbir kimlik ya da iç ayrıntı içermezler.
          */
         $exceptions->render(function (FinanceEntryException $e, Request $request) {
+            if (! $request->is('api/*')) {
+                return null;
+            }
+
+            return response()->json([
+                'message' => $e->getMessage(),
+                'code' => $e->errorCode,
+            ], $e->status);
+        });
+
+        /*
+         * Ödemenin durum kuralları (Faz 7 / Adım 4).
+         *
+         * FinanceEntryException ile aynı desen ve aynı gerekçe: yetki
+         * hatası değil, kaydın durumu işleme izin vermiyor → 422 + kod.
+         */
+        $exceptions->render(function (PaymentException $e, Request $request) {
             if (! $request->is('api/*')) {
                 return null;
             }
