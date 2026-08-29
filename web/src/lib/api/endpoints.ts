@@ -18,6 +18,8 @@ import type {
   Role,
   SecurityEvent,
   Session,
+  Task,
+  TaskInput,
   User,
   VoidInput,
 } from '@/types/api';
@@ -223,6 +225,56 @@ export const payments = {
   /** İptal dağıtımları SİLMEZ; yerinde kalırlar. */
   void: (api: ApiClient, id: number, input: VoidInput = {}) =>
     api.post<Payment>(`payments/${id}/void`, input),
+};
+
+// -------------------------------------------------------------- görevler
+
+/**
+ * Günün işleri (Task/Planning v1) — ŞİRKET GENELİ.
+ *
+ * Finans ve ödeme uçları owner-only'dir; görevler değil. Üye de görür,
+ * oluşturur ve tamamlar (playbook §3.1: karar backend'de, istemcide rol
+ * kapısı yok).
+ *
+ * DELETE UCU VARDIR — finanstan farklı olarak. Finans kaydı iptal edilir
+ * çünkü silinmesi geçmiş bir dönemin toplamını sessizce değiştirir;
+ * yapılacak bir işin böyle bir özelliği yok.
+ */
+export const tasks = {
+  list: (api: ApiClient, params?: { page?: number; per_page?: number; date?: string }) =>
+    api.getPaginated<Paginated<Task>>('tasks', { query: params }),
+
+  /**
+   * BUGÜN — ŞİRKETİN SAAT DİLİMİNE GÖRE, SUNUCUDA BELİRLENİR.
+   *
+   * İstemci `?date=` ile kendi "bugün"ünü göndermez. Gönderseydi, saat
+   * dilimi şirketinkinden farklı bir kullanıcı yanlış günün işlerini
+   * görürdü — "bu işletme için bugün hangi gün" sorusunun cevabı
+   * backend'e aittir (playbook §3.1).
+   */
+  today: (api: ApiClient, params?: { page?: number; per_page?: number }) =>
+    api.getPaginated<Paginated<Task>>('tasks/today', { query: params }),
+
+  get: (api: ApiClient, id: number) => api.get<Task>(`tasks/${id}`),
+
+  create: (api: ApiClient, input: TaskInput) => api.post<Task>('tasks', input),
+
+  /** PUT: tam değiştirme; gövdede olmayan alan boşaltılır. */
+  update: (api: ApiClient, id: number, input: TaskInput) => api.put<Task>(`tasks/${id}`, input),
+
+  remove: (api: ApiClient, id: number) => api.delete(`tasks/${id}`),
+
+  /**
+   * Gövde ALMAZ: tamamlanma zamanını sunucu yazar. İstemci bir işin ne
+   * zaman bitirildiğini seçemez.
+   *
+   * İDEMPOTENT DEĞİL: zaten tamamlanmış bir görev 422 +
+   * `task_already_completed` döner — ikinci bir çağrı ilk tamamlanma
+   * anını üzerine yazardı.
+   */
+  complete: (api: ApiClient, id: number) => api.post<Task>(`tasks/${id}/complete`),
+
+  reopen: (api: ApiClient, id: number) => api.post<Task>(`tasks/${id}/reopen`),
 };
 
 // ------------------------------------------------------------- profile

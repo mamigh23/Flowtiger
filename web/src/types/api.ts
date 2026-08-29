@@ -340,3 +340,73 @@ export interface CustomerBillingInput {
   billing_address?: string | null;
   country?: string | null;
 }
+
+// ===================================================================
+// GÖREVLER (Task/Planning v1)
+// ===================================================================
+
+/**
+ * Kişi ÖZETİ — tam kullanıcı kaydı değil.
+ *
+ * Backend bilinçli olarak yalnızca id ve ad döndürüyor: görev listesi,
+ * kullanıcı verisini dolaylı yoldan dışarı veren bir uç hâline gelmemeli.
+ * E-posta, rol ve aktif şirket yanıtta YOKTUR.
+ */
+export interface UserSummary {
+  id: number;
+  name: string;
+}
+
+/**
+ * GET/POST/PUT /tasks yanıtı.
+ *
+ * DİKKAT — `company_id` YANITTA YOKTUR. TaskResource beyaz listesinde
+ * bulunmuyor; tenant kimliği istemciye hiç açılmıyor.
+ *
+ * DİKKAT — `assigned_to` İSTEK VE YANITTA FARKLI TİPTEDİR:
+ *   istek : number | null         (kullanıcı kimliği)
+ *   yanıt : { id, name } | null   (özet)
+ * Aynı ad, iki şekil. Backend'de gerçekten böyle; uydurulmadı.
+ */
+export interface Task {
+  id: number;
+  title: string;
+  note: string | null;
+  /** Takvim günü (Y-m-d); saat taşımaz. */
+  scheduled_date: string | null;
+  /**
+   * Gün içindeki saat, "09:00". Saatsiz görev meşrudur — null geldiğinde
+   * arayüz SAAT UYDURMAZ.
+   */
+  scheduled_time: string | null;
+  completed_at: string | null;
+  /**
+   * Backend'de `completed_at`ten TÜRETİLİR. Arayüz bunu yeniden
+   * hesaplamaz: iki kaynak, bir gün iki farklı cevap demektir.
+   */
+  is_completed: boolean;
+  customer: CustomerSummary | null;
+  created_by: UserSummary | null;
+  assigned_to: UserSummary | null;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
+/**
+ * POST ve PUT /tasks gövdesi.
+ *
+ * `company_id`, `created_by`, `completed_at` ve `is_completed`
+ * GÖNDERİLMEZ — backend onları `prohibited` ile reddeder.
+ *
+ * `scheduled_time` OPSİYONEL DEĞİL, NULLABLE: backend `present` istiyor.
+ * Alanın düşmesi ile null gönderilmesi aynı şey değil — PUT tam
+ * değiştirme olduğu için "saati kaldır" ancak açık null ile anlatılır.
+ */
+export interface TaskInput {
+  title: string;
+  note?: string | null;
+  scheduled_date: string;
+  scheduled_time: string | null;
+  customer_id?: number | null;
+  assigned_to?: number | null;
+}
