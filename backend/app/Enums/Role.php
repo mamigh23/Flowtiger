@@ -93,6 +93,36 @@ enum Role: string
     }
 
     /**
+     * Bu rol şirketin görevlerini GÖREBİLİR mi? (Task/Planning v1)
+     *
+     * FİNANSTAN FARKLI OLARAK HERKESE AÇIK. Finans kayıtları şirketin
+     * mali görünümüdür ve owner'a aittir; yapılacak iş listesi ise
+     * operasyonel çalışmadır. Üye kendi gününü göremiyorsa ürün işe
+     * yaramaz.
+     *
+     * Her zaman true dönen bir metot gereksiz görünebilir ama policy bir
+     * şeye sormak zorunda; alternatif, `true` değerini policy'ye
+     * dağıtmaktı. Salt okunur bir "mali müşavir" rolü geldiğinde
+     * değişecek tek yer burasıdır.
+     */
+    public function viewsTasks(): bool
+    {
+        return true;
+    }
+
+    /**
+     * Bu rol görev OLUŞTURABİLİR / DEĞİŞTİREBİLİR / TAMAMLAYABİLİR mi?
+     *
+     * viewsTasks()'tan ayrı: ileride bir rol günü görüp değiştiremeyebilir.
+     * İki soruyu tek metoda bağlamak o ayrımı imkânsız kılardı —
+     * viewsFinance()/managesFinance() ayrımıyla aynı gerekçe.
+     */
+    public function managesTasks(): bool
+    {
+        return true;
+    }
+
+    /**
      * Şirketin en az bir tanesine sahip olmak ZORUNDA olduğu rol mü?
      *
      * "Bir şirket asla ownersız kalamaz" kuralının (§5, §19) tek

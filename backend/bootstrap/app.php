@@ -5,6 +5,7 @@ use App\Exceptions\FinanceEntryException;
 use App\Exceptions\InvitationException;
 use App\Exceptions\LastOwnerException;
 use App\Exceptions\PaymentException;
+use App\Exceptions\TaskException;
 use App\Exceptions\TenantContextMissingException;
 use App\Http\Middleware\ResolveCompanyContext;
 use Illuminate\Foundation\Application;
@@ -204,6 +205,25 @@ return Application::configure(basePath: dirname(__DIR__))
          * hatası değil, kaydın durumu işleme izin vermiyor → 422 + kod.
          */
         $exceptions->render(function (PaymentException $e, Request $request) {
+            if (! $request->is('api/*')) {
+                return null;
+            }
+
+            return response()->json([
+                'message' => $e->getMessage(),
+                'code' => $e->errorCode,
+            ], $e->status);
+        });
+
+        /*
+         * Görevin durum kuralları (Task/Planning v1).
+         *
+         * FinanceEntryException ve PaymentException ile aynı desen ve aynı
+         * gerekçe: yetki hatası değil, kaydın durumu işleme izin vermiyor
+         * (zaten tamamlanmış bir görev yeniden tamamlanamaz, zaten açık
+         * olan yeniden açılamaz) → 403 değil 422 + makine-okunur kod.
+         */
+        $exceptions->render(function (TaskException $e, Request $request) {
             if (! $request->is('api/*')) {
                 return null;
             }

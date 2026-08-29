@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\V1\PasswordResetController;
 use App\Http\Controllers\Api\V1\ProfileController;
 use App\Http\Controllers\Api\V1\SecurityEventController;
 use App\Http\Controllers\Api\V1\SessionController;
+use App\Http\Controllers\Api\V1\TaskController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -297,6 +298,54 @@ Route::middleware(['auth:sanctum', 'company.context'])->name('api.v1.')->group(f
 
     Route::post('payments/{payment}/void', [PaymentController::class, 'void'])
         ->name('payments.void');
+
+    /*
+    | GÜNÜN İŞLERİ (Task/Planning v1).
+    |
+    | DELETE UCU VARDIR — finans ve ödemeden farklı olarak. Finans kaydı
+    | iptal edilir çünkü silinmesi geçmiş bir dönemin toplamını sessizce
+    | değiştirir; yapılacak bir işin böyle bir özelliği yok.
+    |
+    | YETKİ ŞİRKET GENELİDİR: owner da member da görür ve yönetir.
+    | Finans owner'a özeldir çünkü mali görünümdür; iş listesi operasyonel
+    | çalışmadır. Başka tenant yine 404.
+    |
+    | SIRA ÖNEMLİ: 'tasks/today' rotası 'tasks/{task}'tan ÖNCE gelmeli.
+    | Sonra gelseydi /tasks/today isteği, id'si "today" olan bir görev
+    | araması olarak yorumlanırdı.
+    */
+    Route::get('tasks', [TaskController::class, 'index'])
+        ->name('tasks.index');
+
+    Route::get('tasks/today', [TaskController::class, 'today'])
+        ->name('tasks.today');
+
+    Route::post('tasks', [TaskController::class, 'store'])
+        ->name('tasks.store');
+
+    Route::get('tasks/{task}', [TaskController::class, 'show'])
+        ->name('tasks.show');
+
+    Route::put('tasks/{task}', [TaskController::class, 'update'])
+        ->name('tasks.update');
+
+    Route::delete('tasks/{task}', [TaskController::class, 'destroy'])
+        ->name('tasks.destroy');
+
+    /*
+    | Tamamlama ve yeniden açma AYRI UÇLARDIR, PUT içinde bayrak değil:
+    | `completed_at` sunucunun yazdığı bir zaman damgasıdır ve istemci bir
+    | işin NE ZAMAN bitirildiğini seçemez.
+    |
+    | İkisi de TERMİNAL DEĞİL ama İDEMPOTENT DE DEĞİL: zaten tamamlanmış
+    | bir görevi yeniden tamamlamak ilk tamamlanma anını üzerine yazardı
+    | (422 + task_already_completed).
+    */
+    Route::post('tasks/{task}/complete', [TaskController::class, 'complete'])
+        ->name('tasks.complete');
+
+    Route::post('tasks/{task}/reopen', [TaskController::class, 'reopen'])
+        ->name('tasks.reopen');
 
     /*
     | ÜYELİK YÖNETİMİ

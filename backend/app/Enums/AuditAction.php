@@ -156,6 +156,21 @@ enum AuditAction: string
 
     case PaymentVoided = 'payment.voided';
 
+    /*
+     * Görev (Task/Planning v1).
+     *
+     * YALNIZCA SİLME KAYDEDİLİR. `task.created`, `task.updated`,
+     * `task.completed` ve `task.reopened` BİLİNÇLİ OLARAK YOKTUR: her onay
+     * kutusu işareti bir audit satırı üretseydi, denetim geçmişi bir görev
+     * akışına dönüşür ve asıl işini — güvenlik ve yetki değişikliklerinin
+     * izini tutmayı — göremez hâle gelirdi (§16 "devasa audit listesi").
+     *
+     * Silme istisnadır çünkü geri dönüşü yoktur: "bu iş listede vardı,
+     * şimdi yok" sorusunun cevabı bir yerde durmalı. Diğer üç olayın izi
+     * kaydın kendisinde zaten duruyor (updated_at, completed_at).
+     */
+    case TaskDeleted = 'task.deleted';
+
     /**
      * Bu olay tenant'a mı ait?
      *
