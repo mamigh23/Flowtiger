@@ -252,6 +252,28 @@ a {
   font-size: var(--ft-font-size-sm);
 }
 
+/*
+ * Ekranda görünmez, ekran okuyucuda okunur.
+ *
+ * `display: none` ve `visibility: hidden` metni erişilebilirlik ağacından
+ * da ÇIKARIR — o zaman sınıfın hiçbir anlamı kalmazdı. Öğe akışın dışına
+ * alınıp 1px'e indiriliyor ve kırpılıyor: yer kaplamıyor ama hâlâ orada.
+ *
+ * `white-space: nowrap`: kırpılmış kutuda sarmalanan metin bazı ekran
+ * okuyucularda kelimelerin birleşmesine yol açıyor ("Ayrıntı" → "Ayrınt ı").
+ */
+.ft-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
 .ft-stack {
   display: flex;
   flex-direction: column;
@@ -291,23 +313,17 @@ a {
   max-width: 32rem;
 }
 
+/*
+ * Giriş başlığı MERKEZLENDİ: logo formun üstünde ortada durmalı.
+ * Eski "FT" kutusu kaldırıldı — artık gerçek logo var ve kendi zeminine
+ * ihtiyaç duymuyor.
+ */
 .ft-auth__header {
   display: flex;
   flex-direction: column;
-  gap: var(--ft-space-1);
-}
-
-.ft-auth__mark {
-  display: inline-grid;
-  place-items: center;
-  width: 2.25rem;
-  height: 2.25rem;
-  margin-bottom: var(--ft-space-2);
-  border-radius: var(--ft-radius-md);
-  background: var(--ft-color-primary);
-  color: var(--ft-color-primary-contrast);
-  font-weight: var(--ft-font-weight-bold);
-  font-size: var(--ft-font-size-sm);
+  align-items: center;
+  gap: var(--ft-space-2);
+  text-align: center;
 }
 
 .ft-auth__title {
@@ -349,9 +365,15 @@ a {
 
 /* ============================================================= shell */
 
+/*
+ * Kenar çubuğu DAR. Geniş ekranda yalnızca ikonlar görünür; etiketler
+ * DOM'da kalır ama görsel olarak kırpılır (bkz. .ft-nav__label).
+ * Üzerine gelince çubuk genişler — ikon-only bir menüde "bu simge neydi?"
+ * sorusunun ücretsiz cevabı.
+ */
 .ft-shell {
   display: grid;
-  grid-template-columns: 15rem 1fr;
+  grid-template-columns: var(--ft-sidebar-width) 1fr;
   min-height: 100%;
 }
 
@@ -359,9 +381,21 @@ a {
   display: flex;
   flex-direction: column;
   gap: var(--ft-space-5);
-  padding: var(--ft-space-4);
+  padding: var(--ft-space-4) var(--ft-space-3);
   border-right: 1px solid var(--ft-color-border);
   background: var(--ft-color-surface);
+  overflow: hidden;
+  width: var(--ft-sidebar-width);
+  transition: width 0.18s ease;
+}
+
+.ft-shell__sidebar:hover,
+.ft-shell__sidebar:focus-within {
+  width: var(--ft-sidebar-width-expanded);
+  /* Genişlerken içeriği itmez, üstüne biner. */
+  position: relative;
+  z-index: 20;
+  box-shadow: var(--ft-shadow-sm);
 }
 
 .ft-shell__brand {
@@ -369,10 +403,22 @@ a {
   align-items: center;
   gap: var(--ft-space-2);
   font-weight: var(--ft-font-weight-bold);
+  white-space: nowrap;
 }
 
-.ft-shell__brand .ft-auth__mark {
+/* Logo dar sütunda da tam görünür; taşmaz, kırpılmaz. */
+.ft-shell__brand .ft-mark {
   margin: 0;
+}
+
+.ft-shell__brand-word {
+  opacity: 0;
+  transition: opacity 0.18s ease;
+}
+
+.ft-shell__sidebar:hover .ft-shell__brand-word,
+.ft-shell__sidebar:focus-within .ft-shell__brand-word {
+  opacity: 1;
 }
 
 .ft-nav {
@@ -382,12 +428,39 @@ a {
 }
 
 .ft-nav__link {
+  display: flex;
+  align-items: center;
+  gap: var(--ft-space-3);
   padding: var(--ft-space-2) var(--ft-space-3);
   border-radius: var(--ft-radius-md);
   color: var(--ft-color-text-muted);
   text-decoration: none;
   font-size: var(--ft-font-size-sm);
   font-weight: var(--ft-font-weight-medium);
+  white-space: nowrap;
+}
+
+.ft-nav__icon {
+  flex: 0 0 1.25rem;
+  text-align: center;
+  font-size: var(--ft-font-size-md);
+}
+
+/*
+ * Etiket GİZLENMEZ, KIRPILIR.
+ *
+ * `display: none` ya da `visibility: hidden` onu erişilebilirlik
+ * ağacından da çıkarırdı; o zaman ekran okuyucu kullanıcısına yalnızca
+ * bir simge kalırdı. Renk ya da simge TEK BAŞINA anlam taşımamalı.
+ */
+.ft-nav__label {
+  opacity: 0;
+  transition: opacity 0.18s ease;
+}
+
+.ft-shell__sidebar:hover .ft-nav__label,
+.ft-shell__sidebar:focus-within .ft-nav__label {
+  opacity: 1;
 }
 
 .ft-nav__link:hover {
@@ -395,9 +468,16 @@ a {
   color: var(--ft-color-text);
 }
 
+/*
+ * Aktif durum NET ama SAKİN: yumuşak turuncu zemin + sol kenarda ince
+ * bir işaret. Renk tek başına taşıyıcı değil — kenar çizgisi rengi ayırt
+ * edemeyen kullanıcı için ikinci bir işaret, `aria-current` ise ekran
+ * okuyucu için üçüncüsü (NavLink onu kendisi ekler).
+ */
 .ft-nav__link--active {
-  background: var(--ft-color-bg);
+  background: var(--ft-color-primary-soft);
   color: var(--ft-color-primary);
+  box-shadow: inset 2px 0 0 var(--ft-color-primary);
 }
 
 .ft-shell__scrim {
@@ -410,13 +490,56 @@ a {
   min-width: 0;
 }
 
+/*
+ * GİRİŞ GEÇİŞİ.
+ *
+ * Perde açıkken içerik ve kenar çubuğu bir adım geride bekler; perde
+ * kalkınca yerlerine oturur. Kural TERSİNE yazıldı — "girmiş" hâl
+ * varsayılan, "bekleyen" hâl sınıflı. Böylece perde bir sebeple hiç
+ * tamamlanmazsa ekran görünmez kalmaz; en kötü ihtimalde animasyon
+ * olmaz, ama uygulama hep görünür.
+ *
+ * Yalnızca `opacity` ve `transform`: ikisi de compositor'da çalışır,
+ * layout'u yeniden hesaplatmaz.
+ */
+.ft-shell__main {
+  transition:
+    opacity 0.5s ease,
+    transform 0.5s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+/* `width` korunuyor: kenar çubuğu üzerine gelince genişliyor. */
+.ft-shell__sidebar {
+  transition:
+    width 0.18s ease,
+    opacity 0.5s ease,
+    transform 0.5s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+.ft-shell--intro .ft-shell__main {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+.ft-shell--intro .ft-shell__sidebar {
+  opacity: 0;
+  transform: translateX(-8px);
+}
+
+/*
+ * Üst bar İNCELDİ ve zemine karıştı: ana içeriğin önüne geçmemeli.
+ * Şirket adı ve rol bilgisi kalıyor — kullanıcının hangi kiracıda
+ * çalıştığını her an görmesi gerekiyor (çok kiracılı bir üründe bunu
+ * gizlemek yanlış şirkete kayıt girmenin en kısa yolu).
+ */
 .ft-topbar {
   display: flex;
   align-items: center;
   gap: var(--ft-space-4);
-  padding: var(--ft-space-3) var(--ft-space-5);
+  padding: var(--ft-space-2) var(--ft-space-5);
   border-bottom: 1px solid var(--ft-color-border);
-  background: var(--ft-color-surface);
+  background: var(--ft-color-bg);
+  font-size: var(--ft-font-size-sm);
 }
 
 .ft-topbar__toggle {
@@ -531,11 +654,39 @@ a {
   max-width: 64rem;
 }
 
+/*
+ * `flex-wrap`: dar ekranda başlık ve eylemler tek satıra sıkışmasın.
+ * Sarmalanma olmadan 375px'te üç düğmeli bir başlık (görev ayrıntısı)
+ * birbirinin üstüne biniyordu.
+ */
 .ft-page__header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--ft-space-4);
+  flex-wrap: wrap;
+}
+
+/* Başlıktaki eylemler: Yeni kayıt / Düzenle / Sil / Tamamla … */
+.ft-page__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--ft-space-2);
+  flex-wrap: wrap;
+}
+
+/*
+ * Form altındaki eylemler: Kaydet / Vazgeç.
+ *
+ * `margin-top`: alanlardan görsel olarak ayrılsın — aksi hâlde son
+ * girdinin hemen dibine yapışıyordu.
+ */
+.ft-form__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--ft-space-3);
+  flex-wrap: wrap;
+  margin-top: var(--ft-space-4);
 }
 
 .ft-page__title {
@@ -547,6 +698,97 @@ a {
   margin-bottom: var(--ft-space-3);
   font-size: var(--ft-font-size-md);
   font-weight: var(--ft-font-weight-bold);
+}
+
+/* ============================================================= tablo */
+
+.ft-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: var(--ft-font-size-sm);
+}
+
+/*
+ * Başlık satırı sönük ve kalın değil: sütun adları veriyle yarışmamalı.
+ * `nowrap` — "Müşteri no" gibi iki kelimelik bir başlık alt satıra
+ * kaymasın, satır yüksekliği sabit kalsın.
+ */
+.ft-table th {
+  padding: var(--ft-space-2) var(--ft-space-3);
+  border-bottom: 1px solid var(--ft-color-border);
+  color: var(--ft-color-text-muted);
+  font-weight: var(--ft-font-weight-medium);
+  white-space: nowrap;
+}
+
+/*
+ * SATIR AYRIMI `td` ÜZERİNDEN, `tr` ÜZERİNDEN DEĞİL.
+ *
+ * `tr { border-bottom }` yazılsaydı, denetim ekranındaki genişletilebilir
+ * kayıt ile onun ayrıntı paneli arasına da çizgi girerdi — birlikte olan
+ * iki satır görsel olarak ikiye bölünürdü.
+ *
+ * `border-top` + ilk satırın muaf tutulması, `thead`in alt çizgisiyle
+ * çift çizgi oluşmasını da engelliyor.
+ */
+.ft-table td {
+  padding: var(--ft-space-3);
+  border-top: 1px solid var(--ft-color-border);
+  vertical-align: top;
+}
+
+.ft-table tbody tr:first-child td {
+  border-top: 0;
+}
+
+/*
+ * Denetim ekranının ayrıntı paneli (`<td colSpan={6}>`) kendi kaydından
+ * çizgiyle ayrılmaz: ikisi tek bir kaydın parçası. Başka hiçbir tabloda
+ * `colspan` kullanılmıyor, dolayısıyla bu seçici yalnızca o hücreyi
+ * hedefler.
+ */
+.ft-table td[colspan] {
+  border-top: 0;
+}
+
+/* =========================================================== ayrıntı */
+
+/*
+ * Etiket–değer çiftleri iki kolonda. `dl/dt/dd` semantiği korunuyor;
+ * grid yalnızca yerleşimi düzenliyor.
+ *
+ * Etiket sütunu esnek: kısa etiketler ("IP") gereksiz yer kaplamasın,
+ * uzunlar ("Son güncelleme") kırılmasın.
+ */
+.ft-details {
+  display: grid;
+  grid-template-columns: minmax(6rem, 12rem) 1fr;
+  gap: var(--ft-space-2) var(--ft-space-4);
+  margin: 0;
+  font-size: var(--ft-font-size-sm);
+}
+
+.ft-details dt {
+  color: var(--ft-color-text-muted);
+}
+
+.ft-details dd {
+  margin: 0;
+}
+
+/* ========================================================= sayfalama */
+
+/*
+ * Önceki — "Sayfa 1 / 4" — Sonraki.
+ * `wrap`: dar ekranda üç öğe sığmazsa alt satıra insin, taşmasın.
+ */
+.ft-pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ft-space-3);
+  flex-wrap: wrap;
 }
 
 .ft-stat-grid,
@@ -613,6 +855,521 @@ a {
   font-size: var(--ft-font-size-sm);
 }
 
+/* ============================================================= marka */
+
+/*
+ * Tek marka işareti; üç ekranda da aynı bileşenden gelir.
+ * Gerçek logo asset'i geldiğinde bu kural bir <img>/<svg> boyutlandırmaya
+ * dönüşecek — çağıran ekranlar değişmeyecek.
+ */
+/*
+ * ORAN HER ZAMAN KORUNUR.
+ *
+ * Ölçü tek eksenden verilir; diğeri `auto` kalır. İki eksene birden ölçü
+ * vermek logoyu ezerdi. `object-fit: contain` ikinci bir güvence: bir gün
+ * bir kural yanlışlıkla iki eksene de değer verirse logo kırpılmak yerine
+ * kutuya sığar.
+ *
+ * Zemin, çerçeve ya da parlama YOK: logo kendi başına duruyor. Turuncu
+ * bir kutuya oturtmak, logonun kendi turuncusuyla çakışırdı.
+ */
+.ft-mark {
+  display: block;
+  flex: 0 0 auto;
+  width: auto;
+  object-fit: contain;
+}
+
+/* Kenar çubuğu — dar sütuna sığmalı, ezilmemeli. */
+.ft-mark--sm {
+  height: 2.25rem;
+  max-width: 100%;
+}
+
+/* Giriş ekranı — formun üstünde, perdeden küçük. */
+.ft-mark--md {
+  width: clamp(8.75rem, 40vw, 12.5rem);
+  height: auto;
+}
+
+/*
+ * Perde — ekranın ANA görsel unsuru.
+ * Alt sınır mobil, üst sınır masaüstü içindir; `30vw` ise aradaki her
+ * genişlikte viewport'un yaklaşık üçte birinde tutar.
+ */
+.ft-mark--lg {
+  width: clamp(10.625rem, 30vw, 18.75rem);
+  height: auto;
+}
+
+/* ============================================================ splash */
+
+/*
+ * Marka perdesi — arkadaki uygulamanın ÜSTÜNE biner, onu kaldırmaz.
+ * Ne spinner ne progress bar: beklenen bir şey yok, gösterilecek bir
+ * ilerleme de yok.
+ */
+/*
+ * Perde SAHNELERLE ilerler, tek bir fade ile değil. Her sahne bir sınıf;
+ * geçişler yalnızca `transform` ve `opacity` üzerinden — layout'u yeniden
+ * hesaplatan hiçbir özellik animasyona girmiyor.
+ */
+.ft-splash {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Perde zemini uygulamanınkinden bir tık daha koyu: geçiş anında
+     arkadaki yüzeyler yumuşakça ortaya çıksın. */
+  background: #0b0b0d;
+  opacity: 1;
+  transition: opacity 0.45s ease;
+}
+
+/*
+ * Solarken tıklamayı engellemez: perde görünmez olduğu andan itibaren
+ * kullanıcı arkadaki uygulamayı kullanabilmeli. Aksi hâlde görünmeyen bir
+ * cam duvara tıklardı.
+ */
+.ft-splash--leaving {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/*
+ * Logo ÜSTTE, marka adı ALTINDA — yan yana değil.
+ *
+ * 300px'lik bir logonun yanına yazı koymak dengeyi bozar ve logoyu
+ * ikinci öğe hâline getirirdi. Dikey yığın logoyu merkezde tutar; ad ona
+ * eşlik eder, onunla yarışmaz.
+ */
+.ft-splash__brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--ft-space-5);
+  /* Logonun etrafında nefes alacak boşluk. */
+  padding: var(--ft-space-6);
+  transition:
+    opacity 0.55s ease,
+    transform 0.55s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+/* Sahne 1 — zemin var, işaret yok. */
+.ft-splash--dark .ft-splash__brand {
+  opacity: 0;
+  transform: scale(0.94);
+}
+
+/* Sahne 2 ve 3 — işaret belirir ve kısa süre sabit kalır. */
+.ft-splash--mark .ft-splash__brand,
+.ft-splash--word .ft-splash__brand {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* Sahne 5 — hafifçe geri çekilir, arkadaki uygulamaya alan bırakır. */
+.ft-splash--recede .ft-splash__brand,
+.ft-splash--leaving .ft-splash__brand {
+  opacity: 1;
+  transform: scale(0.96);
+}
+
+/*
+ * Marka adı işaretten SONRA gelir (sahne 4). Kendi geçişi var; işaretle
+ * birlikte belirseydi iki ayrı an değil tek bir an olurdu.
+ */
+.ft-splash__word {
+  font-size: var(--ft-font-size-2xl);
+  font-weight: var(--ft-font-weight-bold);
+  letter-spacing: -0.02em;
+  opacity: 0;
+  /* Logo dikey yığında olduğu için ad da aşağıdan gelir, yandan değil. */
+  transform: translateY(6px);
+  transition:
+    opacity 0.5s ease,
+    transform 0.5s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+.ft-splash--word .ft-splash__word,
+.ft-splash--recede .ft-splash__word,
+.ft-splash--leaving .ft-splash__word {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ========================================================= dashboard */
+
+.ft-dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ft-space-6);
+  max-width: 78rem;
+}
+
+/*
+ * İKİ KOLON, ÜÇ DEĞİL.
+ *
+ * Referans tasarım üç kolon kullanıyor ama üçüncü kolonun içeriği
+ * ("Dikkat Etmeniz Gerekenler" + "Günün Özeti") backend'de yok. Boş bir
+ * üçüncü kolon açmak, referansın iskeletini taklit edip içini boş
+ * bırakmak olurdu. Görev ucu geldiğinde kolon eklenir.
+ *
+ * Odak alanı GENİŞ: plan ana iş, son hareketler ona eşlik ediyor.
+ */
+.ft-dashboard__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
+  gap: var(--ft-space-5);
+  align-items: start;
+}
+
+/* ------------------------------------------------------------- hero */
+
+.ft-hero {
+  position: relative;
+  overflow: hidden;
+  padding: var(--ft-space-7) var(--ft-space-6);
+  border: 1px solid var(--ft-color-border);
+  border-radius: var(--ft-radius-xl);
+  background:
+    linear-gradient(135deg, rgb(255 122 0 / 0.06), transparent 42%),
+    var(--ft-color-surface);
+}
+
+.ft-hero__content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ft-space-2);
+  max-width: 40rem;
+}
+
+.ft-hero__title {
+  margin: 0;
+  font-size: var(--ft-font-size-2xl);
+  font-weight: var(--ft-font-weight-bold);
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+}
+
+/*
+ * Selamlama sönük, isim parlak: cümlenin ağırlığı kişide.
+ * Satır kırılması CSS ile yapılır — metin düğümleri bozulmadığı için
+ * erişilebilir ad "Günaydın, Ada Lovelace." olarak kalır.
+ */
+.ft-hero__greeting {
+  display: block;
+  color: var(--ft-color-text-muted);
+  font-size: var(--ft-font-size-lg);
+  font-weight: var(--ft-font-weight-medium);
+  letter-spacing: -0.01em;
+}
+
+.ft-hero__name {
+  color: var(--ft-color-text);
+}
+
+.ft-hero__wave {
+  margin-left: var(--ft-space-2);
+}
+
+.ft-hero__lead {
+  margin: var(--ft-space-2) 0 0;
+  font-size: var(--ft-font-size-lg);
+}
+
+.ft-hero__sub {
+  margin: 0;
+}
+
+/*
+ * Marka rengini taşıyan sakin bir ışık. Neon değil: kenarları belirsiz,
+ * doygunluğu düşük. Görevi dikkat çekmek değil, yüzeye derinlik vermek.
+ */
+.ft-hero__glow {
+  position: absolute;
+  top: -40%;
+  right: -10%;
+  width: 26rem;
+  height: 26rem;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgb(255 122 0 / 0.16), transparent 62%);
+  pointer-events: none;
+}
+
+/* ----------------------------------------------------------- paneller */
+
+.ft-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ft-space-4);
+  padding: var(--ft-space-5);
+  border: 1px solid var(--ft-color-border);
+  border-radius: var(--ft-radius-lg);
+  background: var(--ft-color-surface);
+  min-width: 0;
+}
+
+/* Odak paneli bir tık öne çıkar — üstünde ince turuncu bir çizgi. */
+.ft-panel--focus {
+  position: relative;
+  overflow: hidden;
+}
+
+.ft-panel--focus::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--ft-color-primary), transparent 55%);
+}
+
+.ft-panel__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--ft-space-3);
+  flex-wrap: wrap;
+}
+
+.ft-panel__title {
+  margin: 0;
+  font-size: var(--ft-font-size-lg);
+  font-weight: var(--ft-font-weight-bold);
+  letter-spacing: -0.01em;
+}
+
+.ft-panel__meta {
+  margin: 0;
+  color: var(--ft-color-text-muted);
+  font-size: var(--ft-font-size-sm);
+}
+
+/* -------------------------------------------------------- boş plan */
+
+/*
+ * Boş durum, gerçek planın kaplayacağı YERİ ŞİMDİDEN TUTAR: görevler
+ * geldiğinde ekranın dengesi değişmesin. Ama bir hata gibi de
+ * görünmemeli — kırmızı yok, ünlem yok, kesik çizgili kocaman kutu yok.
+ */
+.ft-plan-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ft-space-3);
+  min-height: 13rem;
+  padding: var(--ft-space-6) var(--ft-space-4);
+  border-radius: var(--ft-radius-lg);
+  background: var(--ft-color-surface-2);
+  text-align: center;
+}
+
+/* Saat kadranını andıran sade bir halka; ikon kütüphanesi gerektirmez. */
+.ft-plan-empty__glyph {
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 2px solid var(--ft-color-primary);
+  border-radius: 50%;
+  opacity: 0.55;
+}
+
+.ft-plan-empty__title {
+  margin: 0;
+  font-size: var(--ft-font-size-md);
+  font-weight: var(--ft-font-weight-medium);
+}
+
+.ft-plan-empty__hint {
+  margin: 0;
+  max-width: 22rem;
+  color: var(--ft-color-text-muted);
+  font-size: var(--ft-font-size-sm);
+}
+
+/* ====================================================== görev listesi */
+
+.ft-task-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ft-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ft-task {
+  display: grid;
+  grid-template-columns: 3.25rem 1fr;
+  align-items: baseline;
+  gap: var(--ft-space-3);
+  padding: var(--ft-space-3) var(--ft-space-4);
+  border-radius: var(--ft-radius-md);
+  background: var(--ft-color-surface-2);
+}
+
+/*
+ * Saatsiz görev, saat sütununu BOŞ bırakır — doldurulmaz.
+ * Yer tutucu bir tire ya da 00:00 koymak, saatsiz bir işi zamanlanmış
+ * gibi gösterirdi.
+ */
+.ft-task__time {
+  color: var(--ft-color-primary);
+  font-size: var(--ft-font-size-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.ft-task__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ft-space-1);
+  grid-column: 2;
+  min-width: 0;
+}
+
+/*
+ * Başlık ayrıntıya götüren bir bağlantı; altı çizili değil, sakin.
+ *
+ * `overflow-wrap`: uzun ve boşluksuz bir başlık (yapıştırılmış bir URL
+ * gibi) satırı yatay olarak taşırmasın. Dar ekranda tek bir kayıt tüm
+ * listeyi kaydırılabilir hâle getirirdi.
+ */
+.ft-task__title {
+  font-size: var(--ft-font-size-sm);
+  color: inherit;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+.ft-task__title:hover {
+  color: var(--ft-color-primary);
+}
+
+.ft-task__meta {
+  font-size: var(--ft-font-size-sm);
+}
+
+/*
+ * Tamamlanmış görev sönükleşir. Renk TEK BAŞINA taşıyıcı değil: üstü
+ * çizili başlık, rengi ayırt edemeyen kullanıcı için ikinci işaret.
+ */
+.ft-task[data-completed='true'] {
+  opacity: 0.55;
+}
+
+.ft-task[data-completed='true'] .ft-task__title {
+  text-decoration: line-through;
+}
+
+/* ========================================================== timeline */
+
+/*
+ * Son hareketler bir TABLO değil, bir akış. Her kayıt bir an: eylem
+ * üstte, ne kadar önce olduğu altta.
+ */
+.ft-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ft-space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/*
+ * İnce dikey çizgi noktaları birbirine bağlar: kayıtlar ayrı satırlar
+ * değil, aynı akışın durakları. Çizgi ::before ile çiziliyor — fazladan
+ * bir DOM düğümü eklemeden.
+ */
+.ft-timeline__item {
+  position: relative;
+  display: grid;
+  grid-template-columns: 0.5rem 1fr;
+  column-gap: var(--ft-space-4);
+  row-gap: var(--ft-space-1);
+  align-items: start;
+  font-size: var(--ft-font-size-sm);
+}
+
+.ft-timeline__item::before {
+  content: '';
+  position: absolute;
+  left: 0.1875rem;
+  top: 1.1em;
+  bottom: calc(-1 * var(--ft-space-4));
+  width: 1px;
+  background: var(--ft-color-border);
+}
+
+/* Son durakta çizgi devam etmez: akış orada biter. */
+.ft-timeline__item:last-child::before {
+  display: none;
+}
+
+.ft-timeline__dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  margin-top: 0.45em;
+  border-radius: 50%;
+  background: var(--ft-color-primary);
+  /* Çizginin üstünde durur, altında değil. */
+  position: relative;
+  z-index: 1;
+  box-shadow: 0 0 0 3px var(--ft-color-surface);
+}
+
+.ft-timeline__label {
+  color: var(--ft-color-text);
+}
+
+.ft-timeline__time {
+  grid-column: 2;
+}
+
+/* ------------------------------------------------- giriş animasyonu */
+
+/*
+ * Bölümler SIRAYLA belirir, hep birlikte değil: göz yukarıdan aşağıya
+ * doğru akar. Gecikmeler küçük tutuldu; daha uzunu kullanıcıyı ekranın
+ * hazır olmasını beklerken bırakırdı.
+ *
+ * `both` doldurma kipi: animasyon başlamadan önceki hâl de keyframe'in
+ * ilk karesidir. Böylece ilk boyamada içerik zıplamaz.
+ *
+ * Yalnızca `opacity` ve `transform` — ikisi de compositor'da çalışır,
+ * layout'u yeniden hesaplatmaz.
+ */
+@keyframes ft-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.ft-hero {
+  animation: ft-fade-up 0.45s ease both;
+}
+
+.ft-dashboard__grid > .ft-panel {
+  animation: ft-fade-up 0.45s ease both;
+}
+
+.ft-dashboard__grid > .ft-panel:nth-child(1) {
+  animation-delay: 0.08s;
+}
+
+.ft-dashboard__grid > .ft-panel:nth-child(2) {
+  animation-delay: 0.16s;
+}
+
 /* ======================================================== responsive */
 
 @media (max-width: 60rem) {
@@ -620,13 +1377,29 @@ a {
     grid-template-columns: 1fr;
   }
 
+  /*
+    Mobilde ÇEKMECE: dar/geniş ayrımı yok. Açıldığında tam genişlikte
+    gelir ve etiketler görünür — dokunmatik ekranda hover ipucu yoktur,
+    ikon-only bir menü orada tahmine dayanır.
+  */
   .ft-shell__sidebar {
     position: fixed;
     z-index: 30;
     inset: 0 auto 0 0;
-    width: 15rem;
+    width: var(--ft-sidebar-width-expanded);
     transform: translateX(-100%);
     transition: transform 0.2s ease;
+  }
+
+  .ft-shell__sidebar:hover,
+  .ft-shell__sidebar:focus-within {
+    width: var(--ft-sidebar-width-expanded);
+    box-shadow: none;
+  }
+
+  .ft-shell__sidebar .ft-nav__label,
+  .ft-shell__sidebar .ft-shell__brand-word {
+    opacity: 1;
   }
 
   .ft-shell--nav-open .ft-shell__sidebar {
@@ -652,10 +1425,96 @@ a {
   .ft-shell__main {
     padding: var(--ft-space-4);
   }
+
+  /* Kartlar tek kolona iner; taşma yok. */
+  .ft-dashboard__grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /*
+    Ayrıntı listesi tek kolona iner: etiket üstte, değer altta.
+    İki kolon dar ekranda değer sütununu birkaç karaktere sıkıştırıyordu.
+  */
+  .ft-details {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--ft-space-1) 0;
+  }
+
+  /*
+    Etiket ile değeri görsel olarak gruplamak için: her yeni etiketten
+    önce boşluk. Aksi hâlde tek kolonda tüm satırlar eşit aralıklı olur ve
+    hangi değerin hangi etikete ait olduğu belirsizleşir.
+  */
+  .ft-details dt + dd {
+    margin-bottom: var(--ft-space-3);
+  }
+
+  .ft-hero {
+    padding: var(--ft-space-6) var(--ft-space-4);
+  }
+
+  /* Işık dar ekranda içeriği yıkamasın. */
+  .ft-hero__glow {
+    width: 16rem;
+    height: 16rem;
+    opacity: 0.7;
+  }
+}
+
+/* Tablet: kolonlar kontrollü şekilde daralır, tek kolona düşmeden. */
+@media (min-width: 60.0625rem) and (max-width: 80rem) {
+  .ft-dashboard__grid {
+    grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ft-shell__sidebar {
+  .ft-shell__sidebar,
+  .ft-shell__main,
+  .ft-shell__brand-word,
+  .ft-nav__label {
     transition: none;
+  }
+
+  /*
+    Perde KALDIRILMAZ, yalnızca hareketi durur — süresi de bileşen
+    tarafında kısalır (FlowTigerSplash: REDUCED_TOTAL_MS). Marka anı yine
+    yaşanır. Bileşeni tamamen atlamak, hareket hassasiyeti olan
+    kullanıcıya farklı bir ürün göstermek olurdu; hareketsiz bir ekranda
+    2.4 saniye bekletmek ise ona daha kötü bir deneyim vermek.
+  */
+  .ft-splash,
+  .ft-splash__brand,
+  .ft-splash__word {
+    transition: none;
+  }
+
+  /* Sahneler arası ölçek/kayma farkları düzleşir. */
+  .ft-splash__brand,
+  .ft-splash--dark .ft-splash__brand,
+  .ft-splash--recede .ft-splash__brand {
+    opacity: 1;
+    transform: none;
+  }
+
+  .ft-splash__word {
+    opacity: 1;
+    transform: none;
+  }
+
+  /* Giriş geçişi de anında tamamlanır. */
+  .ft-shell--intro .ft-shell__main,
+  .ft-shell--intro .ft-shell__sidebar {
+    opacity: 1;
+    transform: none;
+  }
+
+  /*
+    Ana ekranın kademeli girişi kapanır. `animation: none` ile öğeler
+    normal hâllerine döner — görünür kalırlar, yalnızca hareket etmezler.
+  */
+  .ft-hero,
+  .ft-dashboard__grid > .ft-panel {
+    animation: none;
   }
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { screen, waitFor } from '@testing-library/react';
+import { screen, waitFor, waitForElementToBeRemoved } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { bodyOf, fixtures, jsonResponse, mockApi, renderApp } from '@/test/harness';
 
@@ -182,7 +182,20 @@ describe('CustomerCreatePage', () => {
     const posts = fetchMock.mock.calls.filter(([, init]) => init?.method === 'POST');
     expect(posts).toHaveLength(1);
 
+    /**
+     * ASKIDAKİ İSTEK ÇÖZÜLÜR VE SONUCU BEKLENİR.
+     *
+     * Yalnızca `resolve` çağırıp testi bitirmek, isteği başlattığı hâlde
+     * bitişini beklemeyen bir test bırakır: yanıt geldiğinde bileşen
+     * `setSubmitting(false)` yapar ve müşteriye gezinir, ikisi de `act()`
+     * dışında kalır. Finans ve ödeme formlarında bu, React'in
+     * "not wrapped in act(...)" uyarısı olarak görünmüştü; burada henüz
+     * görünmemesi kuralın geçerli olmadığı anlamına gelmiyor, yalnızca
+     * zamanlamanın kıl payı denk geldiği anlamına geliyor.
+     */
     deferred.resolve?.(jsonResponse(201, { data: fixtures.customer() }));
+
+    await waitForElementToBeRemoved(submit);
   });
 
   it('vazgeçme bağlantısı listeye döner', async () => {

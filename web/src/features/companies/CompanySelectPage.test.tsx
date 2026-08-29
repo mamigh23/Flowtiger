@@ -108,7 +108,7 @@ describe('CompanySelectPage', () => {
     await screen.findByText('Bengal Danışmanlık');
     await user.click(screen.getAllByRole('button', { name: /Seç/ })[1]!);
 
-    expect(await screen.findByRole('heading', { name: /Hoş geldin/ })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Bugünün Planı' })).toBeInTheDocument();
   });
 
   /**
@@ -155,7 +155,7 @@ describe('CompanySelectPage', () => {
     // waitFor + getBy: her turda YENİDEN sorgular. findBy ile bulunan
     // düğüm, yönlendirme sırasında yeniden bağlandığı için eskiyebilir.
     await waitFor(() =>
-      expect(screen.getByRole('heading', { name: /Hoş geldin/ })).toBeInTheDocument(),
+      expect(screen.getByRole('heading', { name: 'Bugünün Planı' })).toBeInTheDocument(),
     );
 
     expect(

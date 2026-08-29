@@ -46,7 +46,7 @@ describe('App yönlendirme', () => {
 
     renderApp('/', { token: 'gecerli-token' });
 
-    expect(await screen.findByRole('heading', { name: /Hoş geldin/ })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Bugünün Planı' })).toBeInTheDocument();
   });
 
   it('aktif şirket varken panel açılır', async () => {
@@ -54,7 +54,7 @@ describe('App yönlendirme', () => {
 
     renderApp('/app', { token: 'gecerli-token' });
 
-    expect(await screen.findByRole('heading', { name: /Hoş geldin/ })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Bugünün Planı' })).toBeInTheDocument();
   });
 
   it('aktif şirket yokken ve birden fazla şirket varken seçim ekranına gider', async () => {
@@ -80,7 +80,7 @@ describe('App yönlendirme', () => {
 
     renderApp('/app/company-select', { token: 'gecerli-token' });
 
-    expect(await screen.findByRole('heading', { name: /Hoş geldin/ })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Bugünün Planı' })).toBeInTheDocument();
   });
 
   /*
@@ -125,7 +125,7 @@ describe('App yönlendirme', () => {
     const user = userEvent.setup();
     renderApp('/app', { token: 'gecerli-token' });
 
-    await screen.findByRole('heading', { name: /Hoş geldin/ });
+    await screen.findByRole('heading', { name: 'Bugünün Planı' });
 
     await user.click(screen.getByRole('button', { name: /Hesap menüsü/ }));
     await user.click(await screen.findByRole('menuitem', { name: 'Çıkış yap' }));

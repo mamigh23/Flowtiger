@@ -7,25 +7,55 @@
  * bunun Dart karşılığıdır ve aynı ölçekleri taşır).
  *
  * Bilinçli olarak sıfır bağımlılık: Tailwind/MUI eklemek kolay,
- * çıkarmak zordur. Foundation aşamasında henüz ekran yokken bir CSS
- * framework'ünün kazanımı sınırlı.
+ * çıkarmak zordur.
+ *
+ * KOYU TEMA ARTIK VARSAYILAN VE TEK TEMA (UI-01).
+ *
+ * Önceden açık tema varsayılandı ve koyu tema yalnızca işletim sistemi
+ * öyle istediğinde devreye giriyordu. Bu, ürünün nasıl göründüğünü
+ * kullanıcının işletim sistemi ayarına bırakıyordu — yani FlowTiger'ın
+ * bir görünüşü yoktu, iki tane vardı ve hangisinin "asıl" olduğu belli
+ * değildi. Marka kimliği koyu olduğuna göre tema da koşulsuz koyudur.
+ *
+ * Turuncu KOYU ZEMİNE GÖRE PARLATILDI. Eski #b8460e beyaz zeminde
+ * doğruydu; siyah üzerinde okunaklılığı düşüyordu. Aynı renk ailesi,
+ * daha yüksek parlaklık. Düğme metni de beyazdan koyuya çevrildi:
+ * turuncu üzerinde beyaz ~3:1 kontrast verirken koyu metin ~6.5:1 veriyor.
  */
 
 :root {
-  /* Renk — nötr */
-  --ft-color-bg: #f7f7f8;
-  --ft-color-surface: #ffffff;
-  --ft-color-border: #e3e3e7;
-  --ft-color-text: #17171a;
-  --ft-color-text-muted: #6b6b76;
+  color-scheme: dark;
 
-  /* Renk — anlam */
-  --ft-color-primary: #b8460e;
-  --ft-color-primary-hover: #9a3a0b;
-  --ft-color-primary-contrast: #ffffff;
-  --ft-color-danger: #b3261e;
-  --ft-color-danger-bg: #fdecea;
-  --ft-color-focus: #b8460e;
+  /*
+   * Renk — nötr.
+   *
+   * Zemin saf siyah DEĞİL, çok koyu laciverte çalan bir siyah. Saf siyah
+   * (#000) OLED ekranda keskin, IPS ekranda ise ölü görünür; hafif mavi
+   * tonu yüzeyler arasındaki basamakları görünür kılar.
+   */
+  --ft-color-bg: #08090d;
+  --ft-color-surface: #0f1116;
+  /* İkinci yüzey: kart İÇİNDE daha da sakin bloklar için. */
+  --ft-color-surface-2: #141821;
+  --ft-color-border: #1e222c;
+  --ft-color-text: #f5f6f8;
+  --ft-color-text-muted: #8d93a3;
+
+  /*
+   * Renk — anlam.
+   *
+   * Turuncu logonun kendi turuncusuyla hizalandı (#ff7a00). Düğme metni
+   * koyu: turuncu üzerinde beyaz ~3:1 kontrast verirken koyu metin ~9:1
+   * veriyor.
+   */
+  --ft-color-primary: #ff7a00;
+  --ft-color-primary-hover: #ff9433;
+  --ft-color-primary-contrast: #100a02;
+  /* Vurguyu boğmadan hissettiren yumuşak zemin. */
+  --ft-color-primary-soft: rgb(255 122 0 / 0.12);
+  --ft-color-danger: #ff6b60;
+  --ft-color-danger-bg: #2b1512;
+  --ft-color-focus: #ff7a00;
 
   /* Aralık — 4px ölçeği */
   --ft-space-1: 0.25rem;
@@ -40,29 +70,31 @@
   --ft-radius-sm: 4px;
   --ft-radius-md: 8px;
   --ft-radius-lg: 12px;
+  --ft-radius-xl: 18px;
 
-  /* Tipografi */
-  --ft-font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  /*
+   * Tipografi.
+   *
+   * Inter listenin başında ama İNDİRİLMİYOR: kuruluysa kullanılır,
+   * değilse sistem yazı tipine düşülür. Google Fonts'tan yüklemek her
+   * açılışa bir dış istek ve bir yazı tipi titremesi eklerdi — projenin
+   * sıfır bağımlılık kararıyla çelişir.
+   */
+  --ft-font-sans: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --ft-font-size-sm: 0.875rem;
   --ft-font-size-md: 1rem;
   --ft-font-size-lg: 1.25rem;
   --ft-font-size-xl: 1.75rem;
+  --ft-font-size-2xl: 2.25rem;
   --ft-line-height: 1.5;
   --ft-font-weight-medium: 500;
   --ft-font-weight-bold: 600;
 
   /* Yükseklik */
-  --ft-shadow-sm: 0 1px 2px rgb(0 0 0 / 0.06);
+  --ft-shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
   --ft-control-height: 2.5rem;
-}
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --ft-color-bg: #131316;
-    --ft-color-surface: #1c1c21;
-    --ft-color-border: #2e2e36;
-    --ft-color-text: #f2f2f4;
-    --ft-color-text-muted: #a1a1ad;
-    --ft-color-danger-bg: #3a1c1a;
-  }
+  /* Kabuk ölçüleri — sidebar dar, içerik geniş. */
+  --ft-sidebar-width: 4.5rem;
+  --ft-sidebar-width-expanded: 14rem;
 }

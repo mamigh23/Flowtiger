@@ -5,7 +5,7 @@ import { api, endpoints } from '@/lib/api';
 import { Button, Card, ErrorState, Input, Select, Textarea } from '@/components/ui';
 import { MoneyFormatError, parseMinorAmount } from '@/lib/finance/money';
 import type { Customer, FinanceEntryInput } from '@/types/api';
-import { VAT_RATE_OPTIONS, directionLabel } from './financeLabels';
+import { VAT_RATE_OPTIONS, directionLabel, todayAsCalendarDay } from './financeLabels';
 import { fieldErrorOf, financeErrorMessage } from './financeErrors';
 
 /**
@@ -58,16 +58,6 @@ interface FinanceEntryFormProps {
   initialValues: FinanceFormInitialValues;
   cancelTo: string;
   onSubmit: (values: FinanceEntryInput) => Promise<void>;
-}
-
-/** Bugünün TAKVİM GÜNÜ — yerel saate göre. */
-function todayAsCalendarDay(): string {
-  const now = new Date();
-  const pad = (value: number): string => String(value).padStart(2, '0');
-
-  // toISOString() KULLANILMADI: UTC'ye çevirir ve UTC'nin ilerisindeki bir
-  // saat diliminde akşam saatlerinde yarının tarihini verir.
-  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
 }
 
 export function emptyFinanceFormValues(

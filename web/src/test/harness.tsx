@@ -2,6 +2,7 @@ import { render } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import type { ReactElement } from 'react';
 import { App } from '@/app/App';
+import { ROUTER_FUTURE } from '@/app/routerFuture';
 import { tokenStorage } from '@/lib/auth/tokenStorage';
 
 /**
@@ -141,6 +142,85 @@ export const fixtures = {
     ...overrides,
   }),
 
+  /**
+   * Ödeme — backend PaymentResource ile birebir alanlar.
+   *
+   * `allocated_minor` ve `remaining_minor` backend'de HER OKUMADA
+   * hesaplanır; fixture bir hesap yapmaz, sadece tutarlı bir yanıt taşır.
+   * Değişmez: amount = allocated + remaining. Override verirken üçünü
+   * BİRLİKTE tutarlı tutmak testin sorumluluğu — tutarsız bir varsayılan,
+   * gerçekte olmayan bir yanıtı doğrulamak olurdu.
+   *
+   * `allocations` VARSAYILAN OLARAK BOŞTUR: hedefsiz avans geçerli bir
+   * durumdur (customer_id de nullable).
+   */
+  payment: (overrides: Record<string, unknown> = {}) => ({
+    id: 800,
+    financial_date: '2026-08-22',
+    amount_minor: 120000,
+    currency: 'TRY',
+    method: 'Havale',
+    note: null,
+    customer: null,
+    allocations: [],
+    allocated_minor: 0,
+    remaining_minor: 120000,
+    voided_at: null,
+    void_reason: null,
+    created_at: '2026-08-22T10:00:00+00:00',
+    updated_at: '2026-08-22T10:00:00+00:00',
+    ...overrides,
+  }),
+
+  /**
+   * Dağıtım satırı — PaymentResource içinde satır içi üretilir.
+   *
+   * DİKKAT: yanıtta top-level `finance_entry_id` YOKTUR; hedef
+   * `finance_entry` özeti içinde gelir. `finance_entry_id` yalnızca İSTEK
+   * gövdesinde bulunur.
+   *
+   * `finance_entry` özeti `currency` TAŞIMAZ — `gross_minor`'ı
+   * biçimlendirmek için ödemenin para birimi kullanılır.
+   */
+  paymentAllocation: (overrides: Record<string, unknown> = {}) => ({
+    id: 1,
+    amount_minor: 50000,
+    finance_entry: {
+      id: 900,
+      direction: 'in',
+      financial_date: '2026-08-20',
+      gross_minor: 123456,
+    },
+    ...overrides,
+  }),
+
+  /**
+   * Görev — backend TaskResource ile birebir alanlar.
+   *
+   * DİKKAT: yanıtta `company_id` YOKTUR ve `assigned_to` bir ÖZETTİR
+   * ({id, name}), istekteki gibi bir kullanıcı kimliği değil.
+   *
+   * `is_completed` backend'de `completed_at`ten türetilir; fixture ikisini
+   * tutarlı taşır. Tutarsız bir çift kurmak isteyen test bunu AÇIKÇA
+   * yapmalı — arayüzün hangisini okuduğunu kanıtlayan test tam olarak
+   * budur.
+   */
+  task: (overrides: Record<string, unknown> = {}) => ({
+    id: 300,
+    title: 'Ahmet Yılmaz\'ı ara',
+    note: null,
+    scheduled_date: '2026-08-22',
+    scheduled_time: '09:00',
+    completed_at: null,
+    is_completed: false,
+    customer: null,
+    created_by: { id: 1, name: 'Ada Lovelace' },
+    assigned_to: null,
+    created_at: '2026-08-22T06:00:00+00:00',
+    updated_at: '2026-08-22T06:00:00+00:00',
+    ...overrides,
+  }),
+
   auditLog: (overrides: Record<string, unknown> = {}) => ({
     id: 100,
     action: 'customer.created',
@@ -205,5 +285,16 @@ export function renderApp(initialPath: string, options: { token?: string } = {})
 }
 
 export function renderElement(element: ReactElement, initialPath = '/'): ReturnType<typeof render> {
-  return render(<MemoryRouter initialEntries={[initialPath]}>{element}</MemoryRouter>);
+  return render(
+    /*
+      Router bayrakları ÜRETİMLE AYNI SABİTTEN gelir (main.tsx da onu
+      kullanır). Ayrı yazılsalardı bir gün biri güncellenir, diğeri
+      unutulur ve testler üretimden FARKLI bir router semantiğini
+      sınamaya başlardı — o andan sonra yeşil bir suite, çalışan bir
+      uygulamanın kanıtı olmaktan çıkar.
+    */
+    <MemoryRouter initialEntries={[initialPath]} future={ROUTER_FUTURE}>
+      {element}
+    </MemoryRouter>,
+  );
 }

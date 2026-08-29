@@ -4,6 +4,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth/AuthContext';
 import { ApiError, toUserMessage } from '@/lib/api';
 import { Button, Card, ErrorState, Input, PasswordInput } from '@/components/ui';
+import { FlowTigerMark } from '@/features/brand/FlowTigerMark';
 
 /**
  * Giriş ekranı.
@@ -75,9 +76,8 @@ export function LoginPage() {
       <Card className="ft-auth__card">
         <form className="ft-stack" onSubmit={handleSubmit} noValidate>
           <header className="ft-auth__header">
-            <span className="ft-auth__mark" aria-hidden="true">
-              FT
-            </span>
+            {/* Marka işareti üç ekranda da AYNI bileşenden gelir. */}
+            <FlowTigerMark size="md" />
             <h1 className="ft-auth__title">FlowTiger</h1>
             <p className="ft-muted">Devam etmek için giriş yapın.</p>
           </header>

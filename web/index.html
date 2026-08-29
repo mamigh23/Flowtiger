@@ -3,7 +3,14 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="color-scheme" content="light dark" />
+    <!--
+      Koyu tema koşulsuz ve tek tema (UI-01). "light dark" bırakılsaydı
+      tarayıcı ilk boyamada açık zemin çizer, sonra token'lar yüklenince
+      karartırdı — açılışta bir anlık beyaz parlama.
+    -->
+    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#0b0b0d" />
+    <link rel="icon" href="/assets/flowtiger-logo.png" />
     <title>FlowTiger</title>
   </head>
   <body>

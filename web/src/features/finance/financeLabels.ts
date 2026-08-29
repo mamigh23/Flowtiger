@@ -99,6 +99,23 @@ export function roundingLabel(mode: string): string {
  */
 const CALENDAR_DAY = /^(\d{4})-(\d{2})-(\d{2})$/;
 
+/**
+ * Bugünün TAKVİM GÜNÜ — yerel saate göre, `YYYY-MM-DD`.
+ *
+ * `toISOString()` KULLANILMAZ: UTC'ye çevirir ve UTC'nin ilerisindeki bir
+ * saat diliminde akşam saatlerinde yarının tarihini verir. Mali tarihin
+ * bir gün kayması, yanlış döneme yazılmış bir kayıt demektir.
+ *
+ * Burada durur çünkü hem finans hem ödeme formları aynı varsayılana
+ * ihtiyaç duyuyor; iki kopya, bir gün iki farklı davranış olurdu.
+ */
+export function todayAsCalendarDay(): string {
+  const now = new Date();
+  const pad = (value: number): string => String(value).padStart(2, '0');
+
+  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+}
+
 export function formatFinancialDate(date: string | null): string | null {
   if (date === null) return null;
 

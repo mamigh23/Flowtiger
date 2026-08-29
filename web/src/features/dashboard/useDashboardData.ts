@@ -1,22 +1,25 @@
 import { useEffect, useState } from 'react';
 import { api, ApiError, endpoints } from '@/lib/api';
-import type { AuditLog } from '@/types/api';
+import type { AuditLog, Task } from '@/types/api';
 
 /**
  * Panel verisi.
  *
  * SAHTE VERİ YOK (playbook §11): her değer gerçek bir uçtan gelir.
- *   müşteri sayısı → GET /customers?per_page=1  → meta.total
- *   ekip sayısı    → GET /members?per_page=1    → meta.total
  *   son hareketler → GET /audit-logs?per_page=5 → data[]
  *
- * per_page=1: yalnızca toplam sayı gerekiyor; tüm listeyi çekmek
- * gereksiz bant genişliği ve gereksiz veritabanı yükü olurdu.
+ * MÜŞTERİ VE EKİP SAYIMLARI KALDIRILDI (UI-01). "128 müşteri" bilgisi
+ * doğruydu ama ana ekranın sorusuna — "bugün ne yapmam gerekiyor?" —
+ * cevap vermiyordu; bir yönetim panelinin sorusuna cevap veriyordu.
+ * Sayılar kendi ekranlarında zaten var.
  *
- * KART BAZINDA DURUM: /members ve /audit-logs yalnızca owner'a açıktır.
- * Member rolündeki kullanıcı 403 alır — bu bir ARIZA DEĞİL, beklenen
- * bir sonuçtur. Bu yüzden her kart kendi durumunu taşır ve biri
- * yetkisiz olduğunda diğerleri çalışmaya devam eder.
+ * GÖREV/PLAN UCU YOK. Bu yüzden bu hook bir görev listesi DÖNDÜRMEZ ve
+ * uydurmaz. Backend bir task ucu açtığında buraya eklenir; o güne kadar
+ * ana ekran boş durum gösterir.
+ *
+ * KART BAZINDA DURUM: /audit-logs yalnızca owner'a açıktır. Member
+ * rolündeki kullanıcı 403 alır — bu bir ARIZA DEĞİL, beklenen bir
+ * sonuçtur.
  */
 export type PanelStatus = 'loading' | 'ready' | 'forbidden' | 'error';
 
@@ -26,8 +29,7 @@ export interface Panel<T> {
 }
 
 export interface DashboardData {
-  customerCount: Panel<number>;
-  memberCount: Panel<number>;
+  todayTasks: Panel<Task[]>;
   recentActivity: Panel<AuditLog[]>;
 }
 
@@ -49,8 +51,7 @@ function toFailedPanel<T>(error: unknown): Panel<T> {
 }
 
 export function useDashboardData(activeCompanyId: number | null): DashboardData {
-  const [customerCount, setCustomerCount] = useState<Panel<number>>(initial);
-  const [memberCount, setMemberCount] = useState<Panel<number>>(initial);
+  const [todayTasks, setTodayTasks] = useState<Panel<Task[]>>(initial);
   const [recentActivity, setRecentActivity] = useState<Panel<AuditLog[]>>(initial);
 
   useEffect(() => {
@@ -58,17 +59,20 @@ export function useDashboardData(activeCompanyId: number | null): DashboardData 
 
     let cancelled = false;
 
-    // Kartlar birbirini beklemez: biri yavaşsa ya da yetkisizse
-    // diğerleri anında görünür.
-    void endpoints.customers
-      .list(api, { per_page: 1 })
-      .then((page) => !cancelled && setCustomerCount(toPanel(page.meta.total)))
-      .catch((error: unknown) => !cancelled && setCustomerCount(toFailedPanel(error)));
-
-    void endpoints.members
-      .list(api, { per_page: 1 })
-      .then((page) => !cancelled && setMemberCount(toPanel(page.meta.total)))
-      .catch((error: unknown) => !cancelled && setMemberCount(toFailedPanel(error)));
+    /*
+     * BUGÜNÜN İŞLERİ — `/tasks/today`, `?date=` DEĞİL.
+     *
+     * İstemci kendi "bugün"ünü hesaplayıp göndermez: saat dilimi
+     * şirketinkinden farklı bir kullanıcı yanlış günün işlerini görürdü.
+     * Gün sınırı şirketin saat diliminde, sunucuda belirlenir.
+     *
+     * per_page GÖNDERİLMEZ: backend'in varsayılanı (15) yeterli. Ana
+     * ekran bir görev yönetim ekranı değil; günün ilk sayfası gösterilir.
+     */
+    void endpoints.tasks
+      .today(api)
+      .then((page) => !cancelled && setTodayTasks(toPanel(page.data)))
+      .catch((error: unknown) => !cancelled && setTodayTasks(toFailedPanel(error)));
 
     void endpoints.auditLogs
       .list(api, { per_page: 5 })
@@ -80,5 +84,5 @@ export function useDashboardData(activeCompanyId: number | null): DashboardData 
     };
   }, [activeCompanyId]);
 
-  return { customerCount, memberCount, recentActivity };
+  return { todayTasks, recentActivity };
 }

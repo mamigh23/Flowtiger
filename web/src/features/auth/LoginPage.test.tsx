@@ -3,6 +3,7 @@ import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { fixtures, jsonResponse, mockApi, renderApp } from '@/test/harness';
 import { tokenStorage } from '@/lib/auth/tokenStorage';
+import { FLOWTIGER_LOGO_SRC } from '@/features/brand/FlowTigerMark';
 
 /**
  * Giriş ekranı — ilk gerçek ürün ekranı.
@@ -25,6 +26,27 @@ describe('LoginPage', () => {
     expect(await screen.findByLabelText('E-posta')).toBeInTheDocument();
     expect(screen.getByLabelText('Parola')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Giriş yap' })).toBeEnabled();
+  });
+
+  /**
+   * REGRESYON — GİRİŞ EKRANINDA GERÇEK LOGO.
+   *
+   * Marka üç ekranda (perde, kenar çubuğu, giriş) AYNI bileşenden gelir.
+   * Eski "FT" yer tutucusu kaldırıldı; ikisinin bir arada bulunması iki
+   * farklı markanın yan yana durması olurdu.
+   */
+  it('formun üstünde gerçek FlowTiger logosunu gösterir', async () => {
+    vi.stubGlobal('fetch', mockApi({}));
+
+    renderApp('/login');
+
+    await screen.findByLabelText('E-posta');
+
+    const mark = screen.getByTestId('flowtiger-mark');
+
+    expect(mark.tagName).toBe('IMG');
+    expect(mark).toHaveAttribute('src', FLOWTIGER_LOGO_SRC);
+    expect(screen.queryByText('FT')).not.toBeInTheDocument();
   });
 
   it('parola alanı varsayılan olarak gizli, düğmeyle görünür olur', async () => {

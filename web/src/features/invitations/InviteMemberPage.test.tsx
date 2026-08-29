@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { screen, waitFor } from '@testing-library/react';
+import { screen, waitFor, waitForElementToBeRemoved } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { bodyOf, fixtures, jsonResponse, mockApi, renderApp } from '@/test/harness';
 
@@ -239,7 +239,16 @@ describe('InviteMemberPage', () => {
     const posts = fetchMock.mock.calls.filter(([, init]) => init?.method === 'POST');
     expect(posts).toHaveLength(1);
 
+    /**
+     * ASKIDAKİ İSTEK ÇÖZÜLÜR VE SONUCU BEKLENİR.
+     *
+     * Aynı desen: yanıt geldiğinde bileşen `setSubmitting(false)` yapar ve
+     * davet listesine gezinir. Beklenmezse ikisi de `act()` dışında kalır.
+     * Düğmenin kaybolmasını beklemek bunu gerçek bir iddiaya çevirir.
+     */
     deferred.resolve?.(jsonResponse(201, { data: fixtures.invitation() }));
+
+    await waitForElementToBeRemoved(submit);
   });
 
   it('vazgeçme bağlantısı listeye döner', async () => {

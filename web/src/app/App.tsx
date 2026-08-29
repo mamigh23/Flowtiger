@@ -20,6 +20,14 @@ import { FinanceEntryListPage } from '@/features/finance/FinanceEntryListPage';
 import { FinanceEntryCreatePage } from '@/features/finance/FinanceEntryCreatePage';
 import { FinanceEntryDetailPage } from '@/features/finance/FinanceEntryDetailPage';
 import { FinanceEntryEditPage } from '@/features/finance/FinanceEntryEditPage';
+import { PaymentListPage } from '@/features/payments/PaymentListPage';
+import { PaymentCreatePage } from '@/features/payments/PaymentCreatePage';
+import { PaymentDetailPage } from '@/features/payments/PaymentDetailPage';
+import { PaymentEditPage } from '@/features/payments/PaymentEditPage';
+import { TaskListPage } from '@/features/tasks/TaskListPage';
+import { TaskCreatePage } from '@/features/tasks/TaskCreatePage';
+import { TaskDetailPage } from '@/features/tasks/TaskDetailPage';
+import { TaskEditPage } from '@/features/tasks/TaskEditPage';
 import { ProfilePage } from '@/features/profile/ProfilePage';
 
 /**
@@ -135,6 +143,42 @@ export function App() {
             />
             <Route path="finance/:id" element={<FinanceEntryDetailPage />} />
             <Route path="finance/:id/edit" element={<FinanceEntryEditPage />} />
+
+            {/*
+              Ödemeler (AŞAMA 7 / WEB-03) — tahsilat ve dağıtım.
+
+              SİLME ROTASI YOK: backend'de DELETE ucu yok, ödeme iptal
+              edilir ve dağıtımları yerinde kalır.
+
+              Dağıtımların AYRI ROTASI DA YOK: ödemenin gövdesiyle
+              birlikte yazılırlar. Ayrı bir uç olsaydı "toplam dağıtım
+              ödemeyi aşamaz" kuralı iki isteğe yayılır ve arada geçersiz
+              bir ara durum oluşurdu.
+            */}
+            <Route path="payments" element={<PaymentListPage />} />
+            <Route path="payments/new" element={<PaymentCreatePage />} />
+            <Route path="payments/:id" element={<PaymentDetailPage />} />
+            <Route path="payments/:id/edit" element={<PaymentEditPage />} />
+
+            {/*
+              Görevler (Task/Planning v1) — günün işleri.
+
+              SİLME VARDIR, finans ve ödemeden farklı olarak. Finans kaydı
+              iptal edilir çünkü silinmesi geçmiş bir dönemin toplamını
+              sessizce değiştirir; yapılacak bir işin böyle bir özelliği
+              yok.
+
+              ŞİRKET GENELİ: owner-only değil. Rol kapısı istemcide de
+              yok — karar backend'de (playbook §3.1).
+
+              Sıra: "new" yolu ":id"den ÖNCE gelmeli, yoksa
+              /app/tasks/new isteği id'si "new" olan bir görev araması
+              olarak yorumlanabilirdi.
+            */}
+            <Route path="tasks" element={<TaskListPage />} />
+            <Route path="tasks/new" element={<TaskCreatePage />} />
+            <Route path="tasks/:id" element={<TaskDetailPage />} />
+            <Route path="tasks/:id/edit" element={<TaskEditPage />} />
 
             {/*
               Profil ve güvenlik (AŞAMA 6 — A).

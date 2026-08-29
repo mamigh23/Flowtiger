@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor, waitForElementToBeRemoved } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { bodyOf, fixtures, jsonResponse, mockApi, renderApp } from '@/test/harness';
 
@@ -709,7 +709,25 @@ describe('FinanceEntryCreatePage', () => {
     const posts = fetchMock.mock.calls.filter(([, init]) => init?.method === 'POST');
     expect(posts).toHaveLength(1);
 
+    /**
+     * ASKIDAKİ İSTEK ÇÖZÜLÜR VE SONUCU BEKLENİR.
+     *
+     * Yalnızca `resolve` çağırıp testi bitirmek, isteği başlattığı hâlde
+     * bitişini beklemeyen bir test bırakıyordu. Yanıt geldiğinde bileşen
+     * iki şey yapar: `setSubmitting(false)` ve kayda gezinme. İkisi de
+     * testin son iddiasından SONRA, `act()` dışında çalışıyordu — React'in
+     * "not wrapped in act(...)" uyarısı tam olarak bunu haber veriyordu.
+     *
+     * Uyarı bir gürültü değil, doğru bir teşhisti: test, ölçtüğü akışın
+     * yarısını beklemeden bitiyordu.
+     *
+     * Düğmenin kaybolmasını beklemek bunu GERÇEK BİR İDDİAYA çevirir:
+     * gönderim tamamlanınca form kapanır ve kullanıcı kayda gider.
+     * İddia gevşemedi, arttı.
+     */
     deferred.resolve?.(jsonResponse(201, { data: created }));
+
+    await waitForElementToBeRemoved(submit);
   });
 
   // ------------------------------------------------------------- sonuçlar
