@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { api, endpoints } from '@/lib/api';
-import { Button, Card, ErrorState, LoadingScreen } from '@/components/ui';
+import { Button, Card, ConfirmPanel, ErrorState, LoadingScreen } from '@/components/ui';
 import { formatFinancialDate } from '@/features/finance/financeLabels';
 import { formatDateTime } from '@/features/audit/auditLabels';
 import type { Task } from '@/types/api';
@@ -35,6 +35,9 @@ export function TaskDetailPage() {
 
   const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
+
+  /** Onay paneli kapanınca odağın döneceği düğme. */
+  const deleteTriggerRef = useRef<HTMLElement | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -140,7 +143,13 @@ export function TaskDetailPage() {
             Düzenle
           </Link>
 
-          <Button variant="ghost" onClick={() => setConfirming(true)}>
+          <Button
+            variant="ghost"
+            onClick={(event) => {
+              deleteTriggerRef.current = event.currentTarget;
+              setConfirming(true);
+            }}
+          >
             Sil
           </Button>
         </div>
@@ -188,7 +197,11 @@ export function TaskDetailPage() {
 
       {confirming && (
         <Card>
-          <div data-testid="task-delete-confirm">
+          <ConfirmPanel
+            data-testid="task-delete-confirm"
+            triggerRef={deleteTriggerRef}
+            onCancel={() => setConfirming(false)}
+          >
             {/*
               Onay metni görevin BAŞLIĞINI taşır: yanlış kaydı silmek geri
               alınamaz — görevin void gibi bir geri dönüşü yok.
@@ -198,14 +211,16 @@ export function TaskDetailPage() {
             </p>
 
             <div className="ft-form__actions">
-              <Button onClick={() => void handleDelete()} loading={busy}>
-                Evet, sil
-              </Button>
+              {/* Vazgeç ilk kontrol: yıkıcı aksiyon Tab sırasında ilk
+                  durak olmamalı. */}
               <Button variant="ghost" onClick={() => setConfirming(false)}>
                 Vazgeç
               </Button>
+              <Button onClick={() => void handleDelete()} loading={busy}>
+                Evet, sil
+              </Button>
             </div>
-          </div>
+          </ConfirmPanel>
         </Card>
       )}
 

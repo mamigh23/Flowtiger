@@ -702,6 +702,21 @@ a {
 
 /* ============================================================= tablo */
 
+/*
+ * Dar viewportlarda tablo, KARTI DIŞARI TAŞIRMASIN diye yatayda
+ * kaydırılabilir bir sarmalayıcıya alınır. Kolonlar GİZLENMEZ ve
+ * masaüstünde hiçbir görsel değişiklik olmaz: tablo zaten sarmalayıcıdan
+ * dar ise `overflow-x: auto` hiçbir şey yapmaz, kaydırma çubuğu yalnızca
+ * gerektiğinde belirir.
+ *
+ * Mobilde kart tasarımına dönüştürme BİLİNÇLİ OLARAK yapılmadı: bu,
+ * küçük ekran için ayrı bir görünüm inşa etmek demektir ve kapsam dışıdır
+ * (YAGNI) — tek kolon sarmalayıcı, kolon kaybı olmadan aynı sonucu verir.
+ */
+.ft-table-scroll {
+  overflow-x: auto;
+}
+
 .ft-table {
   width: 100%;
   border-collapse: collapse;

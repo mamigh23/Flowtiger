@@ -82,31 +82,34 @@ export function MemberListPage() {
       {!loading && !error && result && result.data.length > 0 && (
         <>
           <Card>
-            <table className="ft-table" aria-label="Ekip üyeleri">
-              <thead>
-                <tr>
-                  <th scope="col">Ad</th>
-                  <th scope="col">E-posta</th>
-                  <th scope="col">Rol</th>
-                </tr>
-              </thead>
-              <tbody>
-                {result.data.map((member) => (
-                  <tr key={member.id}>
-                    <td>
-                      <Link to={`/app/team/${member.id}`}>{member.name}</Link>
-                    </td>
-                    <td>{member.email}</td>
-                    <td>
-                      {/* Yalnızca görüntüleme; bu değerle yetki kararı verilmez. */}
-                      <Badge tone={member.role === 'owner' ? 'accent' : 'neutral'}>
-                        {roleLabel(member.role)}
-                      </Badge>
-                    </td>
+            {/* Dar viewportta yalnızca tablo yatayda kayar; kart sayfayı taşırmaz. */}
+            <div className="ft-table-scroll">
+              <table className="ft-table" aria-label="Ekip üyeleri">
+                <thead>
+                  <tr>
+                    <th scope="col">Ad</th>
+                    <th scope="col">E-posta</th>
+                    <th scope="col">Rol</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {result.data.map((member) => (
+                    <tr key={member.id}>
+                      <td>
+                        <Link to={`/app/team/${member.id}`}>{member.name}</Link>
+                      </td>
+                      <td>{member.email}</td>
+                      <td>
+                        {/* Yalnızca görüntüleme; bu değerle yetki kararı verilmez. */}
+                        <Badge tone={member.role === 'owner' ? 'accent' : 'neutral'}>
+                          {roleLabel(member.role)}
+                        </Badge>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </Card>
 
           {result.meta.last_page > 1 && (

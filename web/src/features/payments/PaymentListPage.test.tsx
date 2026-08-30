@@ -127,6 +127,28 @@ describe('PaymentListPage', () => {
   });
 
   /**
+   * REGRESYON — DAR VIEWPORTTA TABLO KARTI TAŞIRMAMALI.
+   *
+   * Bu tablo da (Finans'la birlikte) 8 kolonludur. Sarmalayıcı kolon
+   * gizlemez, yalnızca gerektiğinde `overflow-x` sağlar.
+   */
+  it('tablo yatay kaydırma sarmalayıcısı içindedir', async () => {
+    vi.stubGlobal(
+      'fetch',
+      mockApi({
+        ...ownerSession,
+        '/payments': () => jsonResponse(200, fixtures.paginated(threePayments, 3)),
+      }),
+    );
+
+    renderApp('/app/payments', { token: 'gecerli-token' });
+
+    const table = await screen.findByRole('table', { name: 'Ödemeler' });
+
+    expect(table.parentElement).toHaveClass('ft-table-scroll');
+  });
+
+  /**
    * REGRESYON — TUTARLAR TÜRKÇE PARA BİÇİMİNDE.
    *
    * 120000 kuruş "1.200,00 TL"dir. Ham kuruş gösterilseydi kullanıcı

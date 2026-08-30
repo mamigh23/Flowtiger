@@ -59,6 +59,28 @@ describe('MemberListPage', () => {
     expect(within(table).getByText('Elif Şahin')).toBeInTheDocument();
   });
 
+  /**
+   * REGRESYON — DAR VIEWPORTTA TABLO KARTI TAŞIRMAMALI.
+   *
+   * Tablo, yatay kaydırmayı üstlenen bir sarmalayıcının içinde olmalı;
+   * sarmalayıcı kolon gizlemez, yalnızca gerektiğinde `overflow-x` sağlar.
+   */
+  it('tablo yatay kaydırma sarmalayıcısı içindedir', async () => {
+    vi.stubGlobal(
+      'fetch',
+      mockApi({
+        ...ownerSession,
+        '/members': () => jsonResponse(200, fixtures.paginated(threeMembers, 3)),
+      }),
+    );
+
+    renderApp('/app/team', { token: 'gecerli-token' });
+
+    const table = await screen.findByRole('table', { name: 'Ekip üyeleri' });
+
+    expect(table.parentElement).toHaveClass('ft-table-scroll');
+  });
+
   it('rolleri Türkçe etiketle gösterir', async () => {
     vi.stubGlobal(
       'fetch',

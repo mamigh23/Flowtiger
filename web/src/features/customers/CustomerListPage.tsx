@@ -82,28 +82,31 @@ export function CustomerListPage() {
       {!loading && !error && result && result.data.length > 0 && (
         <>
           <Card>
-            <table className="ft-table" aria-label="Müşteriler">
-              <thead>
-                <tr>
-                  <th scope="col">No</th>
-                  <th scope="col">Ad</th>
-                  <th scope="col">Telefon</th>
-                </tr>
-              </thead>
-              <tbody>
-                {result.data.map((customer) => (
-                  <tr key={customer.id}>
-                    {/* Kullanıcıya gösterilen numara customer_no'dur, id değil. */}
-                    <td>{customer.customer_no}</td>
-                    <td>
-                      <Link to={`/app/customers/${customer.id}`}>{customer.name}</Link>
-                    </td>
-                    {/* Telefon yoksa uydurma değer değil, boşluk işareti. */}
-                    <td>{customer.phone ?? '—'}</td>
+            {/* Dar viewportta yalnızca tablo yatayda kayar; kart sayfayı taşırmaz. */}
+            <div className="ft-table-scroll">
+              <table className="ft-table" aria-label="Müşteriler">
+                <thead>
+                  <tr>
+                    <th scope="col">No</th>
+                    <th scope="col">Ad</th>
+                    <th scope="col">Telefon</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {result.data.map((customer) => (
+                    <tr key={customer.id}>
+                      {/* Kullanıcıya gösterilen numara customer_no'dur, id değil. */}
+                      <td>{customer.customer_no}</td>
+                      <td>
+                        <Link to={`/app/customers/${customer.id}`}>{customer.name}</Link>
+                      </td>
+                      {/* Telefon yoksa uydurma değer değil, boşluk işareti. */}
+                      <td>{customer.phone ?? '—'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </Card>
 
           {result.meta.last_page > 1 && (

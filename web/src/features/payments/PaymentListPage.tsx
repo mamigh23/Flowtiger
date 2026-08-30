@@ -94,54 +94,57 @@ export function PaymentListPage() {
       {!loading && !error && result && result.data.length > 0 && (
         <>
           <Card>
-            <table className="ft-table" aria-label="Ödemeler">
-              <thead>
-                <tr>
-                  <th scope="col">Tarih</th>
-                  <th scope="col">Müşteri</th>
-                  <th scope="col">Yöntem</th>
-                  <th scope="col">Tutar</th>
-                  <th scope="col">Dağıtılan</th>
-                  <th scope="col">Kalan</th>
-                  <th scope="col">Durum</th>
-                  <th scope="col">İşlemler</th>
-                </tr>
-              </thead>
-              <tbody>
-                {result.data.map((payment) => {
-                  const voided = payment.voided_at !== null;
+            {/* Dar viewportta yalnızca tablo yatayda kayar; kart sayfayı taşırmaz. */}
+            <div className="ft-table-scroll">
+              <table className="ft-table" aria-label="Ödemeler">
+                <thead>
+                  <tr>
+                    <th scope="col">Tarih</th>
+                    <th scope="col">Müşteri</th>
+                    <th scope="col">Yöntem</th>
+                    <th scope="col">Tutar</th>
+                    <th scope="col">Dağıtılan</th>
+                    <th scope="col">Kalan</th>
+                    <th scope="col">Durum</th>
+                    <th scope="col">İşlemler</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {result.data.map((payment) => {
+                    const voided = payment.voided_at !== null;
 
-                  return (
-                    <tr
-                      key={payment.id}
-                      data-testid={`payment-row-${payment.id}`}
-                      // Yalnızca stil kancası; kullanıcıya görünen işaret
-                      // Durum sütunundaki rozettir.
-                      data-voided={voided ? 'true' : 'false'}
-                    >
-                      {/* Takvim günü Date'e çevrilmeden biçimlenir. */}
-                      <td>{formatFinancialDate(payment.financial_date) ?? '—'}</td>
-                      <td data-testid="payment-row-customer">{payment.customer?.name ?? '—'}</td>
-                      {/* `method` serbest metindir; ne gelirse yazılır. */}
-                      <td data-testid="payment-row-method">{payment.method ?? '—'}</td>
-                      <td data-testid="payment-row-amount">
-                        {formatMoney(payment.amount_minor, payment.currency)}
-                      </td>
-                      <td data-testid="payment-row-allocated">
-                        {formatMoney(payment.allocated_minor, payment.currency)}
-                      </td>
-                      <td data-testid="payment-row-remaining">
-                        {formatMoney(payment.remaining_minor, payment.currency)}
-                      </td>
-                      <td>{voided ? <Badge>İptal edildi</Badge> : 'Aktif'}</td>
-                      <td>
-                        <Link to={`/app/payments/${payment.id}`}>Ayrıntılar</Link>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                    return (
+                      <tr
+                        key={payment.id}
+                        data-testid={`payment-row-${payment.id}`}
+                        // Yalnızca stil kancası; kullanıcıya görünen işaret
+                        // Durum sütunundaki rozettir.
+                        data-voided={voided ? 'true' : 'false'}
+                      >
+                        {/* Takvim günü Date'e çevrilmeden biçimlenir. */}
+                        <td>{formatFinancialDate(payment.financial_date) ?? '—'}</td>
+                        <td data-testid="payment-row-customer">{payment.customer?.name ?? '—'}</td>
+                        {/* `method` serbest metindir; ne gelirse yazılır. */}
+                        <td data-testid="payment-row-method">{payment.method ?? '—'}</td>
+                        <td data-testid="payment-row-amount">
+                          {formatMoney(payment.amount_minor, payment.currency)}
+                        </td>
+                        <td data-testid="payment-row-allocated">
+                          {formatMoney(payment.allocated_minor, payment.currency)}
+                        </td>
+                        <td data-testid="payment-row-remaining">
+                          {formatMoney(payment.remaining_minor, payment.currency)}
+                        </td>
+                        <td>{voided ? <Badge>İptal edildi</Badge> : 'Aktif'}</td>
+                        <td>
+                          <Link to={`/app/payments/${payment.id}`}>Ayrıntılar</Link>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </Card>
 
           {result.meta.last_page > 1 && (

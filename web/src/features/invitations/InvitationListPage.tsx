@@ -40,6 +40,12 @@ export function InvitationListPage() {
     setLoading(true);
     setError(null);
 
+    // İptale özgü hata da burada temizlenir: bir önceki sayfada başarısız
+    // olan iptal denemesinin banner'ı, kullanıcı sayfa değiştirdiğinde
+    // (ya da "Tekrar dene" ile listeyi yeniden yüklediğinde) ekranda asılı
+    // KALMAMALI — artık üzerinde durduğu satır bile görünürde değil.
+    setRevokeError(null);
+
     try {
       setResult(await endpoints.invitations.list(api, { page: requestedPage }));
     } catch (caught) {

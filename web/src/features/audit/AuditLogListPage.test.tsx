@@ -111,6 +111,30 @@ describe('AuditLogListPage', () => {
   });
 
   /**
+   * REGRESYON — DAR VIEWPORTTA TABLO KARTI TAŞIRMAMALI.
+   *
+   * Bu tablo, genişleyip ayrıntı satırı gösteren tek tablodur
+   * (`Fragment` + koşullu ikinci `<tr>`). Sarmalayıcı bu örüntüyü
+   * bozmamalı: kolonlar gizlenmez, yalnızca gerektiğinde `overflow-x`
+   * sağlanır.
+   */
+  it('tablo yatay kaydırma sarmalayıcısı içindedir', async () => {
+    vi.stubGlobal(
+      'fetch',
+      mockApi({
+        ...ownerSession,
+        '/audit-logs': () => jsonResponse(200, fixtures.paginated(threeLogs, 3)),
+      }),
+    );
+
+    renderApp('/app/audit', { token: 'gecerli-token' });
+
+    const table = await screen.findByRole('table', { name: 'Denetim kayıtları' });
+
+    expect(table.parentElement).toHaveClass('ft-table-scroll');
+  });
+
+  /**
    * Tanınmayan kod UYDURULMAZ. Backend enum'a yeni bir değer eklediğinde
    * kullanıcı ham kodu görür; boş bir hücre ya da yanlış bir metin
    * görmez.

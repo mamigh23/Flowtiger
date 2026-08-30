@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { api, endpoints } from '@/lib/api';
-import { Button, Card, ErrorState, Input, LoadingScreen } from '@/components/ui';
+import { Button, Card, ConfirmPanel, ErrorState, Input, LoadingScreen } from '@/components/ui';
 import { formatMoney } from '@/lib/finance/money';
 import { formatFinancialDate } from '@/features/finance/financeLabels';
 /*
@@ -44,6 +44,9 @@ export function PaymentDetailPage() {
   const [confirming, setConfirming] = useState(false);
   const [reason, setReason] = useState('');
   const [voiding, setVoiding] = useState(false);
+
+  /** Onay paneli kapanınca odağın döneceği düğme. */
+  const voidTriggerRef = useRef<HTMLElement | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -119,7 +122,13 @@ export function PaymentDetailPage() {
             <Link className="ft-button ft-button--secondary" to={`/app/payments/${payment.id}/edit`}>
               Düzenle
             </Link>
-            <Button variant="ghost" onClick={() => setConfirming(true)}>
+            <Button
+              variant="ghost"
+              onClick={(event) => {
+                voidTriggerRef.current = event.currentTarget;
+                setConfirming(true);
+              }}
+            >
               İptal et
             </Button>
           </div>
@@ -223,9 +232,19 @@ export function PaymentDetailPage() {
         <Card>
           {/*
             testid ONAY KUTUSUNUN TAMAMINDA: metin, sebep alanı ve iki
-            düğme aynı kabuğun içinde.
+            düğme aynı kabuğun içinde. Yalnızca metne konsaydı "onay
+            kutusundaki Vazgeç" gibi bir sorgu, sayfadaki başka bir
+            Vazgeç'i yakalayabilirdi.
+
+            ConfirmPanel açılışta odağı bu kabuğa taşır (tabIndex=-1).
+            "İptal sebebi" alanına ZORLA odak verilmez — panel bir bütün
+            olarak duyurulur, tek bir alan öne çıkarılmaz.
           */}
-          <div data-testid="payment-void-confirm">
+          <ConfirmPanel
+            data-testid="payment-void-confirm"
+            triggerRef={voidTriggerRef}
+            onCancel={() => setConfirming(false)}
+          >
             <p>
               Bu ödeme iptal edilecek ve geri alınamayacak. Kayıt silinmez; dağıtımları da yerinde
               kalır.
@@ -240,14 +259,16 @@ export function PaymentDetailPage() {
             />
 
             <div className="ft-form__actions">
-              <Button onClick={() => void handleVoid()} loading={voiding}>
-                Evet, iptal et
-              </Button>
+              {/* Vazgeç ilk kontrol: yıkıcı aksiyon Tab sırasında ilk
+                  durak olmamalı. */}
               <Button variant="ghost" onClick={() => setConfirming(false)}>
                 Vazgeç
               </Button>
+              <Button onClick={() => void handleVoid()} loading={voiding}>
+                Evet, iptal et
+              </Button>
             </div>
-          </div>
+          </ConfirmPanel>
         </Card>
       )}
 

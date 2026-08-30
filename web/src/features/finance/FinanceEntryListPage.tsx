@@ -98,48 +98,55 @@ export function FinanceEntryListPage() {
       {!loading && !error && result && result.data.length > 0 && (
         <>
           <Card>
-            <table className="ft-table" aria-label="Finans kayıtları">
-              <thead>
-                <tr>
-                  <th scope="col">Tarih</th>
-                  <th scope="col">Yön</th>
-                  <th scope="col">Müşteri</th>
-                  <th scope="col">Kategori</th>
-                  <th scope="col">Brüt tutar</th>
-                  <th scope="col">KDV</th>
-                  <th scope="col">Durum</th>
-                  <th scope="col">İşlemler</th>
-                </tr>
-              </thead>
-              <tbody>
-                {result.data.map((entry) => {
-                  const voided = entry.voided_at !== null;
+            {/*
+              Dar viewportta yalnızca tablo yatayda kayar; kart sayfayı
+              taşırmaz. Bu tablo 8 kolonludur (uygulamadaki en geniş
+              tablo) — sarmalayıcı en çok burada işe yarar.
+            */}
+            <div className="ft-table-scroll">
+              <table className="ft-table" aria-label="Finans kayıtları">
+                <thead>
+                  <tr>
+                    <th scope="col">Tarih</th>
+                    <th scope="col">Yön</th>
+                    <th scope="col">Müşteri</th>
+                    <th scope="col">Kategori</th>
+                    <th scope="col">Brüt tutar</th>
+                    <th scope="col">KDV</th>
+                    <th scope="col">Durum</th>
+                    <th scope="col">İşlemler</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {result.data.map((entry) => {
+                    const voided = entry.voided_at !== null;
 
-                  return (
-                    <tr
-                      key={entry.id}
-                      data-testid={`finance-row-${entry.id}`}
-                      // Yalnızca stil kancası; kullanıcıya görünen işaret
-                      // Durum sütunundaki rozettir.
-                      data-voided={voided ? 'true' : 'false'}
-                    >
-                      {/* Takvim günü Date'e çevrilmeden biçimlenir. */}
-                      <td>{formatFinancialDate(entry.financial_date) ?? '—'}</td>
-                      <td>{directionLabel(entry.direction)}</td>
-                      <td data-testid="finance-row-customer">{entry.customer?.name ?? '—'}</td>
-                      <td>{entry.category ?? '—'}</td>
-                      {/* Ham kuruş asla gösterilmez. */}
-                      <td>{formatMoney(entry.gross_minor, entry.currency)}</td>
-                      <td>{vatRateLabel(entry.vat_rate_bp)}</td>
-                      <td>{voided ? <Badge>İptal edildi</Badge> : 'Aktif'}</td>
-                      <td>
-                        <Link to={`/app/finance/${entry.id}`}>Ayrıntılar</Link>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                    return (
+                      <tr
+                        key={entry.id}
+                        data-testid={`finance-row-${entry.id}`}
+                        // Yalnızca stil kancası; kullanıcıya görünen işaret
+                        // Durum sütunundaki rozettir.
+                        data-voided={voided ? 'true' : 'false'}
+                      >
+                        {/* Takvim günü Date'e çevrilmeden biçimlenir. */}
+                        <td>{formatFinancialDate(entry.financial_date) ?? '—'}</td>
+                        <td>{directionLabel(entry.direction)}</td>
+                        <td data-testid="finance-row-customer">{entry.customer?.name ?? '—'}</td>
+                        <td>{entry.category ?? '—'}</td>
+                        {/* Ham kuruş asla gösterilmez. */}
+                        <td>{formatMoney(entry.gross_minor, entry.currency)}</td>
+                        <td>{vatRateLabel(entry.vat_rate_bp)}</td>
+                        <td>{voided ? <Badge>İptal edildi</Badge> : 'Aktif'}</td>
+                        <td>
+                          <Link to={`/app/finance/${entry.id}`}>Ayrıntılar</Link>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </Card>
 
           {result.meta.last_page > 1 && (

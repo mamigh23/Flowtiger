@@ -515,6 +515,105 @@ describe('PaymentDetailPage', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('Bu ödeme zaten iptal edilmiş.');
   });
 
+  // --------------------------------------------------------- A11Y: odak
+
+  it('onay açıldığında odak onay paneline geçer', async () => {
+    vi.stubGlobal(
+      'fetch',
+      mockApi({ ...ownerSession, '/payments/800': () => jsonResponse(200, { data: payment }) }),
+    );
+
+    const user = userEvent.setup();
+    renderApp('/app/payments/800', { token: 'gecerli-token' });
+
+    await screen.findByTestId('payment-status');
+    await user.click(screen.getByRole('button', { name: 'İptal et' }));
+
+    // Panel gerçek bir modal değil; açılışta odağın panelin kendisine
+    // (tabIndex=-1) taşındığını doğruluyoruz — "İptal sebebi" alanına
+    // zorla odak VERİLMEZ.
+    const panel = await screen.findByTestId('payment-void-confirm');
+    expect(panel).toHaveFocus();
+  });
+
+  it('Escape onayı kapatır ve odağı İptal et düğmesine döndürür', async () => {
+    vi.stubGlobal(
+      'fetch',
+      mockApi({ ...ownerSession, '/payments/800': () => jsonResponse(200, { data: payment }) }),
+    );
+
+    const user = userEvent.setup();
+    renderApp('/app/payments/800', { token: 'gecerli-token' });
+
+    await screen.findByTestId('payment-status');
+    const voidButton = screen.getByRole('button', { name: 'İptal et' });
+    await user.click(voidButton);
+    await screen.findByTestId('payment-void-confirm');
+
+    await user.keyboard('{Escape}');
+
+    await waitFor(() =>
+      expect(screen.queryByTestId('payment-void-confirm')).not.toBeInTheDocument(),
+    );
+    expect(voidButton).toHaveFocus();
+  });
+
+  it('Vazgeç sonrası odak İptal et düğmesine döner', async () => {
+    vi.stubGlobal(
+      'fetch',
+      mockApi({ ...ownerSession, '/payments/800': () => jsonResponse(200, { data: payment }) }),
+    );
+
+    const user = userEvent.setup();
+    renderApp('/app/payments/800', { token: 'gecerli-token' });
+
+    await screen.findByTestId('payment-status');
+    const voidButton = screen.getByRole('button', { name: 'İptal et' });
+    await user.click(voidButton);
+
+    const confirm = await screen.findByTestId('payment-void-confirm');
+    await user.click(within(confirm).getByRole('button', { name: 'Vazgeç' }));
+
+    await waitFor(() =>
+      expect(screen.queryByTestId('payment-void-confirm')).not.toBeInTheDocument(),
+    );
+    expect(voidButton).toHaveFocus();
+  });
+
+  /**
+   * "Zaten iptal edilmiş" 422'si, kullanıcının sayfada kaldığı hata
+   * senaryosudur — kayıt yeniden okunmaz, yönlendirme olmaz. Odağın
+   * kaybolmaması burada özellikle önemlidir.
+   */
+  it('zaten iptal edilmiş 422 dönerse panel kapanır ve odak İptal et düğmesine döner', async () => {
+    vi.stubGlobal(
+      'fetch',
+      mockApi({
+        ...ownerSession,
+        '/payments/800/void': () =>
+          jsonResponse(422, {
+            message: 'Bu ödeme zaten iptal edilmiş.',
+            code: 'payment_already_voided',
+          }),
+        '/payments/800': () => jsonResponse(200, { data: payment }),
+      }),
+    );
+
+    const user = userEvent.setup();
+    renderApp('/app/payments/800', { token: 'gecerli-token' });
+
+    await screen.findByTestId('payment-status');
+    const voidButton = screen.getByRole('button', { name: 'İptal et' });
+    await user.click(voidButton);
+    await user.click(await screen.findByRole('button', { name: 'Evet, iptal et' }));
+
+    await screen.findByRole('alert');
+    await waitFor(() =>
+      expect(screen.queryByTestId('payment-void-confirm')).not.toBeInTheDocument(),
+    );
+    expect(voidButton).toHaveFocus();
+  });
+
   // ---------------------------------------------------------------- hata
 
   it('bilinmeyen ödemede bulunamadı der, yetki hatası demez', async () => {

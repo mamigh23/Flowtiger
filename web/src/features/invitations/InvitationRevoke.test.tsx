@@ -290,6 +290,118 @@ describe('Davet iptali', () => {
     expect(alert.textContent).not.toContain('This action is unauthorized.');
   });
 
+  // --------------------------------------------------- revokeError durumu
+
+  /**
+   * REGRESYON — SAYFA DEĞİŞİNCE ESKİ İPTAL HATASI ASILI KALMAMALI.
+   *
+   * `revokeError` yalnızca yeni bir iptal denemesinin BAŞINDA
+   * temizleniyordu; sayfalama `load()`'u tetiklese de bu state'e hiç
+   * dokunmuyordu. Sonuç: 1. sayfada başarısız bir iptalden sonra 2.
+   * sayfaya geçen kullanıcı, artık ekranda hiç görünmeyen bir satırla
+   * ilgili eski hata banner'ını görmeye devam ediyordu.
+   */
+  it('sayfa değişince eski iptal hatası ekrandan kalkar', async () => {
+    const secondPage = [
+      fixtures.invitation({ id: 61, email: 'z***@flowtiger.test', status: 'pending' }),
+    ];
+
+    vi.stubGlobal(
+      'fetch',
+      mockApi({
+        ...session,
+        '/invitations/41': (init) =>
+          (init as RequestInit | undefined)?.method === 'DELETE'
+            ? jsonResponse(410, {
+                message: 'Davet artık kullanılamaz (durum: revoked).',
+                code: 'invitation_revoked',
+              })
+            : jsonResponse(404, { message: 'Beklenmeyen çağrı' }),
+        '/invitations': (_init, url) => {
+          const page = new URL(url ?? '', 'http://test.local').searchParams.get('page') ?? '1';
+
+          return jsonResponse(
+            200,
+            fixtures.paginated(page === '2' ? secondPage : [pending], 45, {
+              currentPage: Number(page),
+              lastPage: 3,
+              perPage: 20,
+            }),
+          );
+        },
+      }),
+    );
+
+    const user = userEvent.setup();
+    renderApp('/app/invitations', { token: 'gecerli-token' });
+
+    const table = await screen.findByRole('table', { name: 'Davetler' });
+    await user.click(within(table).getByRole('button', { name: 'İptal et' }));
+    await user.click(await screen.findByRole('button', { name: 'Evet, iptal et' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Bu davet zaten iptal edilmiş.');
+
+    const pager = await screen.findByRole('navigation', { name: 'Sayfalama' });
+    await user.click(within(pager).getByRole('button', { name: 'Sonraki' }));
+
+    await screen.findByText('z***@flowtiger.test');
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
+  /**
+   * REGRESYON — BAŞARILI İPTALDEN SONRA ESKİ HATA KALMAMALI.
+   *
+   * Bu zaten `handleRevoke`'un başında temizleniyordu; sayfalama
+   * düzeltmesiyle aynı davranışı BOZMADIĞINI doğrulamak için ayrıca
+   * sınanır.
+   */
+  it('başarısız denemeden sonra başarılı iptal eski hatayı temizler', async () => {
+    let revoked = false;
+
+    vi.stubGlobal(
+      'fetch',
+      mockApi({
+        ...session,
+        '/invitations/41': (init) => {
+          if ((init as RequestInit | undefined)?.method !== 'DELETE') {
+            return jsonResponse(404, { message: 'Beklenmeyen çağrı' });
+          }
+
+          if (!revoked) {
+            revoked = true;
+            return jsonResponse(410, {
+              message: 'Davet artık kullanılamaz (durum: revoked).',
+              code: 'invitation_revoked',
+            });
+          }
+
+          return new Response(null, { status: 204 });
+        },
+        '/invitations': () =>
+          jsonResponse(
+            200,
+            fixtures.paginated([revoked ? { ...pending, status: 'revoked' } : pending], 1),
+          ),
+      }),
+    );
+
+    const user = userEvent.setup();
+    renderApp('/app/invitations', { token: 'gecerli-token' });
+
+    const table = await screen.findByRole('table', { name: 'Davetler' });
+    await user.click(within(table).getByRole('button', { name: 'İptal et' }));
+    await user.click(await screen.findByRole('button', { name: 'Evet, iptal et' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Bu davet zaten iptal edilmiş.');
+
+    // Aynı satır için tekrar denenir; bu kez backend 204 döner.
+    await user.click(screen.getByRole('button', { name: 'İptal et' }));
+    await user.click(await screen.findByRole('button', { name: 'Evet, iptal et' }));
+
+    await waitFor(() => expect(screen.queryByRole('alert')).not.toBeInTheDocument());
+    expect(await screen.findByText('İptal edildi')).toBeInTheDocument();
+  });
+
   // --------------------------------------------------------- A11Y: odak
 
   it('onay açıldığında odak onay paneline geçer', async () => {

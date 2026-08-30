@@ -54,6 +54,28 @@ describe('CustomerListPage', () => {
     expect(within(list).getByText('05551112233')).toBeInTheDocument();
   });
 
+  /**
+   * REGRESYON — DAR VIEWPORTTA TABLO KARTI TAŞIRMAMALI.
+   *
+   * Tablo, yatay kaydırmayı üstlenen bir sarmalayıcının içinde olmalı;
+   * sarmalayıcı kolon gizlemez, yalnızca gerektiğinde `overflow-x` sağlar.
+   */
+  it('tablo yatay kaydırma sarmalayıcısı içindedir', async () => {
+    vi.stubGlobal(
+      'fetch',
+      mockApi({
+        ...session,
+        '/customers': () => jsonResponse(200, fixtures.paginated(threeCustomers, 3)),
+      }),
+    );
+
+    renderApp('/app/customers', { token: 'gecerli-token' });
+
+    const list = await screen.findByRole('table', { name: 'Müşteriler' });
+
+    expect(list.parentElement).toHaveClass('ft-table-scroll');
+  });
+
   it('telefonu olmayan müşteride uydurma değer göstermez', async () => {
     vi.stubGlobal(
       'fetch',

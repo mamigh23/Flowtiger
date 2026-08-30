@@ -140,6 +140,31 @@ describe('FinanceEntryListPage', () => {
     expect(table.textContent).not.toContain('2026-08-20');
   });
 
+  /**
+   * REGRESYON — DAR VIEWPORTTA TABLO KARTI TAŞIRMAMALI.
+   *
+   * Bu ekran uygulamadaki EN GENİŞ tabloyu taşır (8 kolon). Tablo, yatay
+   * kaydırmayı üstlenen bir sarmalayıcının içinde olmalı; böylece dar bir
+   * ekranda taşan tek şey tablo olur, sayfanın tamamı değil. Sarmalayıcı
+   * kolon GİZLEMEZ — tablo aynı şekilde `table` rolüyle erişilebilir
+   * kalır, yalnızca DOM'da bir üst düzeyde `overflow-x` sağlar.
+   */
+  it('geniş tablo yatay kaydırma sarmalayıcısı içindedir', async () => {
+    vi.stubGlobal(
+      'fetch',
+      mockApi({
+        ...ownerSession,
+        '/finance-entries': () => jsonResponse(200, fixtures.paginated(threeEntries, 3)),
+      }),
+    );
+
+    renderApp('/app/finance', { token: 'gecerli-token' });
+
+    const table = await screen.findByRole('table', { name: 'Finans kayıtları' });
+
+    expect(table.parentElement).toHaveClass('ft-table-scroll');
+  });
+
   /** in → Gelir, out → Gider. Ham sözleşme değeri kullanıcıya gösterilmez. */
   it('yön değerlerini Türkçe gösterir', async () => {
     vi.stubGlobal(
