@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useState } from 'react';
+import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api, endpoints } from '@/lib/api';
-import { Badge, Button, Card, ErrorState, Skeleton } from '@/components/ui';
+import { Badge, Button, Card, ConfirmPanel, ErrorState, Skeleton } from '@/components/ui';
 import { roleLabel } from '@/lib/company/roleLabel';
 import type { Invitation, Paginated } from '@/types/api';
 import { invitationErrorMessage, invitationStatusLabel } from './invitationErrors';
@@ -32,6 +32,9 @@ export function InvitationListPage() {
   const [revokeError, setRevokeError] = useState<string | null>(null);
   const [confirming, setConfirming] = useState<Invitation | null>(null);
   const [revoking, setRevoking] = useState(false);
+
+  /** Onay paneli kapanınca odağın döneceği düğme. */
+  const revokeTriggerRef = useRef<HTMLElement | null>(null);
 
   const load = useCallback(async (requestedPage: number) => {
     setLoading(true);
@@ -81,22 +84,6 @@ export function InvitationListPage() {
 
       {revokeError !== null && <ErrorState message={revokeError} />}
 
-      {confirming !== null && (
-        <Card>
-          <p data-testid="revoke-confirm">
-            <strong>{confirming.email}</strong> adresine gönderilen davet iptal edilecek.
-          </p>
-          <div className="ft-form__actions">
-            <Button onClick={() => void handleRevoke(confirming)} loading={revoking}>
-              Evet, iptal et
-            </Button>
-            <Button variant="ghost" onClick={() => setConfirming(null)}>
-              Vazgeç
-            </Button>
-          </div>
-        </Card>
-      )}
-
       {loading && (
         <Card>
           <div data-testid="invitations-loading" className="ft-stack">
@@ -141,25 +128,75 @@ export function InvitationListPage() {
                 </tr>
               </thead>
               <tbody>
-                {result.data.map((invitation) => (
-                  <tr key={invitation.id}>
-                    {/* Maskeli adres olduğu gibi gösterilir. */}
-                    <td>{invitation.email}</td>
-                    <td>{roleLabel(invitation.role)}</td>
-                    <td>
-                      <Badge tone={invitation.status === 'pending' ? 'accent' : 'neutral'}>
-                        {invitationStatusLabel(invitation.status)}
-                      </Badge>
-                    </td>
-                    <td>{invitation.expires_at ?? '—'}</td>
-                    <td>
-                      {/* Durum istemcide değerlendirilmez; 410 backend'in cevabı. */}
-                      <Button variant="ghost" onClick={() => setConfirming(invitation)}>
-                        İptal et
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
+                {result.data.map((invitation) => {
+                  // Onay AYNI SATIRIN hemen ardına, ikinci bir <tr> olarak
+                  // eklenir (AuditLogListPage'deki ayrıntı satırıyla aynı
+                  // örüntü). Tek bir <Card> içinde tablodan ÖNCE render
+                  // etmek, ileri Tab akışının tetikleyici düğmeden onay
+                  // düğmelerine hiç ulaşmamasına yol açıyordu — DOM'da
+                  // geriden geliyordu. Burada onay, tam olarak tetikleyici
+                  // satırdan sonra geldiği için doğal ileri Tab sırasına
+                  // girer.
+                  const open = confirming?.id === invitation.id;
+
+                  return (
+                    <Fragment key={invitation.id}>
+                      <tr>
+                        {/* Maskeli adres olduğu gibi gösterilir. */}
+                        <td>{invitation.email}</td>
+                        <td>{roleLabel(invitation.role)}</td>
+                        <td>
+                          <Badge tone={invitation.status === 'pending' ? 'accent' : 'neutral'}>
+                            {invitationStatusLabel(invitation.status)}
+                          </Badge>
+                        </td>
+                        <td>{invitation.expires_at ?? '—'}</td>
+                        <td>
+                          {/* Durum istemcide değerlendirilmez; 410 backend'in cevabı. */}
+                          <Button
+                            variant="ghost"
+                            onClick={(event) => {
+                              revokeTriggerRef.current = event.currentTarget;
+                              setConfirming(invitation);
+                            }}
+                          >
+                            İptal et
+                          </Button>
+                        </td>
+                      </tr>
+
+                      {open && (
+                        <tr>
+                          <td colSpan={5}>
+                            <ConfirmPanel
+                              data-testid="revoke-confirm-panel"
+                              triggerRef={revokeTriggerRef}
+                              onCancel={() => setConfirming(null)}
+                            >
+                              <p data-testid="revoke-confirm">
+                                <strong>{invitation.email}</strong> adresine gönderilen davet
+                                iptal edilecek.
+                              </p>
+                              <div className="ft-form__actions">
+                                {/* Vazgeç ilk kontrol: yıkıcı aksiyon Tab
+                                    sırasında ilk durak olmamalı. */}
+                                <Button variant="ghost" onClick={() => setConfirming(null)}>
+                                  Vazgeç
+                                </Button>
+                                <Button
+                                  onClick={() => void handleRevoke(invitation)}
+                                  loading={revoking}
+                                >
+                                  Evet, iptal et
+                                </Button>
+                              </div>
+                            </ConfirmPanel>
+                          </td>
+                        </tr>
+                      )}
+                    </Fragment>
+                  );
+                })}
               </tbody>
             </table>
           </Card>

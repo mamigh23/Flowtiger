@@ -211,4 +211,101 @@ describe('CustomerDetailPage', () => {
     expect(alert).toHaveTextContent('Müşteri bulunamadı.');
     expect(alert.textContent).not.toMatch(/yetki/i);
   });
+
+  // --------------------------------------------------------- A11Y: odak
+
+  it('onay açıldığında odak onay paneline geçer', async () => {
+    vi.stubGlobal(
+      'fetch',
+      mockApi({
+        ...session,
+        '/customers/501': () => jsonResponse(200, { data: customer }),
+      }),
+    );
+
+    const user = userEvent.setup();
+    renderApp('/app/customers/501', { token: 'gecerli-token' });
+
+    await screen.findByRole('heading', { name: 'Zeynep Kaya' });
+    await user.click(screen.getByRole('button', { name: 'Sil' }));
+
+    // Panel gerçek bir modal değil (tabIndex=-1 taşıyan sıradan bir
+    // div); açılışta odağın bu kabuğa taşındığını doğruluyoruz.
+    const confirmText = await screen.findByTestId('delete-confirm');
+    expect(confirmText.closest('[tabindex="-1"]')).toBe(document.activeElement);
+  });
+
+  it('Escape onayı kapatır ve odağı Sil düğmesine döndürür', async () => {
+    vi.stubGlobal(
+      'fetch',
+      mockApi({
+        ...session,
+        '/customers/501': () => jsonResponse(200, { data: customer }),
+      }),
+    );
+
+    const user = userEvent.setup();
+    renderApp('/app/customers/501', { token: 'gecerli-token' });
+
+    await screen.findByRole('heading', { name: 'Zeynep Kaya' });
+    const deleteButton = screen.getByRole('button', { name: 'Sil' });
+    await user.click(deleteButton);
+    await screen.findByTestId('delete-confirm');
+
+    await user.keyboard('{Escape}');
+
+    await waitFor(() => expect(screen.queryByTestId('delete-confirm')).not.toBeInTheDocument());
+    expect(deleteButton).toHaveFocus();
+  });
+
+  it('Vazgeç sonrası odak Sil düğmesine döner', async () => {
+    vi.stubGlobal(
+      'fetch',
+      mockApi({
+        ...session,
+        '/customers/501': () => jsonResponse(200, { data: customer }),
+      }),
+    );
+
+    const user = userEvent.setup();
+    renderApp('/app/customers/501', { token: 'gecerli-token' });
+
+    await screen.findByRole('heading', { name: 'Zeynep Kaya' });
+    const deleteButton = screen.getByRole('button', { name: 'Sil' });
+    await user.click(deleteButton);
+    await user.click(await screen.findByRole('button', { name: 'Vazgeç' }));
+
+    await waitFor(() => expect(screen.queryByTestId('delete-confirm')).not.toBeInTheDocument());
+    expect(deleteButton).toHaveFocus();
+  });
+
+  /**
+   * Hata sonrası kapanma en çok atlanan senaryodur: kullanıcı sayfadan
+   * ayrılmaz (navigate() çağrılmaz), bu yüzden odağın kaybolmaması
+   * özellikle burada önemlidir.
+   */
+  it('silme 404 dönerse panel kapanır ve odak Sil düğmesine döner', async () => {
+    vi.stubGlobal(
+      'fetch',
+      mockApi({
+        ...session,
+        '/customers/501': (init) =>
+          init?.method === 'DELETE'
+            ? jsonResponse(404, { message: 'Kayıt bulunamadı.' })
+            : jsonResponse(200, { data: customer }),
+      }),
+    );
+
+    const user = userEvent.setup();
+    renderApp('/app/customers/501', { token: 'gecerli-token' });
+
+    await screen.findByRole('heading', { name: 'Zeynep Kaya' });
+    const deleteButton = screen.getByRole('button', { name: 'Sil' });
+    await user.click(deleteButton);
+    await user.click(await screen.findByRole('button', { name: 'Evet, sil' }));
+
+    await screen.findByRole('alert');
+    await waitFor(() => expect(screen.queryByTestId('delete-confirm')).not.toBeInTheDocument());
+    expect(deleteButton).toHaveFocus();
+  });
 });

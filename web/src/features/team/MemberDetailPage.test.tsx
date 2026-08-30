@@ -298,4 +298,101 @@ describe('MemberDetailPage', () => {
     expect(alert).toHaveTextContent('Kendinizi ekipten çıkaramazsınız.');
     expect(alert.textContent).not.toContain('This action is unauthorized.');
   });
+
+  // --------------------------------------------------------- A11Y: odak
+
+  it('onay açıldığında odak onay paneline geçer', async () => {
+    vi.stubGlobal(
+      'fetch',
+      mockApi({
+        ...session,
+        '/members/22': () => jsonResponse(200, { data: member }),
+      }),
+    );
+
+    const user = userEvent.setup();
+    renderApp('/app/team/22', { token: 'gecerli-token' });
+
+    await screen.findByRole('heading', { name: 'Mert Demir' });
+    await user.click(screen.getByRole('button', { name: 'Ekipten çıkar' }));
+
+    const confirmText = await screen.findByTestId('remove-confirm');
+    expect(confirmText.closest('[tabindex="-1"]')).toBe(document.activeElement);
+  });
+
+  it('Escape onayı kapatır ve odağı Ekipten çıkar düğmesine döndürür', async () => {
+    vi.stubGlobal(
+      'fetch',
+      mockApi({
+        ...session,
+        '/members/22': () => jsonResponse(200, { data: member }),
+      }),
+    );
+
+    const user = userEvent.setup();
+    renderApp('/app/team/22', { token: 'gecerli-token' });
+
+    await screen.findByRole('heading', { name: 'Mert Demir' });
+    const removeButton = screen.getByRole('button', { name: 'Ekipten çıkar' });
+    await user.click(removeButton);
+    await screen.findByTestId('remove-confirm');
+
+    await user.keyboard('{Escape}');
+
+    await waitFor(() => expect(screen.queryByTestId('remove-confirm')).not.toBeInTheDocument());
+    expect(removeButton).toHaveFocus();
+  });
+
+  it('Vazgeç sonrası odak Ekipten çıkar düğmesine döner', async () => {
+    vi.stubGlobal(
+      'fetch',
+      mockApi({
+        ...session,
+        '/members/22': () => jsonResponse(200, { data: member }),
+      }),
+    );
+
+    const user = userEvent.setup();
+    renderApp('/app/team/22', { token: 'gecerli-token' });
+
+    await screen.findByRole('heading', { name: 'Mert Demir' });
+    const removeButton = screen.getByRole('button', { name: 'Ekipten çıkar' });
+    await user.click(removeButton);
+    await user.click(await screen.findByRole('button', { name: 'Vazgeç' }));
+
+    await waitFor(() => expect(screen.queryByTestId('remove-confirm')).not.toBeInTheDocument());
+    expect(removeButton).toHaveFocus();
+  });
+
+  /**
+   * Kendini çıkarma 403'ü, kullanıcının sayfada kaldığı hata
+   * senaryosudur (navigate() çağrılmaz) — odağın kaybolmaması burada
+   * özellikle önemlidir.
+   */
+  it('kendini çıkarma 403 dönerse panel kapanır ve odak Ekipten çıkar düğmesine döner', async () => {
+    const self = fixtures.member({ id: 21, name: 'Ada Lovelace', role: 'owner' });
+
+    vi.stubGlobal(
+      'fetch',
+      mockApi({
+        ...session,
+        '/members/21': (init) =>
+          (init as RequestInit | undefined)?.method === 'DELETE'
+            ? jsonResponse(403, { message: 'This action is unauthorized.' })
+            : jsonResponse(200, { data: self }),
+      }),
+    );
+
+    const user = userEvent.setup();
+    renderApp('/app/team/21', { token: 'gecerli-token' });
+
+    await screen.findByRole('heading', { name: 'Ada Lovelace' });
+    const removeButton = screen.getByRole('button', { name: 'Ekipten çıkar' });
+    await user.click(removeButton);
+    await user.click(await screen.findByRole('button', { name: 'Evet, çıkar' }));
+
+    await screen.findByRole('alert');
+    await waitFor(() => expect(screen.queryByTestId('remove-confirm')).not.toBeInTheDocument());
+    expect(removeButton).toHaveFocus();
+  });
 });

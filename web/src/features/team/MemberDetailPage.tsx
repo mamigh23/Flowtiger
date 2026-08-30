@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { api, endpoints } from '@/lib/api';
-import { Badge, Button, Card, ErrorState, LoadingScreen } from '@/components/ui';
+import { Badge, Button, Card, ConfirmPanel, ErrorState, LoadingScreen } from '@/components/ui';
 import { roleLabel } from '@/lib/company/roleLabel';
 import type { Member, Role } from '@/types/api';
 import { memberErrorMessage, removeErrorMessage } from './memberErrors';
@@ -34,6 +34,9 @@ export function MemberDetailPage() {
   const [confirming, setConfirming] = useState(false);
   const [removing, setRemoving] = useState(false);
   const [changingRole, setChangingRole] = useState(false);
+
+  /** Onay paneli kapanınca odağın döneceği düğme. */
+  const removeTriggerRef = useRef<HTMLElement | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -110,7 +113,13 @@ export function MemberDetailPage() {
           <Link className="ft-button ft-button--secondary" to={`/app/team/${member.id}/edit`}>
             Düzenle
           </Link>
-          <Button variant="ghost" onClick={() => setConfirming(true)}>
+          <Button
+            variant="ghost"
+            onClick={(event) => {
+              removeTriggerRef.current = event.currentTarget;
+              setConfirming(true);
+            }}
+          >
             Ekipten çıkar
           </Button>
         </div>
@@ -165,18 +174,26 @@ export function MemberDetailPage() {
 
       {confirming && (
         <Card>
-          <p data-testid="remove-confirm">
-            <strong>{member.name}</strong> ekipten çıkarılacak. Şirket verilerine erişimi
-            sona erer.
-          </p>
-          <div className="ft-form__actions">
-            <Button onClick={() => void handleRemove()} loading={removing}>
-              Evet, çıkar
-            </Button>
-            <Button variant="ghost" onClick={() => setConfirming(false)}>
-              Vazgeç
-            </Button>
-          </div>
+          <ConfirmPanel
+            data-testid="remove-confirm-panel"
+            triggerRef={removeTriggerRef}
+            onCancel={() => setConfirming(false)}
+          >
+            <p data-testid="remove-confirm">
+              <strong>{member.name}</strong> ekipten çıkarılacak. Şirket verilerine erişimi
+              sona erer.
+            </p>
+            <div className="ft-form__actions">
+              {/* Vazgeç ilk kontrol: yıkıcı aksiyon Tab sırasında ilk
+                  durak olmamalı. */}
+              <Button variant="ghost" onClick={() => setConfirming(false)}>
+                Vazgeç
+              </Button>
+              <Button onClick={() => void handleRemove()} loading={removing}>
+                Evet, çıkar
+              </Button>
+            </div>
+          </ConfirmPanel>
         </Card>
       )}
     </div>

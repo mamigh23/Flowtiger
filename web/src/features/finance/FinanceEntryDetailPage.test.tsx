@@ -469,6 +469,105 @@ describe('FinanceEntryDetailPage', () => {
     );
   });
 
+  // --------------------------------------------------------- A11Y: odak
+
+  it('onay açıldığında odak onay paneline geçer', async () => {
+    vi.stubGlobal(
+      'fetch',
+      mockApi({ ...ownerSession, '/finance-entries/900': () => jsonResponse(200, { data: entry }) }),
+    );
+
+    const user = userEvent.setup();
+    renderApp('/app/finance/900', { token: 'gecerli-token' });
+
+    await screen.findByTestId('finance-status');
+    await user.click(screen.getByRole('button', { name: 'İptal et' }));
+
+    // Panel gerçek bir modal değil; açılışta odağın panelin kendisine
+    // (tabIndex=-1) taşındığını doğruluyoruz — "İptal sebebi" alanına
+    // zorla odak VERİLMEZ.
+    const panel = await screen.findByTestId('finance-void-confirm');
+    expect(panel).toHaveFocus();
+  });
+
+  it('Escape onayı kapatır ve odağı İptal et düğmesine döndürür', async () => {
+    vi.stubGlobal(
+      'fetch',
+      mockApi({ ...ownerSession, '/finance-entries/900': () => jsonResponse(200, { data: entry }) }),
+    );
+
+    const user = userEvent.setup();
+    renderApp('/app/finance/900', { token: 'gecerli-token' });
+
+    await screen.findByTestId('finance-status');
+    const voidButton = screen.getByRole('button', { name: 'İptal et' });
+    await user.click(voidButton);
+    await screen.findByTestId('finance-void-confirm');
+
+    await user.keyboard('{Escape}');
+
+    await waitFor(() =>
+      expect(screen.queryByTestId('finance-void-confirm')).not.toBeInTheDocument(),
+    );
+    expect(voidButton).toHaveFocus();
+  });
+
+  it('Vazgeç sonrası odak İptal et düğmesine döner', async () => {
+    vi.stubGlobal(
+      'fetch',
+      mockApi({ ...ownerSession, '/finance-entries/900': () => jsonResponse(200, { data: entry }) }),
+    );
+
+    const user = userEvent.setup();
+    renderApp('/app/finance/900', { token: 'gecerli-token' });
+
+    await screen.findByTestId('finance-status');
+    const voidButton = screen.getByRole('button', { name: 'İptal et' });
+    await user.click(voidButton);
+
+    const confirm = await screen.findByTestId('finance-void-confirm');
+    await user.click(within(confirm).getByRole('button', { name: 'Vazgeç' }));
+
+    await waitFor(() =>
+      expect(screen.queryByTestId('finance-void-confirm')).not.toBeInTheDocument(),
+    );
+    expect(voidButton).toHaveFocus();
+  });
+
+  /**
+   * "Zaten iptal edilmiş" 422'si, kullanıcının sayfada kaldığı hata
+   * senaryosudur — kayıt yeniden okunmaz, yönlendirme olmaz. Odağın
+   * kaybolmaması burada özellikle önemlidir.
+   */
+  it('zaten iptal edilmiş 422 dönerse panel kapanır ve odak İptal et düğmesine döner', async () => {
+    vi.stubGlobal(
+      'fetch',
+      mockApi({
+        ...ownerSession,
+        '/finance-entries/900/void': () =>
+          jsonResponse(422, {
+            message: 'Bu finans kaydı zaten iptal edilmiş.',
+            code: 'finance_entry_already_voided',
+          }),
+        '/finance-entries/900': () => jsonResponse(200, { data: entry }),
+      }),
+    );
+
+    const user = userEvent.setup();
+    renderApp('/app/finance/900', { token: 'gecerli-token' });
+
+    await screen.findByTestId('finance-status');
+    const voidButton = screen.getByRole('button', { name: 'İptal et' });
+    await user.click(voidButton);
+    await user.click(await screen.findByRole('button', { name: 'Evet, iptal et' }));
+
+    await screen.findByRole('alert');
+    await waitFor(() =>
+      expect(screen.queryByTestId('finance-void-confirm')).not.toBeInTheDocument(),
+    );
+    expect(voidButton).toHaveFocus();
+  });
+
   // ---------------------------------------------------------------- hata
 
   it('bilinmeyen kayıtta bulunamadı der, yetki hatası demez', async () => {

@@ -1,11 +1,14 @@
 import type {
   ButtonHTMLAttributes,
+  HTMLAttributes,
   InputHTMLAttributes,
+  KeyboardEvent,
+  MutableRefObject,
   ReactNode,
   SelectHTMLAttributes,
   TextareaHTMLAttributes,
 } from 'react';
-import { useId, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 
 /**
  * Foundation bileşenleri.
@@ -199,6 +202,75 @@ export function Textarea({ label, error, id, ...rest }: TextareaProps) {
 
 export function Card({ children, className }: { children: ReactNode; className?: string }) {
   return <div className={`ft-card${className ? ` ${className}` : ''}`}>{children}</div>;
+}
+
+type ConfirmPanelProps = HTMLAttributes<HTMLDivElement> & {
+  /** Onayı açan denetime referans; panel kapanınca odak buraya döner. */
+  triggerRef: MutableRefObject<HTMLElement | null>;
+  /** Escape'in de çağırdığı kapatma yolu; "Vazgeç" ile AYNI fonksiyon olmalı. */
+  onCancel: () => void;
+};
+
+/**
+ * Silme/iptal onaylarında kullanılan ortak, dar kapsamlı odak yönetimi.
+ *
+ * GERÇEK BİR MODAL DEĞİLDİR. Portal, backdrop, role="dialog"/aria-modal
+ * ya da bir focus trap KASITLI OLARAK yok: bu paneller sayfa akışının
+ * bir parçasıdır, üstüne binen bir katman değil. Görünüm çağıranın
+ * elindedir (genelde bir <Card> içine konur); burada yönetilen tek şey
+ * odaktır:
+ *
+ *   - açılışta odak panelin KENDİSİNE taşınır (tabIndex=-1) — belirli
+ *     bir alana (ör. bir metin kutusuna) zorla odaklanmak, o alanı
+ *     gereğinden önemli göstermek olurdu.
+ *   - Escape aynı kapatma yolunu (`onCancel`) çağırır; "Vazgeç"
+ *     düğmesiyle davranış farkı yoktur.
+ *   - panel DOM'dan kalktığında (Vazgeç, Escape ya da bir API hatası —
+ *     üçü de çağıranın state'ini kapatıp bu bileşeni unmount eder) odak
+ *     tetikleyici düğmeye geri döner.
+ *
+ * Başarılı bir işlemden sonra sayfa değişiyorsa ya da tetikleyicinin
+ * kendisi de aynı anda kalkıyorsa bu geri dönüş sessizce hiçbir şey
+ * yapmaz (dönük düğme artık DOM'da değildir) — o senaryo kasıtlı olarak
+ * bu bileşenin kapsamı dışıdır.
+ */
+export function ConfirmPanel({ triggerRef, onCancel, children, onKeyDown, ...rest }: ConfirmPanelProps) {
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  // Açılış: odak panelin kendisine taşınır. Çağıran bu bileşeni bir
+  // koşulla render ettiği için (`{confirming && <ConfirmPanel>...}`)
+  // her açılış yeni bir mount'tur — boş bağımlılık dizisi burada
+  // "yalnızca bir kez" değil, "her açılışta bir kez" anlamına gelir.
+  useEffect(() => {
+    panelRef.current?.focus();
+  }, []);
+
+  // Kapanış: panel unmount olduğunda odak tetikleyiciye döner. Aynı
+  // anda tetikleyici de kalkmışsa (ör. başarılı işlem sonrası
+  // yönlendirme) `focus()` çağrısı sessizce hiçbir şey yapmaz.
+  useEffect(
+    () => () => {
+      triggerRef.current?.focus();
+    },
+    [triggerRef],
+  );
+
+  function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    onKeyDown?.(event);
+
+    if (event.key === 'Escape') {
+      // Modal olmadığı için tarayıcı Escape'i kendiliğinden ele almaz;
+      // olayın bir üst forma sızması da istenmez.
+      event.stopPropagation();
+      onCancel();
+    }
+  }
+
+  return (
+    <div {...rest} ref={panelRef} tabIndex={-1} onKeyDown={handleKeyDown}>
+      {children}
+    </div>
+  );
 }
 
 export function Spinner() {

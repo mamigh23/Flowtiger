@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { api, endpoints } from '@/lib/api';
-import { Button, Card, ErrorState, LoadingScreen } from '@/components/ui';
+import { Button, Card, ConfirmPanel, ErrorState, LoadingScreen } from '@/components/ui';
 import type { Customer } from '@/types/api';
 import { customerErrorMessage } from './customerErrors';
 
@@ -22,6 +22,9 @@ export function CustomerDetailPage() {
 
   const [confirming, setConfirming] = useState(false);
   const [deleting, setDeleting] = useState(false);
+
+  /** Onay paneli kapanınca odağın döneceği düğme. */
+  const deleteTriggerRef = useRef<HTMLElement | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -83,7 +86,13 @@ export function CustomerDetailPage() {
           <Link className="ft-button ft-button--secondary" to={`/app/customers/${customer.id}/edit`}>
             Düzenle
           </Link>
-          <Button variant="ghost" onClick={() => setConfirming(true)}>
+          <Button
+            variant="ghost"
+            onClick={(event) => {
+              deleteTriggerRef.current = event.currentTarget;
+              setConfirming(true);
+            }}
+          >
             Sil
           </Button>
         </div>
@@ -110,19 +119,27 @@ export function CustomerDetailPage() {
 
       {confirming && (
         <Card>
-          {/* Onay metni müşterinin adını taşır: yanlış kaydı silmek geri
-              alınamaz, çünkü backend'de soft delete yok. */}
-          <p data-testid="delete-confirm">
-            <strong>{customer.name}</strong> kalıcı olarak silinecek. Bu işlem geri alınamaz.
-          </p>
-          <div className="ft-form__actions">
-            <Button onClick={() => void handleDelete()} loading={deleting}>
-              Evet, sil
-            </Button>
-            <Button variant="ghost" onClick={() => setConfirming(false)}>
-              Vazgeç
-            </Button>
-          </div>
+          <ConfirmPanel
+            data-testid="delete-confirm-panel"
+            triggerRef={deleteTriggerRef}
+            onCancel={() => setConfirming(false)}
+          >
+            {/* Onay metni müşterinin adını taşır: yanlış kaydı silmek geri
+                alınamaz, çünkü backend'de soft delete yok. */}
+            <p data-testid="delete-confirm">
+              <strong>{customer.name}</strong> kalıcı olarak silinecek. Bu işlem geri alınamaz.
+            </p>
+            <div className="ft-form__actions">
+              {/* Vazgeç ilk kontrol: yıkıcı aksiyon Tab sırasında ilk
+                  durak olmamalı. */}
+              <Button variant="ghost" onClick={() => setConfirming(false)}>
+                Vazgeç
+              </Button>
+              <Button onClick={() => void handleDelete()} loading={deleting}>
+                Evet, sil
+              </Button>
+            </div>
+          </ConfirmPanel>
         </Card>
       )}
     </div>

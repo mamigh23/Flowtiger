@@ -289,4 +289,143 @@ describe('Davet iptali', () => {
     expect(alert).toHaveTextContent('Bu bölüm yalnızca şirket sahiplerine açıktır.');
     expect(alert.textContent).not.toContain('This action is unauthorized.');
   });
+
+  // --------------------------------------------------------- A11Y: odak
+
+  it('onay açıldığında odak onay paneline geçer', async () => {
+    const fetchMock = mockApi({
+      ...session,
+      '/invitations': () => jsonResponse(200, fixtures.paginated([pending], 1)),
+    });
+
+    vi.stubGlobal('fetch', fetchMock);
+    const user = userEvent.setup();
+
+    renderApp('/app/invitations', { token: 'gecerli-token' });
+
+    const table = await screen.findByRole('table', { name: 'Davetler' });
+    await user.click(within(table).getByRole('button', { name: 'İptal et' }));
+
+    // Panel gerçek bir modal değil; açılışta odağın panelin kendisine
+    // (tabIndex=-1) taşındığını doğruluyoruz.
+    const confirmText = await screen.findByTestId('revoke-confirm');
+    expect(confirmText.closest('[tabindex="-1"]')).toBe(document.activeElement);
+  });
+
+  it('Escape onayı kapatır ve odağı İptal et düğmesine döndürür', async () => {
+    const fetchMock = mockApi({
+      ...session,
+      '/invitations': () => jsonResponse(200, fixtures.paginated([pending], 1)),
+    });
+
+    vi.stubGlobal('fetch', fetchMock);
+    const user = userEvent.setup();
+
+    renderApp('/app/invitations', { token: 'gecerli-token' });
+
+    const table = await screen.findByRole('table', { name: 'Davetler' });
+    const cancelButton = within(table).getByRole('button', { name: 'İptal et' });
+    await user.click(cancelButton);
+    await screen.findByTestId('revoke-confirm');
+
+    await user.keyboard('{Escape}');
+
+    await waitFor(() => expect(screen.queryByTestId('revoke-confirm')).not.toBeInTheDocument());
+    expect(cancelButton).toHaveFocus();
+  });
+
+  it('Vazgeç sonrası odak İptal et düğmesine döner', async () => {
+    const fetchMock = mockApi({
+      ...session,
+      '/invitations': () => jsonResponse(200, fixtures.paginated([pending], 1)),
+    });
+
+    vi.stubGlobal('fetch', fetchMock);
+    const user = userEvent.setup();
+
+    renderApp('/app/invitations', { token: 'gecerli-token' });
+
+    const table = await screen.findByRole('table', { name: 'Davetler' });
+    const cancelButton = within(table).getByRole('button', { name: 'İptal et' });
+    await user.click(cancelButton);
+    await user.click(await screen.findByRole('button', { name: 'Vazgeç' }));
+
+    await waitFor(() => expect(screen.queryByTestId('revoke-confirm')).not.toBeInTheDocument());
+    expect(cancelButton).toHaveFocus();
+  });
+
+  /**
+   * 410 (zaten geçersiz davet), kullanıcının sayfada kaldığı hata
+   * senaryosudur — liste yeniden yüklenmez. Odağın kaybolmaması burada
+   * özellikle önemlidir.
+   */
+  it('410 dönerse panel kapanır ve odak İptal et düğmesine döner', async () => {
+    vi.stubGlobal(
+      'fetch',
+      mockApi({
+        ...session,
+        '/invitations/41': (init) =>
+          (init as RequestInit | undefined)?.method === 'DELETE'
+            ? jsonResponse(410, {
+                message: 'Davet artık kullanılamaz (durum: revoked).',
+                code: 'invitation_revoked',
+              })
+            : jsonResponse(404, { message: 'Beklenmeyen çağrı' }),
+        '/invitations': () => jsonResponse(200, fixtures.paginated([pending], 1)),
+      }),
+    );
+
+    const user = userEvent.setup();
+    renderApp('/app/invitations', { token: 'gecerli-token' });
+
+    const table = await screen.findByRole('table', { name: 'Davetler' });
+    const cancelButton = within(table).getByRole('button', { name: 'İptal et' });
+    await user.click(cancelButton);
+    await user.click(await screen.findByRole('button', { name: 'Evet, iptal et' }));
+
+    await screen.findByRole('alert');
+    await waitFor(() => expect(screen.queryByTestId('revoke-confirm')).not.toBeInTheDocument());
+    expect(cancelButton).toHaveFocus();
+  });
+
+  /**
+   * Onay paneli daha önce tabloDAN ÖNCE, tek bir <Card> içinde render
+   * ediliyordu: ileri Tab akışı tetikleyici satırdan onay düğmelerine
+   * HİÇ ULAŞAMIYORDU (panel DOM'da geriden geliyordu, yalnızca Shift+Tab
+   * ile erişilebiliyordu). Artık onay, tetikleyici satırın hemen
+   * ardında ikinci bir <tr> olarak render ediliyor.
+   *
+   * Panelin kendisi tabIndex=-1 taşıdığı (sıralı klavye gezinmesine
+   * girmez) için buradaki odak, tetikleyiciden sonra doğrudan panelin
+   * İLK gerçek tabbable alt öğesine ("Vazgeç") geçmeli.
+   */
+  it('ileri Tab akışı tetikleyici satırdan onay düğmelerine ulaşır', async () => {
+    const fetchMock = mockApi({
+      ...session,
+      '/invitations': () => jsonResponse(200, fixtures.paginated([pending], 1)),
+    });
+
+    vi.stubGlobal('fetch', fetchMock);
+    const user = userEvent.setup();
+
+    renderApp('/app/invitations', { token: 'gecerli-token' });
+
+    const table = await screen.findByRole('table', { name: 'Davetler' });
+    const cancelButton = within(table).getByRole('button', { name: 'İptal et' });
+
+    await user.click(cancelButton);
+    await screen.findByTestId('revoke-confirm');
+
+    // Açılış odağı (panelin kendisi) devre dışı bırakılıp tetikleyiciye
+    // geri odaklanarak HAM ileri Tab sırası sınanır — bu, autofocus'a
+    // bağlı kalmadan DOM bitişikliğini doğrular.
+    cancelButton.focus();
+    expect(cancelButton).toHaveFocus();
+
+    await user.tab();
+    expect(screen.getByRole('button', { name: 'Vazgeç' })).toHaveFocus();
+
+    await user.tab();
+    expect(screen.getByRole('button', { name: 'Evet, iptal et' })).toHaveFocus();
+  });
 });

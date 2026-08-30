@@ -743,10 +743,10 @@ a {
 }
 
 /*
- * Denetim ekranının ayrıntı paneli (`<td colSpan={6}>`) kendi kaydından
- * çizgiyle ayrılmaz: ikisi tek bir kaydın parçası. Başka hiçbir tabloda
- * `colspan` kullanılmıyor, dolayısıyla bu seçici yalnızca o hücreyi
- * hedefler.
+ * Bir kaydın altına açılan panel (denetimde ayrıntı, davette iptal
+ * onayı) kendi kaydından çizgiyle ayrılmaz: ikisi tek bir kaydın
+ * parçasıdır. Bu iki ekran dışında `colspan` kullanan başka tablo yok,
+ * dolayısıyla bu seçici yalnızca o hücreleri hedefler.
  */
 .ft-table td[colspan] {
   border-top: 0;
