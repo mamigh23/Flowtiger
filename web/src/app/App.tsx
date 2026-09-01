@@ -15,6 +15,7 @@ import { MemberDetailPage } from '@/features/team/MemberDetailPage';
 import { MemberEditPage } from '@/features/team/MemberEditPage';
 import { InvitationListPage } from '@/features/invitations/InvitationListPage';
 import { InviteMemberPage } from '@/features/invitations/InviteMemberPage';
+import { AcceptInvitationPage } from '@/features/invitations/AcceptInvitationPage';
 import { AuditLogListPage } from '@/features/audit/AuditLogListPage';
 import { FinanceEntryListPage } from '@/features/finance/FinanceEntryListPage';
 import { FinanceEntryCreatePage } from '@/features/finance/FinanceEntryCreatePage';
@@ -34,12 +35,20 @@ import { ProfilePage } from '@/features/profile/ProfilePage';
  * Rota haritası.
  *
  *   /login                → herkese açık (girişliyse /app'e gider)
+ *   /invitations/accept   → herkese açık, kimlik durumundan BAĞIMSIZ
  *   /app/company-select   → kimlik gerekir, aktif şirket GEREKMEZ
  *   /app/*                → kimlik + aktif şirket gerekir
  *
  * company-select'in kabuğun DIŞINDA olması bilinçlidir: kullanıcı henüz
  * bir tenant seçmemişken kenar çubuğundaki tenant uçlarını göstermek,
  * tıklandığında 403 duvarına çarpan bir arayüz demek olurdu.
+ *
+ * /invitations/accept de kabuğun DIŞINDA VE `PublicOnlyRoute`/
+ * `ProtectedRoute`'un DIŞINDADIR — ikisi de tek bir kimlik durumunu
+ * varsayar, bu ekran ise İKİSİNİ DE desteklemek zorunda: hesabı olmayan
+ * bir davetli de gelebilir, giriş yapmış biri de. `POST
+ * /invitations/accept`'in kendisi de aynı sebeple `auth:sanctum`
+ * taşımaz (backend `$request->user('sanctum')` ile isteğe bağlı çözer).
  *
  * CompanyProvider, AuthProvider'ın İÇİNDE: şirket listesi ancak kimlik
  * doğrulandıktan sonra anlamlıdır ve oturum kapanınca temizlenmelidir.
@@ -57,6 +66,8 @@ export function App() {
               </PublicOnlyRoute>
             }
           />
+
+          <Route path="/invitations/accept" element={<AcceptInvitationPage />} />
 
           <Route
             path="/app/company-select"
@@ -103,11 +114,11 @@ export function App() {
             <Route path="team/:id/edit" element={<MemberEditPage />} />
 
             {/*
-              Davet ekranları (AŞAMA 4) — yalnızca owner tarafı.
+              Davet ekranları (AŞAMA 4) — owner tarafı (gönder/listele/iptal).
 
-              POST /invitations/accept BU KAPSAMIN DIŞINDA: kimlik
-              doğrulaması olmayan public bir rota, oturumlu/oturumsuz iki
-              ayrı form ve kendi rate-limit'i var. Ayrı bir faz.
+              Kabul tarafı (/invitations/accept) BURADA DEĞİL: kimlik
+              doğrulaması olmayan, kabuğun ve owner yetkisinin dışında
+              ayrı bir rota (yukarıda, /login'in yanında).
             */}
             <Route path="invitations" element={<InvitationListPage />} />
             <Route path="invitations/new" element={<InviteMemberPage />} />
