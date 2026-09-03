@@ -31,6 +31,14 @@ class CustomerApiTest extends TestCase
 
     private User $user;
 
+    /**
+     * P0-04 — Member Permission Hardening: Customer DELETE artık Owner'a
+     * özel. Diğer tüm testler `$this->user` (owner) üzerinden çalışmaya
+     * devam ediyor; bu alan yalnızca DELETE'in yetki tarafını ölçmek için
+     * eklendi.
+     */
+    private User $member;
+
     private Company $company;
 
     /** @var array<int, string> user id → plaintext token */
@@ -41,7 +49,9 @@ class CustomerApiTest extends TestCase
         parent::setUp();
 
         $this->user = User::factory()->create();
+        $this->member = User::factory()->create();
         $this->company = Company::factory()->withOwner($this->user)->create();
+        $this->company->users()->attach($this->member, ['role' => 'member']);
 
         // Fixture'lar company context YOKKEN kuruluyor: test, ölçtüğü
         // mekanizmayı kurarken kullanmamalı (Faz 1'deki yaklaşım).
@@ -50,6 +60,7 @@ class CustomerApiTest extends TestCase
         Customer::factory()->forCompany($this->company)->create(['name' => 'Cem']);
 
         $this->giveActiveCompany($this->user, $this->company);
+        $this->giveActiveCompany($this->member, $this->company);
     }
 
     /**
@@ -491,6 +502,50 @@ class CustomerApiTest extends TestCase
         $this->apiAs($this->user)
             ->deleteJson(self::URI.'/999999')
             ->assertNotFound();
+    }
+
+    /**
+     * P0-04 — Member Permission Hardening.
+     *
+     * Member şirketin TÜM operasyonel müşteri kayıtlarını görüntüleyebilir,
+     * oluşturabilir ve güncelleyebilir ama SİLEMEZ — ürün kararı budur.
+     * 403 doğrudur, 404 değil: kayıt gerçekten var ve Member gerçekten bu
+     * şirketin üyesi; eksik olan yalnızca yetki (§ tenant vs. authorization
+     * ayrımı, CustomerPolicy docblock'u).
+     */
+    public function test_a_member_cannot_destroy_a_customer(): void
+    {
+        $customer = $this->firstSeededCustomer();
+
+        $this->apiAs($this->member)
+            ->deleteJson($this->uriFor($customer))
+            ->assertForbidden();
+
+        $this->assertNotNull(
+            $this->rawCustomer($customer->getKey()),
+            'Member silme isteği reddedilmeliydi; müşteri veritabanında kalmalı.'
+        );
+    }
+
+    /**
+     * REGRESYON — Member'ın view/create/update yetkisi P0-04'ten
+     * ETKİLENMEDİ. Yalnızca delete() yeni bir üçüncü koşul (rol) kazandı;
+     * diğer üç eylem hâlâ yalnızca tenant üyeliği ister.
+     */
+    public function test_a_member_can_still_view_create_and_update_customers(): void
+    {
+        $customer = $this->firstSeededCustomer();
+
+        $this->apiAs($this->member)->getJson(self::URI)->assertOk();
+        $this->apiAs($this->member)->getJson($this->uriFor($customer))->assertOk();
+
+        $this->apiAs($this->member)
+            ->postJson(self::URI, ['name' => 'Member Musterisi'])
+            ->assertCreated();
+
+        $this->apiAs($this->member)
+            ->putJson($this->uriFor($customer), ['name' => 'Guncellenen Isim'])
+            ->assertOk();
     }
 
     // ===============================================================

@@ -15,11 +15,18 @@ use App\Services\MembershipService;
  *   2. Kayıt (varsa) o şirkete ait olmalı.
  *   3. Kullanıcının o şirketteki rolü görev yetkisi taşımalı.
  *
- * AMA OWNER-ONLY DEĞİL. Finans şirketin mali görünümüdür; görev listesi
- * operasyonel çalışmadır. Üye kendi gününü yönetemiyorsa ürün işe yaramaz.
- * Üçüncü koşul bugün her iki rol için de geçiyor — koşulun kendisi yine de
- * duruyor, çünkü rol sorusu Role'ün yetenek metotlarına sorulur,
- * `$role === Role::Owner` diye buraya yazılmaz (§3).
+ * AMA OWNER-ONLY DEĞİL — view/create/update/complete için. Finans şirketin
+ * mali görünümüdür; görev listesi operasyonel çalışmadır. Üye kendi gününü
+ * yönetemiyorsa ürün işe yaramaz. Üçüncü koşul bu dört eylem için her iki
+ * rolde de geçiyor — koşulun kendisi yine de duruyor, çünkü rol sorusu
+ * Role'ün yetenek metotlarına sorulur, `$role === Role::Owner` diye buraya
+ * yazılmaz (§3).
+ *
+ * DELETE İSTİSNADIR (P0-04 — Member Permission Hardening): silme geri
+ * alınamaz (görev void edilmez, silinir) ve `deletesTasks()` yeteneği
+ * yalnızca Owner'da true döner. Aynı üç-koşul iskeleti kullanılır, üçüncü
+ * koşulun sorduğu yetenek farklıdır — bu yüzden ayrı bir metot ya da yeni
+ * bir soyutlama eklenmedi.
  *
  * Başka TENANT'ın görevi buraya HİÇ ULAŞMAZ: route model binding sorgusu
  * CompanyScope'un altından geçer ve 404 olur. İkinci koşul yine de
@@ -57,7 +64,7 @@ class TaskPolicy
     public function delete(User $user, Task $task): bool
     {
         return $this->belongsToActiveCompany($task)
-            && $this->roleAllows($user, 'managesTasks');
+            && $this->roleAllows($user, 'deletesTasks');
     }
 
     /**

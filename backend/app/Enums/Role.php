@@ -93,6 +93,22 @@ enum Role: string
     }
 
     /**
+     * Bu rol müşteri kaydını SİLEBİLİR mi? (P0-04 — Member Permission Hardening)
+     *
+     * Görüntüleme/oluşturma/güncellemeden BİLİNÇLİ OLARAK AYRI bir metot:
+     * silme geri alınamaz (customers tablosunda soft delete yok), diğer
+     * üçü değiştirilebilir bir düzeltmedir. Member şirketin TÜM operasyonel
+     * müşteri kayıtlarını görüntüleyebilir/oluşturabilir/güncelleyebilir
+     * ama silemez — ürün kararı budur. viewsTasks()/managesTasks() ayrımıyla
+     * aynı gerekçe: iki soruyu tek metoda bağlamak bu ayrımı imkânsız
+     * kılardı.
+     */
+    public function deletesCustomers(): bool
+    {
+        return $this === self::Owner;
+    }
+
+    /**
      * Bu rol şirketin görevlerini GÖREBİLİR mi? (Task/Planning v1)
      *
      * FİNANSTAN FARKLI OLARAK HERKESE AÇIK. Finans kayıtları şirketin
@@ -120,6 +136,20 @@ enum Role: string
     public function managesTasks(): bool
     {
         return true;
+    }
+
+    /**
+     * Bu rol görev kaydını SİLEBİLİR mi? (P0-04 — Member Permission Hardening)
+     *
+     * managesTasks()'tan BİLİNÇLİ OLARAK AYRI: oluşturma/güncelleme/
+     * tamamlama şirketin tüm operasyonel görevleri için her iki role de
+     * açık kalırken, silme geri alınamaz bir kayıptır (görev void edilmez,
+     * silinir) ve Owner'a ayrılmıştır — ürün kararı budur. deletesCustomers()
+     * ile aynı gerekçe.
+     */
+    public function deletesTasks(): bool
+    {
+        return $this === self::Owner;
     }
 
     /**

@@ -560,6 +560,25 @@ class TaskApiTest extends TestCase
         $this->assertNull($this->rawTask($task->getKey()));
     }
 
+    /**
+     * P0-04 — Member Permission Hardening.
+     *
+     * Member şirketin TÜM operasyonel görevlerini görüntüleyebilir,
+     * oluşturabilir, güncelleyebilir ve tamamlayabilir ama SİLEMEZ — ürün
+     * kararı budur. 403 doğrudur, 404 değil: görev gerçekten var ve Member
+     * gerçekten bu şirketin üyesi; eksik olan yalnızca yetki.
+     */
+    public function test_a_member_cannot_delete_a_task(): void
+    {
+        $task = $this->makeTask();
+
+        $this->apiAs($this->member)
+            ->deleteJson(self::URI.'/'.$task->getKey())
+            ->assertForbidden();
+
+        $this->assertNotNull($this->rawTask($task->getKey()), 'Görev silinmemiş olmalı.');
+    }
+
     // =================================================================
     // YETKİ
     // =================================================================
