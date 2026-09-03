@@ -3,6 +3,7 @@ import { AuthProvider } from '@/lib/auth/AuthContext';
 import { CompanyProvider } from '@/lib/company/CompanyContext';
 import { ProtectedRoute, PublicOnlyRoute, RequireActiveCompany } from '@/routes/ProtectedRoute';
 import { LoginPage } from '@/features/auth/LoginPage';
+import { RegisterPage } from '@/features/auth/RegisterPage';
 import { CompanySelectPage } from '@/features/companies/CompanySelectPage';
 import { AppShell } from '@/features/shell/AppShell';
 import { DashboardPage } from '@/features/dashboard/DashboardPage';
@@ -63,6 +64,21 @@ export function App() {
             element={
               <PublicOnlyRoute>
                 <LoginPage />
+              </PublicOnlyRoute>
+            }
+          />
+
+          {/*
+            Self-servis kayıt (P0-03) — /login ile AYNI koruma:
+            PublicOnlyRoute, zaten girişli kullanıcıyı burada TUTMAZ.
+            Backend'in kendisi de register'ı public tutuyor (auth:sanctum
+            taşımaz) — istemci tarafı bunun yalnızca kullanışlılık yansımasıdır.
+          */}
+          <Route
+            path="/register"
+            element={
+              <PublicOnlyRoute>
+                <RegisterPage />
               </PublicOnlyRoute>
             }
           />

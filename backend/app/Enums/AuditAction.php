@@ -75,6 +75,17 @@ enum AuditAction: string
 
     case SessionsRevokedOthers = 'sessions.revoked_others';
 
+    /*
+     * Kayıt (P0-01 — self-servis onboarding).
+     *
+     * company.created, YENİ bir şirketin var olmaya başladığı tek andır.
+     * Owner üyeliği ve aktif şirket seçimi kendi mevcut olaylarıyla
+     * (member.created, company.selected) zaten ayrıca kaydedilir; burada
+     * yalnızca "bu şirket şu an doğdu" olgusu eklenir — companies.created_at
+     * bir çıkarım olurdu, bu ise kayıtlı bir olay.
+     */
+    case CompanyCreated = 'company.created';
+
     // Şirket bağlamı
     case CompanySelected = 'company.selected';
 

@@ -48,6 +48,23 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::prefix('auth')->name('api.v1.auth.')->group(function (): void {
+    /*
+    | SELF-SERVİS KAYIT (P0-01) — HERKESE AÇIK, auth:sanctum YOK.
+    |
+    | login ile aynı gerekçeyle throttle'lı: kimlik doğrulaması olmadan
+    | çalışan tek uçtur ve e-posta + IP anahtarlaması aynı desendir
+    | (register limiter, login/password-forgot/password-reset ile aynı
+    | emailThrottleKey() üzerinden çalışır).
+    |
+    | Bu uç YENİ bir User + YENİ bir Company + Owner üyeliği + aktif şirket
+    | yaratır — TEK istekte, TEK transaction'da (RegistrationService).
+    | login rotasından ÖNCE tanımlanması yalnızca okunabilirlik içindir,
+    | route çözümlemesini etkilemez (ikisi de sabit segment, çakışma yok).
+    */
+    Route::post('register', [AuthController::class, 'register'])
+        ->middleware('throttle:register')
+        ->name('register');
+
     // Kimlik doğrulamadan ÖNCEKİ tek uç. throttle, brute-force denemelerini
     // e-posta + IP bazında sınırlar (Laravel yerleşik; yeni bağımlılık yok).
     Route::post('login', [AuthController::class, 'login'])

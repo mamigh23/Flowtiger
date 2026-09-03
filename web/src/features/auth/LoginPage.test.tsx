@@ -193,6 +193,22 @@ describe('LoginPage', () => {
   });
 
   /**
+   * Login ↔ Register geçişi (P0-03). Diğer yön —
+   * RegisterPage.test.tsx'teki "Giriş yapın" testi.
+   */
+  it('"Kayıt olun" bağlantısı /register\'a götürür', async () => {
+    vi.stubGlobal('fetch', mockApi({}));
+    const user = userEvent.setup();
+
+    renderApp('/login');
+
+    await screen.findByLabelText('E-posta');
+    await user.click(screen.getByRole('link', { name: 'Kayıt olun' }));
+
+    expect(await screen.findByRole('button', { name: 'Kayıt ol' })).toBeInTheDocument();
+  });
+
+  /**
    * Çift gönderim koruması: yavaş bir ağda düğmeye iki kez basmak iki
    * login isteği üretmemeli — backend'in oran sınırını boşa harcar.
    */

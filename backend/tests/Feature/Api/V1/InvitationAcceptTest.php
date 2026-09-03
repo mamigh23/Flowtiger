@@ -553,6 +553,202 @@ class InvitationAcceptTest extends TestCase
     }
 
     // ===============================================================
+    // EŞZAMANLILIK (P0-02)
+    //
+    // PHPUnit gerçek paralel thread üretemez. Aşağıdaki testler gerçek
+    // eşzamanlılığı, "başka bir eşzamanlı istek bizden HEMEN ÖNCE aynı
+    // satırı GERÇEKTEN commit etti" durumunu simüle ederek doğrular:
+    // enjekte edilen satır her zaman GERÇEK bir DB INSERT'idir ve
+    // accept()'in kendi yazması bu satırla GERÇEK bir Postgres UNIQUE
+    // ihlaline çarpar (`company_users(company_id,user_id)` ya da
+    // `users.email`) — hiçbir yerde exception taklit edilmez, yalnızca
+    // ZAMANLAMA taklit edilir. Amaç: InvitationService::accept()'in bu
+    // GERÇEK ihlali yakalayıp MEVCUT domain hatalarından birine
+    // çevirdiğini (ham 500 DEĞİL) kanıtlamak.
+    // ===============================================================
+
+    /**
+     * (1) Aynı (kimliği doğrulanmış) kullanıcının aynı daveti TEKRAR
+     * kabul etmeye çalışması — retry senaryosu. İlk çağrı başarılı olduktan
+     * sonra ikinci çağrı, davet artık "accepted" durumda olduğu için
+     * mevcut durum makinesi kontrolüne (§15 adım 2) takılır ve MEVCUT
+     * 410/invitation_accepted davranışını değişmeden korur. Bu, guest yol
+     * için zaten var olan test_a_token_cannot_be_used_twice'ın
+     * authenticated karşılığıdır.
+     */
+    public function test_an_authenticated_users_repeated_accept_still_returns_the_existing_domain_error(): void
+    {
+        $existing = User::factory()->create(['email' => 'mevcut@flowtiger.test']);
+        $this->pendingInvitation('mevcut@flowtiger.test');
+
+        $this->apiAs($existing)
+            ->postJson(self::URI, ['token' => self::TOKEN])
+            ->assertOk();
+
+        $this->apiAs($existing)
+            ->postJson(self::URI, ['token' => self::TOKEN])
+            ->assertStatus(410)
+            ->assertJsonPath('code', 'invitation_accepted');
+
+        $this->assertSame(1, DB::table('company_users')
+            ->where('company_id', $this->company->getKey())
+            ->where('user_id', $existing->getKey())
+            ->count());
+    }
+
+    /**
+     * (2) MEMBERSHIP UNIQUE KISITI YARIŞI.
+     *
+     * $existing zaten hesabı olan (ama henüz üye olmayan) bir davetlidir.
+     * accept()'in ÖN KONTROLÜ ($user->isMemberOf($company)) bu anda henüz
+     * geçmiştir (davetli henüz üye değil); enjeksiyon ancak GERÇEK
+     * company_users INSERT'i çalışmak ÜZEREYKEN, DB::beforeExecuting() ile
+     * devreye girer — "başka bir eşzamanlı accept() isteğinin bizden HEMEN
+     * ÖNCE aynı satırı yazdığı" anı taklit eder. accept()'in KENDİ INSERT'i
+     * artık company_users(company_id,user_id) UNIQUE kısıtına GERÇEKTEN
+     * çarpar; bu, düzeltmeden ÖNCE yakalanmamış bir
+     * UniqueConstraintViolationException'dı (→ ham 500). Şimdi MEVCUT
+     * invitation_already_member (422) domain hatasına çevrilmeli.
+     *
+     * NOT (test sınırlaması): RefreshDatabase testi tek bir transaction
+     * içinde çalıştırır; accept()'in kendi DB::transaction()'ı bu transaction
+     * içinde bir SAVEPOINT'tir. Enjekte edilen satır da AYNI savepoint
+     * içinde yazıldığından, kaybeden isteğin rollback'i onu da geri alır —
+     * gerçek bir yarışta kazananın satırı KALICI olurdu. Bu, testin
+     * kanıtladığı asıl şeyi (GERÇEK bir Postgres ihlalinin doğru domain
+     * hatasına çevrildiğini) değiştirmez; yalnızca "kazananın satırı
+     * kalıcı mı" sorusu bu test tekniğiyle ayrıca doğrulanamaz.
+     */
+    public function test_a_concurrent_membership_commit_is_translated_to_the_existing_already_member_error(): void
+    {
+        $existing = User::factory()->create(['email' => 'mevcut@flowtiger.test']);
+        $invitation = $this->pendingInvitation('mevcut@flowtiger.test');
+
+        $injected = false;
+
+        DB::connection()->beforeExecuting(function (string $query) use (&$injected, $existing): void {
+            if ($injected || ! str_contains($query, 'insert into "company_users"')) {
+                return;
+            }
+
+            $injected = true;
+
+            // "Diğer" eşzamanlı accept() isteğinin GERÇEK satırı —
+            // MembershipService::attach()'in bir sonraki adımda yazacağı
+            // satırla birebir aynı.
+            DB::table('company_users')->insert([
+                'company_id' => $this->company->getKey(),
+                'user_id' => $existing->getKey(),
+                'role' => Role::Member->value,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        });
+
+        $this->apiAs($existing)
+            ->postJson(self::URI, ['token' => self::TOKEN])
+            ->assertStatus(422)
+            ->assertJsonPath('code', 'invitation_already_member');
+
+        // Kaybeden isteğin transaction'ı GERÇEKTEN geri alındı: davet
+        // TÜKETİLMEDİ (accepted_at hâlâ null).
+        $this->assertNull(
+            $invitation->fresh()->accepted_at,
+            'Kaybeden isteğin transaction\'ı geri alınmamış: accepted_at yazılmış.'
+        );
+    }
+
+    /**
+     * (3a) GUEST-PATH E-POSTA YARIŞI — kazanan AYNI daveti kabul eden
+     * başka bir eşzamanlı istek.
+     *
+     * NEDEN BU TEST HTTP SEVİYESİNDE DEĞİL, DOĞRUDAN translateAcceptRaceException()
+     * ÜZERİNDE (reflection ile):
+     *
+     * Bu dalı HTTP üzerinden tetiklemek için "kazananın" satırının,
+     * kaybedenin transaction'ı geri alındıktan SONRA da sorgulanabilir
+     * kalması gerekir. Tek bağlantılı bir testte (yukarıdaki (2) ve (3b)
+     * testlerinin kullandığı teknik) bu mümkün değildir: kazananın satırı
+     * accept()'in KENDİ DB::transaction()'ının AYNI SAVEPOINT'i içinde
+     * yazılır ve kaybedenin ROLLBACK TO SAVEPOINT'i onu da geri alır — bu
+     * yüzden translateAcceptRaceException()'ın kendi User::where()
+     * sorgusu winner'ı asla BULAMAZ (denendi, doğrulandı). Gerçek bir
+     * bağımsız commit'i simüle etmek, RefreshDatabase'in testi saran
+     * TEK, commit edilmemiş dış transaction'ı yüzünden ayrı bir
+     * bağlantıdan erişilemeyen (company, invitation gibi) verilere bağlı
+     * kalır — bu da foreign key ihlaline yol açar (denendi, doğrulandı).
+     *
+     * Bu yüzden bu dalın KARAR MANTIĞI, GERÇEK bir Company + GERÇEK bir
+     * (üye yapılmış) User ile — ama exception'ı bir HTTP yarışıyla değil,
+     * doğrudan çağırarak — doğrulanır. (2) ve (3b) testleri zaten GERÇEK
+     * bir UniqueConstraintViolationException'ın accept() tarafından
+     * yakalandığını kanıtlıyor; bu test yalnızca ay(ı)rt etme mantığının
+     * ("kazanan üye mi?") doğru dalı seçtiğini, sahte hiçbir exception
+     * kullanmadan kanıtlar.
+     */
+    public function test_translate_accept_race_exception_treats_a_member_winner_as_already_member(): void
+    {
+        $invitation = $this->pendingInvitation('yarisan@flowtiger.test');
+
+        // GERÇEK bir kazanan: gerçekten var olan bir hesap, gerçekten bu
+        // şirketin üyesi (normal MembershipService/factory yoluyla).
+        $winner = User::factory()->create(['email' => 'yarisan@flowtiger.test']);
+        $this->company->users()->syncWithoutDetaching([
+            $winner->getKey() => ['role' => Role::Member->value],
+        ]);
+
+        $service = app(\App\Services\InvitationService::class);
+        $method = new \ReflectionMethod($service, 'translateAcceptRaceException');
+        $method->setAccessible(true);
+
+        $result = $method->invoke($service, $invitation, $this->company, null);
+
+        $this->assertInstanceOf(\App\Exceptions\InvitationException::class, $result);
+        $this->assertSame('invitation_already_member', $result->errorCode);
+        $this->assertSame(422, $result->status);
+    }
+
+    /**
+     * (3b) GUEST-PATH E-POSTA YARIŞI — kazanan TAMAMEN BAĞIMSIZ bir hesap
+     * (ör. eşzamanlı bir self-servis kayıt/RegistrationService). Kazanan bu
+     * şirketin üyesi DEĞİLDİR; bu, resolveAcceptingUser()'ın "hesabı zaten
+     * var" dalıyla (test_an_existing_account_cannot_be_joined_without_signing_in)
+     * AYNI durumdur — davetli artık kazanan hesapla giriş yapmalıdır.
+     */
+    public function test_a_guest_path_email_race_won_by_an_unrelated_account_requires_authentication(): void
+    {
+        $this->pendingInvitation('yarisan2@flowtiger.test');
+
+        $injected = false;
+
+        DB::connection()->beforeExecuting(function (string $query) use (&$injected): void {
+            if ($injected || ! str_contains($query, 'insert into "users"')) {
+                return;
+            }
+
+            $injected = true;
+
+            // Şirkete HİÇ bağlanmayan, tamamen ilgisiz bir hesap — ör.
+            // eşzamanlı bir /auth/register isteğinin kazandığı yarış.
+            DB::table('users')->insert([
+                'name' => 'Ilgisiz Kayit',
+                'email' => 'yarisan2@flowtiger.test',
+                'password' => bcrypt('baska-parola-999'),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        });
+
+        $this->asGuest()->postJson(self::URI, [
+            'token' => self::TOKEN,
+            'name' => 'Kaybeden Istek',
+            'password' => 'guclu-parola-123',
+        ])
+            ->assertStatus(403)
+            ->assertJsonPath('code', 'invitation_requires_authentication');
+    }
+
+    // ===============================================================
     // UÇTAN UCA
     // ===============================================================
 

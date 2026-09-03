@@ -209,6 +209,20 @@ class AppServiceProvider extends ServiceProvider
         });
 
         /*
+         * Self-servis kayıt (P0-01).
+         *
+         * login/password-forgot/password-reset ile AYNI gerekçe ve AYNI
+         * anahtarlama: e-posta + IP. Yalnızca IP, bir saldırganın kurbanın
+         * adresiyle sınırsız hesap+şirket denemesine izin verirdi; yalnızca
+         * e-posta ise aynı ofisten/NAT arkasından kayıt olan masum
+         * kullanıcıları birbirine kilitlerdi. Bu uç kimlik doğrulaması
+         * olmadan çalıştığı için (login gibi) tek savunma satırı budur.
+         */
+        RateLimiter::for('register', function (Request $request): Limit {
+            return Limit::perMinute(5)->by($this->emailThrottleKey($request));
+        });
+
+        /*
          * Davet kabul ucu kimlik doğrulaması olmadan çalışır ve tek
          * korunması gereken şey token'dır. 256 bitlik bir token'ı kaba
          * kuvvetle bulmak pratikte imkânsızdır; bu sınır asıl olarak

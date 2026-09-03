@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import type { FormEvent } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth/AuthContext';
 import { ApiError, toUserMessage } from '@/lib/api';
 import { Button, Card, ErrorState, Input, PasswordInput } from '@/components/ui';
@@ -109,6 +109,10 @@ export function LoginPage() {
           <Button type="submit" loading={submitting}>
             Giriş yap
           </Button>
+
+          <p className="ft-muted">
+            Hesabınız yok mu? <Link to="/register">Kayıt olun</Link>
+          </p>
         </form>
       </Card>
     </div>

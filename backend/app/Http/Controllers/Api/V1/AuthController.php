@@ -5,9 +5,11 @@ namespace App\Http\Controllers\Api\V1;
 use App\Enums\AuditAction;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\LoginRequest;
+use App\Http\Requests\Api\V1\RegisterRequest;
 use App\Http\Resources\UserResource;
 use App\Models\User;
 use App\Services\AuditLogService;
+use App\Services\RegistrationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -35,7 +37,52 @@ class AuthController extends Controller
 
     public function __construct(
         private readonly AuditLogService $audit,
+        private readonly RegistrationService $registration,
     ) {}
+
+    /**
+     * Self-servis kayıt (P0-01): yeni User + yeni Company + Owner üyeliği +
+     * aktif şirket, TEK istekte.
+     *
+     * İş mantığının TAMAMI RegistrationService'tedir (§13 ile aynı ilke:
+     * bu controller'ın iş mantığı yoktur). Buradaki tek sorumluluk, doğrulanmış
+     * DÖRT alanı servise geçirmek ve login() ile AYNI şekilde bir token
+     * üretip AYNI yanıt zarfını döndürmek.
+     *
+     * role / company_id / active_company_id request'ten OKUNMAZ:
+     * RegisterRequest::rules() bu alanları hiç tanımlamaz, bu yüzden
+     * validated() içlerinde ne olursa olsun bu üçünü asla döndürmez.
+     * Rol, RegistrationService içinde SABİT olarak Role::Owner'dır.
+     *
+     * 201 Created: login'den farklı olarak burada yeni bir kaynak (User +
+     * Company) yaratılıyor — MemberController::store() ile aynı durum kodu.
+     */
+    public function register(RegisterRequest $request): JsonResponse
+    {
+        $user = $this->registration->register(
+            $request->validated('name'),
+            $request->validated('email'),
+            $request->validated('password'),
+            $request->validated('company_name'),
+        );
+
+        // Token ÜRETİLİR; login() ile aynı mekanizma, aynı isim. Kayıt
+        // olmak zaten "ilk giriş" anlamına gelir — ayrıca login isteği
+        // atmaya zorlamak istemciye gereksiz bir tur ekletirdi.
+        $token = $user->createToken(self::TOKEN_NAME)->plainTextToken;
+
+        // Token audit'e GİRMEZ (login() ile aynı disiplin). Kayıt olayının
+        // izi zaten RegistrationService içinde company.created ve
+        // member.created ile tutulur; burada tekrar bir audit çağrısı
+        // YAPILMAZ — aynı olayı iki kez, iki farklı action'la kaydetmek
+        // audit'i yanıltıcı hale getirirdi.
+        return response()->json([
+            'data' => [
+                'token' => $token,
+                'user' => UserResource::make($user),
+            ],
+        ], Response::HTTP_CREATED);
+    }
 
     /**
      * E-posta + parola karşılığında bir personal access token üretir.

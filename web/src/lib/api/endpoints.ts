@@ -43,6 +43,28 @@ export const auth = {
   login: (api: ApiClient, email: string, password: string) =>
     api.post<LoginResult>('auth/login', { email, password }, { authenticated: false }),
 
+  /**
+   * Self-servis kayıt (P0-03) — public, token henüz yok.
+   *
+   * Yanıt `login` ile AYNI zarfı taşır ({token, user}); bu yüzden ayrı
+   * bir tip TANIMLANMADI, `LoginResult` yeniden kullanıldı. Gövde
+   * bilinçli olarak yalnızca bu dört alanı taşır: role/company_id/
+   * active_company_id istemciden hiç GÖNDERİLMEZ — backend
+   * `RegisterRequest` bunları zaten tanımlamıyor (§9, §21 ile aynı kural).
+   */
+  register: (
+    api: ApiClient,
+    name: string,
+    email: string,
+    password: string,
+    companyName: string,
+  ) =>
+    api.post<LoginResult>(
+      'auth/register',
+      { name, email, password, company_name: companyName },
+      { authenticated: false },
+    ),
+
   logout: (api: ApiClient) => api.post<void>('auth/logout'),
 
   me: (api: ApiClient) => api.get<User>('me'),

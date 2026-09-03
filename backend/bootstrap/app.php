@@ -5,6 +5,7 @@ use App\Exceptions\FinanceEntryException;
 use App\Exceptions\InvitationException;
 use App\Exceptions\LastOwnerException;
 use App\Exceptions\PaymentException;
+use App\Exceptions\RegistrationException;
 use App\Exceptions\TaskException;
 use App\Exceptions\TenantContextMissingException;
 use App\Http\Middleware\ResolveCompanyContext;
@@ -224,6 +225,33 @@ return Application::configure(basePath: dirname(__DIR__))
          * olan yeniden açılamaz) → 403 değil 422 + makine-okunur kod.
          */
         $exceptions->render(function (TaskException $e, Request $request) {
+            if (! $request->is('api/*')) {
+                return null;
+            }
+
+            return response()->json([
+                'message' => $e->getMessage(),
+                'code' => $e->errorCode,
+            ], $e->status);
+        });
+
+        /*
+         * Self-servis kaydın reddedilme sebepleri (P0-01).
+         *
+         * FinanceEntryException/PaymentException/TaskException ile aynı
+         * desen: durum ve makine-okunur kod exception'ın kendisinde
+         * taşınır, tek callback hepsini karşılar.
+         *
+         * TEK SEBEP şu an: e-posta, form doğrulamasını GEÇTİKTEN SONRA ama
+         * transaction commit olmadan önce başka bir istek tarafından
+         * alınmış (register/invitation-accept yarışı). Bu YETKİ hatası
+         * DEĞİLDİR, isteğin BİÇİMİ de bozuk değildir — içerik artık geçersiz
+         * hale gelmiştir; bu yüzden 403 ya da 400 değil 422 kullanılır.
+         *
+         * Mesaj istemciye gönderilir: RegistrationException'ın mesajları bu
+         * amaçla yazılmıştır, token/e-posta/kullanıcı kimliği içermezler.
+         */
+        $exceptions->render(function (RegistrationException $e, Request $request) {
             if (! $request->is('api/*')) {
                 return null;
             }

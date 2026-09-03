@@ -10,6 +10,7 @@ use App\Models\Company;
 use App\Models\Invitation;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 
@@ -154,6 +155,19 @@ class InvitationService
      *   5. tek transaction: kullanıcı (gerekiyorsa) + üyelik +
      *      accepted_at + audit (§24)
      *
+     * EŞZAMANLILIK (P0-02): yukarıdaki 1-4 arası kontroller transaction
+     * DIŞINDA, kilitsiz yapılır — bilinçli bir tercih, §15'teki sırayı ve
+     * mevcut davranışı bozmamak için buraya lockForUpdate() EKLENMEDİ.
+     * Bunun yerine güvence, zaten var olan iki DB UNIQUE kısıtına
+     * (`users.email`, `company_users(company_id, user_id)`) yaslanır: iki
+     * eşzamanlı accept() isteği bu kontrolleri aynı anda geçebilir, ama
+     * transaction'ın SONUNDAKİ INSERT'lerden
+     * yalnızca biri commit olabilir. Kaybeden istek eskiden ham bir
+     * UniqueConstraintViolationException (→ 500) alıyordu; şimdi bu
+     * yakalanıp MEVCUT domain hatalarından birine çevrilir — ne yeni bir
+     * exception kodu eklenir ne de kazananın (ya da sıralı çağrıların)
+     * davranışı değişir.
+     *
      * @throws InvitationException
      */
     public function accept(
@@ -192,30 +206,81 @@ class InvitationService
             throw InvitationException::alreadyMember();
         }
 
-        return DB::transaction(function () use ($invitation, $company, $user, $name, $password): Invitation {
-            $member = $user ?? $this->createUserFromInvitation($invitation, (string) $name, (string) $password);
+        try {
+            return DB::transaction(function () use ($invitation, $company, $user, $name, $password): Invitation {
+                $member = $user ?? $this->createUserFromInvitation($invitation, (string) $name, (string) $password);
 
-            $this->memberships->attach($company, $member, $invitation->role, $member);
+                $this->memberships->attach($company, $member, $invitation->role, $member);
 
-            $invitation->accepted_at = now();
-            $invitation->save();
+                $invitation->accepted_at = now();
+                $invitation->save();
 
-            $this->audit->record(
-                action: AuditAction::InvitationAccepted,
-                company: $company,
-                auditable: $invitation,
-                metadata: [
-                    'email_hash' => $this->audit->hashEmail($invitation->email),
-                    'role' => $invitation->role->value,
-                    // Kabul eden hesabın yeni mi oluştuğu, güvenlik
-                    // incelemesinde anlamlı bir ayrımdır.
-                    'created_new_account' => $user === null,
-                ],
-                actor: $member,
-            );
+                $this->audit->record(
+                    action: AuditAction::InvitationAccepted,
+                    company: $company,
+                    auditable: $invitation,
+                    metadata: [
+                        'email_hash' => $this->audit->hashEmail($invitation->email),
+                        'role' => $invitation->role->value,
+                        // Kabul eden hesabın yeni mi oluştuğu, güvenlik
+                        // incelemesinde anlamlı bir ayrımdır.
+                        'created_new_account' => $user === null,
+                    ],
+                    actor: $member,
+                );
 
-            return $invitation;
-        });
+                return $invitation;
+            });
+        } catch (UniqueConstraintViolationException) {
+            throw $this->translateAcceptRaceException($invitation, $company, $user);
+        }
+    }
+
+    /**
+     * accept() transaction'ı sırasında bir UNIQUE kısıtı ihlal edildiyse
+     * (P0-02 — eşzamanlı/retry kabul yarışı), bunu YENİ bir exception türü
+     * icat etmeden, zaten var olan InvitationException kodlarından
+     * doğrusuna çevirir. Hangi kısıt patladığı (company_users mı,
+     * users.email mi) exception mesajından ayrıştırılmaz — bunun yerine
+     * o anki VERİTABANI DURUMU sorgulanarak hangi senaryonun gerçekleştiği
+     * tespit edilir; bu hem sürücüden bağımsızdır hem de yanlış teşhis
+     * riskini ortadan kaldırır.
+     *
+     * @throws InvitationException
+     */
+    private function translateAcceptRaceException(Invitation $invitation, Company $company, ?User $user): InvitationException
+    {
+        if ($user !== null) {
+            // $user zaten transaction'dan ÖNCE çözümlenmişti (giriş yapmış
+            // ya da hesabı olan biri). Bu durumda company_users dışında
+            // ihlal edilebilecek bir kısıt yoktur (bkz. yorum): eşzamanlı
+            // başka bir accept() isteği AYNI kullanıcıyı bizden önce bu
+            // şirkete bağlamış demektir — mevcut sıralı senaryoyla (§4)
+            // BİREBİR aynı sonuç.
+            return InvitationException::alreadyMember();
+        }
+
+        // Guest path: çakışma yalnızca users.email üzerinde olabilir,
+        // çünkü $user null olduğunda transaction içinde YENİ bir kullanıcı
+        // (yeni bir birincil anahtarla) yaratılır ve bu satır company_users
+        // kısıtıyla asla çakışamaz (bkz. sınıf yorumu).
+        //
+        // Kazanan taraf iki farklı akıştan biri olabilir ve ikisi FARKLI
+        // yanıt gerektirir:
+        //   a) Aynı daveti kabul eden başka bir eşzamanlı istek → kazanan
+        //      artık bu şirketin üyesi → alreadyMember() (§4 ile aynı kod).
+        //   b) Tamamen bağımsız bir self-servis kayıt (RegistrationService)
+        //      ya da başka bir yolla açılmış bir hesap → kazanan bu
+        //      şirketin üyesi DEĞİL → bu, resolveAcceptingUser()'ın "hesabı
+        //      zaten var" dalıyla (§3) AYNI durumdur: davetli artık var
+        //      olan hesabıyla giriş yapmalıdır.
+        $winner = User::query()->where('email', $invitation->email)->first();
+
+        if ($winner !== null && $winner->isMemberOf($company)) {
+            return InvitationException::alreadyMember();
+        }
+
+        return InvitationException::authenticationRequired();
     }
 
     /**

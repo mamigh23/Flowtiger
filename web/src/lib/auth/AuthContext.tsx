@@ -18,6 +18,15 @@ interface AuthContextValue {
   status: AuthStatus;
   user: User | null;
   login(email: string, password: string): Promise<void>;
+  /**
+   * Self-servis kayıt (P0-03) — backend tek istekte hesap + ilk şirket +
+   * owner üyeliği oluşturur ve `login` ile AYNI şekli döner ({token, user}).
+   * Bu yüzden uygulama tarafı da `login`in AYNI iki satırıdır: token
+   * yalnızca tokenStorage'a yazılır, kullanıcı ve durum ondan gelen
+   * yanıtla güncellenir. active_company_id backend'den gelen `user`
+   * içindedir — istemci burada bir tenant/rol kararı ÜRETMEZ.
+   */
+  register(name: string, email: string, password: string, companyName: string): Promise<void>;
   logout(): Promise<void>;
   /** Kullanıcıyı backend'den tazeler (profil/şirket değişiminden sonra). */
   refreshUser(): Promise<void>;
@@ -85,6 +94,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setStatus('authenticated');
   }, []);
 
+  const register = useCallback(
+    async (name: string, email: string, password: string, companyName: string) => {
+      const result = await endpoints.auth.register(api, name, email, password, companyName);
+
+      // login'deki AYNI tek nokta: token yalnızca burada saklanır.
+      tokenStorage.set(result.token);
+      setUser(result.user);
+      setStatus('authenticated');
+    },
+    [],
+  );
+
   const logout = useCallback(async () => {
     try {
       await endpoints.auth.logout(api);
@@ -102,8 +123,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo<AuthContextValue>(
-    () => ({ status, user, login, logout, refreshUser }),
-    [status, user, login, logout, refreshUser],
+    () => ({ status, user, login, register, logout, refreshUser }),
+    [status, user, login, register, logout, refreshUser],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
