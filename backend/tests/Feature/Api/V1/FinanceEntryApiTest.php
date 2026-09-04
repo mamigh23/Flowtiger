@@ -53,6 +53,14 @@ class FinanceEntryApiTest extends TestCase
 
     private User $owner;
 
+    /**
+     * P0-05 — Payment/FinanceEntry OWNER-ONLY yetki kapsamının test
+     * kanıtı. Diğer tüm testler `$this->owner` üzerinden çalışmaya devam
+     * ediyor; bu alan yalnızca yetki tarafını ölçmek için eklendi (bkz.
+     * CustomerApiTest'teki P0-04 destroy testleriyle aynı gerekçe).
+     */
+    private User $member;
+
     private Company $company;
 
     private Customer $customer;
@@ -65,10 +73,15 @@ class FinanceEntryApiTest extends TestCase
         parent::setUp();
 
         $this->owner = User::factory()->create();
+        $this->member = User::factory()->create();
         $this->company = Company::factory()->withOwner($this->owner)->create();
+        $this->company->users()->attach($this->member, ['role' => 'member']);
         $this->customer = Customer::factory()->forCompany($this->company)->create(['name' => 'Zeynep Kaya']);
 
         app(CompanySelectionService::class)->select($this->owner, $this->company);
+        app(CompanyContext::class)->clear();
+
+        app(CompanySelectionService::class)->select($this->member, $this->company);
         app(CompanyContext::class)->clear();
     }
 
@@ -770,5 +783,64 @@ class FinanceEntryApiTest extends TestCase
         sort($keys);
 
         $this->assertSame(['created_at', 'customer_no', 'id', 'name', 'phone', 'updated_at'], $keys);
+    }
+
+    // =================================================================
+    // ROL YETKİSİ (P0-05) — FinanceEntry OWNER-ONLY'dir, Member her uçta 403 alır
+    // =================================================================
+
+    /**
+     * 403 doğrudur, 404 değil: kayıt gerçekten var ve Member gerçekten bu
+     * şirketin üyesi, eksik olan yalnızca yetki — CustomerApiTest'teki
+     * P0-04 destroy testleriyle aynı gerekçe (tenant vs. authorization
+     * ayrımı, FinanceEntryPolicy docblock'u).
+     */
+    public function test_a_member_cannot_list_finance_entries(): void
+    {
+        $this->apiAs($this->owner)->postJson(self::URI, $this->payload())->assertCreated();
+
+        $this->apiAs($this->member)
+            ->getJson(self::URI)
+            ->assertForbidden();
+    }
+
+    public function test_a_member_cannot_read_a_single_finance_entry(): void
+    {
+        $id = $this->apiAs($this->owner)->postJson(self::URI, $this->payload())->json('data.id');
+
+        $this->apiAs($this->member)
+            ->getJson(self::URI.'/'.$id)
+            ->assertForbidden();
+    }
+
+    public function test_a_member_cannot_create_a_finance_entry(): void
+    {
+        $this->apiAs($this->member)
+            ->postJson(self::URI, $this->payload())
+            ->assertForbidden();
+
+        $this->assertSame(0, FinanceEntry::withoutTenantScope('test doğrulaması')->count());
+    }
+
+    public function test_a_member_cannot_update_a_finance_entry(): void
+    {
+        $id = $this->apiAs($this->owner)->postJson(self::URI, $this->payload())->json('data.id');
+
+        $this->apiAs($this->member)
+            ->putJson(self::URI.'/'.$id, $this->payload(['amount_minor' => 1]))
+            ->assertForbidden();
+
+        $this->assertSame(100000, $this->rawEntry($id)->net_minor);
+    }
+
+    public function test_a_member_cannot_void_a_finance_entry(): void
+    {
+        $id = $this->apiAs($this->owner)->postJson(self::URI, $this->payload())->json('data.id');
+
+        $this->apiAs($this->member)
+            ->postJson(self::URI.'/'.$id.'/void', [])
+            ->assertForbidden();
+
+        $this->assertNull($this->rawEntry($id)->voided_at);
     }
 }

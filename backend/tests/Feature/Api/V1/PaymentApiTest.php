@@ -49,6 +49,14 @@ class PaymentApiTest extends TestCase
 
     private User $owner;
 
+    /**
+     * P0-05 — Payment/FinanceEntry OWNER-ONLY yetki kapsamının test
+     * kanıtı. Diğer tüm testler `$this->owner` üzerinden çalışmaya devam
+     * ediyor; bu alan yalnızca yetki tarafını ölçmek için eklendi (bkz.
+     * CustomerApiTest'teki P0-04 destroy testleriyle aynı gerekçe).
+     */
+    private User $member;
+
     private Company $company;
 
     private Customer $customer;
@@ -63,13 +71,18 @@ class PaymentApiTest extends TestCase
         parent::setUp();
 
         $this->owner = User::factory()->create();
+        $this->member = User::factory()->create();
         $this->company = Company::factory()->withOwner($this->owner)->create();
+        $this->company->users()->attach($this->member, ['role' => 'member']);
         $this->customer = Customer::factory()->forCompany($this->company)->create(['name' => 'Zeynep Kaya']);
 
         // 1.200,00 TL brüt gelir kaydı — tahsilat hedefi.
         $this->entry = FinanceEntry::factory()->forCompany($this->company)->create(['direction' => 'in']);
 
         app(CompanySelectionService::class)->select($this->owner, $this->company);
+        app(CompanyContext::class)->clear();
+
+        app(CompanySelectionService::class)->select($this->member, $this->company);
         app(CompanyContext::class)->clear();
     }
 
@@ -712,5 +725,64 @@ class PaymentApiTest extends TestCase
             ->where('action', $action->value)
             ->latest('id')
             ->first();
+    }
+
+    // =================================================================
+    // ROL YETKİSİ (P0-05) — Payment OWNER-ONLY'dir, Member her uçta 403 alır
+    // =================================================================
+
+    /**
+     * 403 doğrudur, 404 değil: kayıt gerçekten var ve Member gerçekten bu
+     * şirketin üyesi, eksik olan yalnızca yetki — CustomerApiTest'teki
+     * P0-04 destroy testleriyle aynı gerekçe (tenant vs. authorization
+     * ayrımı, PaymentPolicy docblock'u).
+     */
+    public function test_a_member_cannot_list_payments(): void
+    {
+        $this->apiAs($this->owner)->postJson(self::URI, $this->payload())->assertCreated();
+
+        $this->apiAs($this->member)
+            ->getJson(self::URI)
+            ->assertForbidden();
+    }
+
+    public function test_a_member_cannot_read_a_single_payment(): void
+    {
+        $id = $this->apiAs($this->owner)->postJson(self::URI, $this->payload())->json('data.id');
+
+        $this->apiAs($this->member)
+            ->getJson(self::URI.'/'.$id)
+            ->assertForbidden();
+    }
+
+    public function test_a_member_cannot_create_a_payment(): void
+    {
+        $this->apiAs($this->member)
+            ->postJson(self::URI, $this->payload())
+            ->assertForbidden();
+
+        $this->assertSame(0, Payment::withoutTenantScope('test doğrulaması')->count());
+    }
+
+    public function test_a_member_cannot_update_a_payment(): void
+    {
+        $id = $this->apiAs($this->owner)->postJson(self::URI, $this->payload())->json('data.id');
+
+        $this->apiAs($this->member)
+            ->putJson(self::URI.'/'.$id, $this->payload(['amount_minor' => 1]))
+            ->assertForbidden();
+
+        $this->assertSame(120000, $this->rawPayment($id)->amount_minor);
+    }
+
+    public function test_a_member_cannot_void_a_payment(): void
+    {
+        $id = $this->apiAs($this->owner)->postJson(self::URI, $this->payload())->json('data.id');
+
+        $this->apiAs($this->member)
+            ->postJson(self::URI.'/'.$id.'/void', [])
+            ->assertForbidden();
+
+        $this->assertNull($this->rawPayment($id)->voided_at);
     }
 }
