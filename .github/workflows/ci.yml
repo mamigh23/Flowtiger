@@ -1,13 +1,5 @@
 # ============================================================================
-# FlowTiger — Backend CI
-#
-# ⚠ BU DOSYA REPO KÖKÜNE TAŞINMALIDIR:
-#
-#     mv backend/.github .github
-#
-# GitHub Actions yalnızca repo KÖKÜNDEKİ .github/workflows/ altındaki
-# dosyaları çalıştırır. İçerideki yollar zaten repo kökünden yazıldığı
-# için taşıdıktan sonra hiçbir düzenleme gerekmez.
+# FlowTiger — CI (backend + frontend)
 #
 # Repository secret GEREKTİRMEZ (§17): veritabanı, iş akışı içinde ayağa
 # kalkan geçici bir PostgreSQL servisidir ve parolası yalnızca o koşuda
@@ -21,10 +13,12 @@ on:
     branches: ['**']
     paths:
       - 'backend/**'
+      - 'web/**'
       - '.github/workflows/ci.yml'
   pull_request:
     paths:
       - 'backend/**'
+      - 'web/**'
       - '.github/workflows/ci.yml'
 
 # Aynı dal için yeni bir push geldiğinde eski koşuyu iptal et.
@@ -124,3 +118,34 @@ jobs:
       - name: Audit dependencies for known vulnerabilities
         run: composer audit --no-interaction
         continue-on-error: true
+
+  frontend:
+    name: Node LTS · frontend
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: web
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Run test suite
+        run: npm test
+
+      - name: Build
+        run: npm run build
