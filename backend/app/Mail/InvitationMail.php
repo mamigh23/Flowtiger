@@ -17,8 +17,15 @@ use Illuminate\Mail\Mailables\Envelope;
  *
  *   InvitationService::create() üretir
  *        → bu Mailable'a verilir
- *        → gönderilen mail'in gövdesine yazılır
+ *        → gönderilen mail'in gövdesindeki KABUL BAĞLANTISININ İÇİNE yazılır
  *        → bellekten düşer
+ *
+ * P1-05: Token artık e-postada AYRI bir kopyala-yapıştır kodu olarak
+ * GÖSTERİLMEZ — yalnızca frontend'in davet kabul ekranına (?token=...)
+ * götüren tıklanabilir bağlantının İÇİNDE, url-encode edilmiş hâliyle
+ * yaşar (bkz. acceptUrl()). Bu, "tek yer" kuralını BOZMAZ: token hâlâ
+ * yalnızca bu sınıfın ürettiği gövdede var olur, sadece SUNUM şekli
+ * değişir.
  *
  * Bu yüzden sınıf BİLİNÇLİ OLARAK ShouldQueue DEĞİLDİR: kuyruğa alınsaydı
  * token, serialize edilerek jobs tablosuna — yani kalıcı depolamaya —
@@ -51,9 +58,30 @@ class InvitationMail extends Mailable
             with: [
                 'companyName' => $this->companyName,
                 'role' => $this->invitation->role->value,
-                'token' => $this->plainToken,
+                'acceptUrl' => $this->acceptUrl(),
                 'expiresAt' => $this->invitation->expires_at,
             ],
+        );
+    }
+
+    /**
+     * Davet kabul bağlantısı — config/flowtiger.php'deki `{token}` şablonu
+     * url-encode edilmiş plaintext token ile doldurulur.
+     *
+     * urlencode() BİLİNÇLİ: token bir SORGU PARAMETRESİ olarak taşınır
+     * (?token=...), yol segmenti olarak değil — password_reset.url'ün
+     * e-posta yer tutucusuyla (?email={email}) AYNI konum, AYNI fonksiyon.
+     * Token şu an yalnızca [0-9a-f] karakterlerinden oluşsa da (bkz.
+     * InvitationService::generateToken()) encode adımı üretim biçimine
+     * bağımlı kalmaz — token formatı ileride değişse bile bağlantı geçerli
+     * kalır.
+     */
+    private function acceptUrl(): string
+    {
+        return str_replace(
+            '{token}',
+            urlencode($this->plainToken),
+            (string) config('flowtiger.invitations.accept_url'),
         );
     }
 }

@@ -29,6 +29,30 @@ return [
          */
         'expires_after_days' => (int) env('FLOWTIGER_INVITATION_EXPIRY_DAYS', 7),
 
+        /*
+         * Davet kabul bağlantısının şablonu (P1-05).
+         *
+         * {token} yer tutucusu gönderim anında InvitationMail tarafından
+         * doldurulur (bkz. InvitationMail::acceptUrl()) — password_reset.url
+         * ile AYNI desen: yer tutucu + str_replace, ayrı bir config sistemi
+         * DEĞİL.
+         *
+         * Bağlantı FRONTEND'e işaret eder, API'ye değil: kullanıcı linke
+         * tıklar, frontend (web/src/features/invitations/AcceptInvitationPage.tsx)
+         * token'ı POST /api/v1/invitations/accept'e taşır.
+         *
+         * FRONTEND_URL öncelikli kaynaktır (frontend backend'den FARKLI bir
+         * origin'de yaşayabilir); tanımlı değilse APP_URL'e, o da yoksa
+         * localhost'a düşer — password_reset.url'ün kullandığı AYNI kademeli
+         * varsayılan zinciri. Hiçbir yerde sabit bir localhost/production
+         * adresi YAZILMAZ; hepsi env()'den gelir.
+         */
+        'accept_url' => env(
+            'FLOWTIGER_INVITATION_ACCEPT_URL',
+            rtrim((string) env('FRONTEND_URL', env('APP_URL', 'http://localhost')), '/')
+                .'/invitations/accept?token={token}',
+        ),
+
     ],
 
     'password_reset' => [

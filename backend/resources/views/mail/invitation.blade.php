@@ -1,12 +1,13 @@
 {{--
     Davet e-postası.
 
-    Token yalnızca burada, gönderilen mail gövdesinde görünür. Şablona
-    parola, oturum bilgisi ya da başka bir sır konmamalıdır.
+    Kabul bağlantısı (ve içindeki token) yalnızca burada, gönderilen mail
+    gövdesinde görünür. Şablona parola, oturum bilgisi ya da başka bir sır
+    konmamalıdır.
 
-    Bu faz bir frontend içermediği için token tam bir bağlantı yerine
-    ham hâliyle veriliyor; frontend geldiğinde burası davet URL'ine
-    dönüşecek.
+    P1-05: token artık ayrı, kopyala-yapıştırılan bir KOD olarak
+    GÖSTERİLMEZ — kullanıcı yalnızca aşağıdaki bağlantıya tıklar, token
+    URL'in İÇİNDE frontend'e taşınır (frontend zaten ?token=... okuyor).
 --}}
 <!DOCTYPE html>
 <html lang="tr">
@@ -22,20 +23,20 @@
         <strong>{{ $role }}</strong> olarak çalışmaya davet etti.
     </p>
 
-    <p>Daveti kabul etmek için aşağıdaki davet kodunu kullanın:</p>
+    <p>Daveti kabul etmek için aşağıdaki bağlantıya tıklayın:</p>
 
-    <p><code>{{ $token }}</code></p>
+    <p><a href="{{ $acceptUrl }}">Daveti kabul et</a></p>
 
     <p>
         Bu davet
         <strong>{{ $expiresAt?->toDayDateTimeString() }}</strong>
-        tarihine kadar geçerlidir. Süre dolduktan sonra kod çalışmaz;
+        tarihine kadar geçerlidir. Süre dolduktan sonra bağlantı çalışmaz;
         yeni bir davet istemeniz gerekir.
     </p>
 
     <p>
         Bu daveti beklemiyorduysanız bu e-postayı yok sayabilirsiniz.
-        Kod kullanılmadığı sürece hiçbir işlem yapılmaz.
+        Bağlantı kullanılmadığı sürece hiçbir işlem yapılmaz.
     </p>
 </body>
 </html>

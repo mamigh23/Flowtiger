@@ -218,6 +218,140 @@ class InvitationApiTest extends TestCase
         $this->assertStringNotContainsString($invitation->token_hash, $rendered);
     }
 
+    // ===============================================================
+    // KABUL BAĞLANTISI (P1-05)
+    // ===============================================================
+
+    /**
+     * Mail artık ham token yerine frontend'e giden TIKLANABİLİR bir
+     * bağlantı taşıyor. Bağlantı config/flowtiger.php'deki
+     * invitations.accept_url şablonundan üretilir — burada config
+     * BİLİNÇLİ OLARAK bilinen bir değere sabitlenir ki test, gerçek
+     * .env'in o anki içeriğine değil, ÜRETİM MANTIĞINA bağlı kalsın.
+     */
+    public function test_the_invitation_mail_links_to_the_configured_frontend_accept_url(): void
+    {
+        config(['flowtiger.invitations.accept_url' => 'https://ornek-frontend.test/invitations/accept?token={token}']);
+
+        $invitation = Invitation::factory()
+            ->forCompany($this->company)
+            ->forEmail('davetli@flowtiger.test')
+            ->asRole(Role::Member)
+            ->create();
+
+        $rendered = (new InvitationMail(
+            invitation: $invitation,
+            plainToken: 'abc123token',
+            companyName: 'Sirket A',
+        ))->render();
+
+        $this->assertStringContainsString(
+            'href="https://ornek-frontend.test/invitations/accept?token=abc123token"',
+            $rendered,
+        );
+    }
+
+    /**
+     * Token bir SORGU PARAMETRESİ olarak taşınır; url-encode edilmemiş
+     * özel karakterler (&, +, /, =) bağlantıyı BOZAR — örneğin bir `&`
+     * kendi sorgu parametresi gibi yorumlanır ve token yarıda kesilir.
+     *
+     * Gerçek üretim (bin2hex) yalnızca [0-9a-f] üretir, ama encode adımı
+     * ÜRETİM BİÇİMİNE bağımlı olmamalı: bu test doğrudan sentetik, özel
+     * karakterli bir token vererek encode mantığının kendisini sınar.
+     */
+    public function test_the_invitation_mail_url_encodes_the_token(): void
+    {
+        config(['flowtiger.invitations.accept_url' => 'https://ornek-frontend.test/invitations/accept?token={token}']);
+
+        $invitation = Invitation::factory()
+            ->forCompany($this->company)
+            ->forEmail('davetli@flowtiger.test')
+            ->asRole(Role::Member)
+            ->create();
+
+        $specialToken = 'tok+en/with&special=chars';
+
+        $rendered = (new InvitationMail(
+            invitation: $invitation,
+            plainToken: $specialToken,
+            companyName: 'Sirket A',
+        ))->render();
+
+        $this->assertStringContainsString(urlencode($specialToken), $rendered);
+        $this->assertStringNotContainsString('token='.$specialToken, $rendered);
+    }
+
+    /**
+     * accept_url şablonu FRONTEND_URL ortam değişkeninden üretilir —
+     * sabit bir localhost/production adresi KOD İÇİNE yazılmaz.
+     *
+     * config() facade'i BİLİNÇLİ OLARAK kullanılmıyor: Laravel config'i
+     * bir kez, uygulama boot olurken önbelleğe alır; test ortasında
+     * `putenv()` çağırmak o önbelleği DEĞİŞTİRMEZ. Bu yüzden config
+     * dosyası ham bir PHP dosyası olarak — env() çağrılarının GERÇEKTEN
+     * o anki ortam değişkenlerini okuduğu şekilde — doğrudan `require`
+     * edilir. Orijinal ortam değişkeni `finally` içinde geri yüklenir.
+     */
+    public function test_the_accept_url_is_derived_from_the_frontend_url_environment_variable(): void
+    {
+        $original = getenv('FRONTEND_URL');
+
+        putenv('FRONTEND_URL=https://ozel-frontend.test');
+        $_ENV['FRONTEND_URL'] = 'https://ozel-frontend.test';
+
+        try {
+            $config = require base_path('config/flowtiger.php');
+
+            $this->assertSame(
+                'https://ozel-frontend.test/invitations/accept?token={token}',
+                $config['invitations']['accept_url'],
+            );
+        } finally {
+            if ($original === false) {
+                putenv('FRONTEND_URL');
+                unset($_ENV['FRONTEND_URL']);
+            } else {
+                putenv("FRONTEND_URL={$original}");
+                $_ENV['FRONTEND_URL'] = $original;
+            }
+        }
+
+        $this->assertSame($original, getenv('FRONTEND_URL'), 'Ortam değişkeni bir sonraki teste sızdı.');
+    }
+
+    /**
+     * P1-05'in ÇEKİRDEK kuralı: ham token artık e-postada AYRI, kopyala-
+     * yapıştırılan bir kod olarak GÖSTERİLMEZ. Token yalnızca bağlantının
+     * (href) İÇİNDE var olabilir; `<code>` bloğu ya da bağımsız bir metin
+     * satırı olarak asla.
+     */
+    public function test_the_invitation_mail_does_not_show_the_raw_token_as_a_separate_code(): void
+    {
+        $invitation = Invitation::factory()
+            ->forCompany($this->company)
+            ->forEmail('davetli@flowtiger.test')
+            ->asRole(Role::Member)
+            ->create();
+
+        $plainToken = 'ayrica-gosterilmeyen-token';
+
+        $rendered = (new InvitationMail(
+            invitation: $invitation,
+            plainToken: $plainToken,
+            companyName: 'Sirket A',
+        ))->render();
+
+        // Eski davranış: <code>{{ $token }}</code>. Artık böyle bir blok yok.
+        $this->assertStringNotContainsString('<code>'.$plainToken.'</code>', $rendered);
+        $this->assertStringNotContainsString('<code>', $rendered);
+
+        // Token YALNIZCA bağlantının içinde geçmeli, başka hiçbir yerde.
+        $occurrences = substr_count($rendered, $plainToken);
+        $this->assertSame(1, $occurrences, 'Token birden fazla yerde ya da bağlantı dışında görünüyor.');
+        $this->assertStringContainsString('href="', $rendered);
+    }
+
     /**
      * §26: normalizasyon tek yerde. "User@Example.com" ile
      * "user@example.com" aynı kişidir.
