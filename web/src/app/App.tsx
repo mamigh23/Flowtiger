@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import { AuthProvider } from '@/lib/auth/AuthContext';
 import { CompanyProvider } from '@/lib/company/CompanyContext';
 import { ProtectedRoute, PublicOnlyRoute, RequireActiveCompany } from '@/routes/ProtectedRoute';
+import { ErrorBoundary } from '@/app/ErrorBoundary';
 import { LoginPage } from '@/features/auth/LoginPage';
 import { RegisterPage } from '@/features/auth/RegisterPage';
 import { CompanySelectPage } from '@/features/companies/CompanySelectPage';
@@ -53,174 +54,181 @@ import { ProfilePage } from '@/features/profile/ProfilePage';
  *
  * CompanyProvider, AuthProvider'ın İÇİNDE: şirket listesi ancak kimlik
  * doğrulandıktan sonra anlamlıdır ve oturum kapanınca temizlenmelidir.
+ *
+ * ErrorBoundary EN DIŞTADIR (P1-04): render sırasında beklenmedik bir
+ * istisna — AuthProvider/CompanyProvider'ın kendisinde dahil — beyaz
+ * ekran yerine güvenli bir fallback ekrana düşer. Ayrıntı için bkz.
+ * ErrorBoundary.tsx.
  */
 export function App() {
   return (
-    <AuthProvider>
-      <CompanyProvider>
-        <Routes>
-          <Route
-            path="/login"
-            element={
-              <PublicOnlyRoute>
-                <LoginPage />
-              </PublicOnlyRoute>
-            }
-          />
-
-          {/*
-            Self-servis kayıt (P0-03) — /login ile AYNI koruma:
-            PublicOnlyRoute, zaten girişli kullanıcıyı burada TUTMAZ.
-            Backend'in kendisi de register'ı public tutuyor (auth:sanctum
-            taşımaz) — istemci tarafı bunun yalnızca kullanışlılık yansımasıdır.
-          */}
-          <Route
-            path="/register"
-            element={
-              <PublicOnlyRoute>
-                <RegisterPage />
-              </PublicOnlyRoute>
-            }
-          />
-
-          <Route path="/invitations/accept" element={<AcceptInvitationPage />} />
-
-          <Route
-            path="/app/company-select"
-            element={
-              <ProtectedRoute>
-                <CompanySelectPage />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/app"
-            element={
-              <ProtectedRoute>
-                <RequireActiveCompany>
-                  <AppShell />
-                </RequireActiveCompany>
-              </ProtectedRoute>
-            }
-          >
-            <Route index element={<DashboardPage />} />
-
-            {/*
-              Müşteri ekranları (AŞAMA 2).
-
-              Sıra önemli: "new" yolu ":id"den ÖNCE gelmeli, yoksa
-              /app/customers/new isteği id'si "new" olan bir müşteri
-              araması olarak yorumlanırdı.
-            */}
-            <Route path="customers" element={<CustomerListPage />} />
-            <Route path="customers/new" element={<CustomerCreatePage />} />
-            <Route path="customers/:id" element={<CustomerDetailPage />} />
-            <Route path="customers/:id/edit" element={<CustomerEditPage />} />
-
-            {/*
-              Ekip ekranları (AŞAMA 3).
-
-              Yeni üye ekleme YOK: POST /members owner'ın başkasının
-              parolasını belirlemesini gerektiriyor ve davet akışıyla
-              çakışıyor; bu faz kapsamı dışında.
-            */}
-            <Route path="team" element={<MemberListPage />} />
-            <Route path="team/:id" element={<MemberDetailPage />} />
-            <Route path="team/:id/edit" element={<MemberEditPage />} />
-
-            {/*
-              Davet ekranları (AŞAMA 4) — owner tarafı (gönder/listele/iptal).
-
-              Kabul tarafı (/invitations/accept) BURADA DEĞİL: kimlik
-              doğrulaması olmayan, kabuğun ve owner yetkisinin dışında
-              ayrı bir rota (yukarıda, /login'in yanında).
-            */}
-            <Route path="invitations" element={<InvitationListPage />} />
-            <Route path="invitations/new" element={<InviteMemberPage />} />
-
-            {/*
-              Denetim (AŞAMA 5) — SALT OKUNUR.
-
-              Tek uç var: GET /audit-logs. Tekil audit ucu olmadığı için
-              /audit/:id gibi bir rota da YOK; ayrıntı listedeki satırın
-              içinde açılır.
-            */}
-            <Route path="audit" element={<AuditLogListPage />} />
-
-            {/*
-              Finans (AŞAMA 7 / WEB-02) — gelir ve gider kayıtları.
-
-              SİLME ROTASI YOK: backend'de DELETE ucu yok, kayıt iptal
-              edilir ve iptal ayrıntı ekranından yapılır.
-
-              Yön ROTAYLA belirlenir, prop olarak geçirilir. "Yeni gelir"
-              ve "Yeni gider" iki ayrı kullanıcı niyetidir; tek bir
-              /finance/new rotası olsaydı yön formda ikinci kez sorulurdu.
-
-              Sıra: "new/..." yolları ":id"den ÖNCE gelmeli — yoksa
-              /app/finance/new isteği id'si "new" olan bir kayıt araması
-              olarak yorumlanabilirdi.
-            */}
-            <Route path="finance" element={<FinanceEntryListPage />} />
-            <Route path="finance/new/income" element={<FinanceEntryCreatePage direction="in" />} />
+    <ErrorBoundary>
+      <AuthProvider>
+        <CompanyProvider>
+          <Routes>
             <Route
-              path="finance/new/expense"
-              element={<FinanceEntryCreatePage direction="out" />}
+              path="/login"
+              element={
+                <PublicOnlyRoute>
+                  <LoginPage />
+                </PublicOnlyRoute>
+              }
             />
-            <Route path="finance/:id" element={<FinanceEntryDetailPage />} />
-            <Route path="finance/:id/edit" element={<FinanceEntryEditPage />} />
 
             {/*
-              Ödemeler (AŞAMA 7 / WEB-03) — tahsilat ve dağıtım.
-
-              SİLME ROTASI YOK: backend'de DELETE ucu yok, ödeme iptal
-              edilir ve dağıtımları yerinde kalır.
-
-              Dağıtımların AYRI ROTASI DA YOK: ödemenin gövdesiyle
-              birlikte yazılırlar. Ayrı bir uç olsaydı "toplam dağıtım
-              ödemeyi aşamaz" kuralı iki isteğe yayılır ve arada geçersiz
-              bir ara durum oluşurdu.
+              Self-servis kayıt (P0-03) — /login ile AYNI koruma:
+              PublicOnlyRoute, zaten girişli kullanıcıyı burada TUTMAZ.
+              Backend'in kendisi de register'ı public tutuyor (auth:sanctum
+              taşımaz) — istemci tarafı bunun yalnızca kullanışlılık yansımasıdır.
             */}
-            <Route path="payments" element={<PaymentListPage />} />
-            <Route path="payments/new" element={<PaymentCreatePage />} />
-            <Route path="payments/:id" element={<PaymentDetailPage />} />
-            <Route path="payments/:id/edit" element={<PaymentEditPage />} />
+            <Route
+              path="/register"
+              element={
+                <PublicOnlyRoute>
+                  <RegisterPage />
+                </PublicOnlyRoute>
+              }
+            />
 
-            {/*
-              Görevler (Task/Planning v1) — günün işleri.
+            <Route path="/invitations/accept" element={<AcceptInvitationPage />} />
 
-              SİLME VARDIR, finans ve ödemeden farklı olarak. Finans kaydı
-              iptal edilir çünkü silinmesi geçmiş bir dönemin toplamını
-              sessizce değiştirir; yapılacak bir işin böyle bir özelliği
-              yok.
+            <Route
+              path="/app/company-select"
+              element={
+                <ProtectedRoute>
+                  <CompanySelectPage />
+                </ProtectedRoute>
+              }
+            />
 
-              ŞİRKET GENELİ: owner-only değil. Rol kapısı istemcide de
-              yok — karar backend'de (playbook §3.1).
+            <Route
+              path="/app"
+              element={
+                <ProtectedRoute>
+                  <RequireActiveCompany>
+                    <AppShell />
+                  </RequireActiveCompany>
+                </ProtectedRoute>
+              }
+            >
+              <Route index element={<DashboardPage />} />
 
-              Sıra: "new" yolu ":id"den ÖNCE gelmeli, yoksa
-              /app/tasks/new isteği id'si "new" olan bir görev araması
-              olarak yorumlanabilirdi.
-            */}
-            <Route path="tasks" element={<TaskListPage />} />
-            <Route path="tasks/new" element={<TaskCreatePage />} />
-            <Route path="tasks/:id" element={<TaskDetailPage />} />
-            <Route path="tasks/:id/edit" element={<TaskEditPage />} />
+              {/*
+                Müşteri ekranları (AŞAMA 2).
 
-            {/*
-              Profil ve güvenlik (AŞAMA 6 — A).
+                Sıra önemli: "new" yolu ":id"den ÖNCE gelmeli, yoksa
+                /app/customers/new isteği id'si "new" olan bir müşteri
+                araması olarak yorumlanırdı.
+              */}
+              <Route path="customers" element={<CustomerListPage />} />
+              <Route path="customers/new" element={<CustomerCreatePage />} />
+              <Route path="customers/:id" element={<CustomerDetailPage />} />
+              <Route path="customers/:id/edit" element={<CustomerEditPage />} />
 
-              Tek rota, üç kart: hesap bilgileri, e-posta doğrulama,
-              parola. Üçü de kullanıcının KENDİ hesabına ait; hiçbiri
-              owner-only değil ve hiçbirinde rol kontrolü yok.
-            */}
-            <Route path="profile" element={<ProfilePage />} />
-          </Route>
+              {/*
+                Ekip ekranları (AŞAMA 3).
 
-          <Route path="/" element={<Navigate to="/app" replace />} />
-          <Route path="*" element={<Navigate to="/app" replace />} />
-        </Routes>
-      </CompanyProvider>
-    </AuthProvider>
+                Yeni üye ekleme YOK: POST /members owner'ın başkasının
+                parolasını belirlemesini gerektiriyor ve davet akışıyla
+                çakışıyor; bu faz kapsamı dışında.
+              */}
+              <Route path="team" element={<MemberListPage />} />
+              <Route path="team/:id" element={<MemberDetailPage />} />
+              <Route path="team/:id/edit" element={<MemberEditPage />} />
+
+              {/*
+                Davet ekranları (AŞAMA 4) — owner tarafı (gönder/listele/iptal).
+
+                Kabul tarafı (/invitations/accept) BURADA DEĞİL: kimlik
+                doğrulaması olmayan, kabuğun ve owner yetkisinin dışında
+                ayrı bir rota (yukarıda, /login'in yanında).
+              */}
+              <Route path="invitations" element={<InvitationListPage />} />
+              <Route path="invitations/new" element={<InviteMemberPage />} />
+
+              {/*
+                Denetim (AŞAMA 5) — SALT OKUNUR.
+
+                Tek uç var: GET /audit-logs. Tekil audit ucu olmadığı için
+                /audit/:id gibi bir rota da YOK; ayrıntı listedeki satırın
+                içinde açılır.
+              */}
+              <Route path="audit" element={<AuditLogListPage />} />
+
+              {/*
+                Finans (AŞAMA 7 / WEB-02) — gelir ve gider kayıtları.
+
+                SİLME ROTASI YOK: backend'de DELETE ucu yok, kayıt iptal
+                edilir ve iptal ayrıntı ekranından yapılır.
+
+                Yön ROTAYLA belirlenir, prop olarak geçirilir. "Yeni gelir"
+                ve "Yeni gider" iki ayrı kullanıcı niyetidir; tek bir
+                /finance/new rotası olsaydı yön formda ikinci kez sorulurdu.
+
+                Sıra: "new/..." yolları ":id"den ÖNCE gelmeli — yoksa
+                /app/finance/new isteği id'si "new" olan bir kayıt araması
+                olarak yorumlanabilirdi.
+              */}
+              <Route path="finance" element={<FinanceEntryListPage />} />
+              <Route path="finance/new/income" element={<FinanceEntryCreatePage direction="in" />} />
+              <Route
+                path="finance/new/expense"
+                element={<FinanceEntryCreatePage direction="out" />}
+              />
+              <Route path="finance/:id" element={<FinanceEntryDetailPage />} />
+              <Route path="finance/:id/edit" element={<FinanceEntryEditPage />} />
+
+              {/*
+                Ödemeler (AŞAMA 7 / WEB-03) — tahsilat ve dağıtım.
+
+                SİLME ROTASI YOK: backend'de DELETE ucu yok, ödeme iptal
+                edilir ve dağıtımları yerinde kalır.
+
+                Dağıtımların AYRI ROTASI DA YOK: ödemenin gövdesiyle
+                birlikte yazılırlar. Ayrı bir uç olsaydı "toplam dağıtım
+                ödemeyi aşamaz" kuralı iki isteğe yayılır ve arada geçersiz
+                bir ara durum oluşurdu.
+              */}
+              <Route path="payments" element={<PaymentListPage />} />
+              <Route path="payments/new" element={<PaymentCreatePage />} />
+              <Route path="payments/:id" element={<PaymentDetailPage />} />
+              <Route path="payments/:id/edit" element={<PaymentEditPage />} />
+
+              {/*
+                Görevler (Task/Planning v1) — günün işleri.
+
+                SİLME VARDIR, finans ve ödemeden farklı olarak. Finans kaydı
+                iptal edilir çünkü silinmesi geçmiş bir dönemin toplamını
+                sessizce değiştirir; yapılacak bir işin böyle bir özelliği
+                yok.
+
+                ŞİRKET GENELİ: owner-only değil. Rol kapısı istemcide de
+                yok — karar backend'de (playbook §3.1).
+
+                Sıra: "new" yolu ":id"den ÖNCE gelmeli, yoksa
+                /app/tasks/new isteği id'si "new" olan bir görev araması
+                olarak yorumlanabilirdi.
+              */}
+              <Route path="tasks" element={<TaskListPage />} />
+              <Route path="tasks/new" element={<TaskCreatePage />} />
+              <Route path="tasks/:id" element={<TaskDetailPage />} />
+              <Route path="tasks/:id/edit" element={<TaskEditPage />} />
+
+              {/*
+                Profil ve güvenlik (AŞAMA 6 — A).
+
+                Tek rota, üç kart: hesap bilgileri, e-posta doğrulama,
+                parola. Üçü de kullanıcının KENDİ hesabına ait; hiçbiri
+                owner-only değil ve hiçbirinde rol kontrolü yok.
+              */}
+              <Route path="profile" element={<ProfilePage />} />
+            </Route>
+
+            <Route path="/" element={<Navigate to="/app" replace />} />
+            <Route path="*" element={<Navigate to="/app" replace />} />
+          </Routes>
+        </CompanyProvider>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }
