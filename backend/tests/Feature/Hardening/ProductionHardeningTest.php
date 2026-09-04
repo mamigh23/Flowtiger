@@ -6,6 +6,7 @@ use App\Models\AuditLog;
 use App\Models\Company;
 use App\Models\Customer;
 use App\Models\User;
+use App\Providers\AppServiceProvider;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -421,6 +422,99 @@ class ProductionHardeningTest extends TestCase
         $this->assertSame(1, User::where('email', 'owner@flowtiger.test')->count());
         $this->assertSame(1, Company::where('name', 'FlowTiger Test Company')->count());
         $this->assertSame(2, Customer::withoutTenantScope('test doğrulaması')->count());
+    }
+
+    // ===============================================================
+    // PRODUCTION DEBUG GUARD
+    // ===============================================================
+
+    /**
+     * debug=true iken her istisna, kullanıcıya stack trace, dosya yolu ve
+     * SQL sorgusunu olduğu gibi döner. Production'da bu doğrudan bir bilgi
+     * sızıntısıdır — bu yüzden bu kombinasyon SESSİZCE ÇALIŞMAK yerine
+     * uygulama BOOT sırasında açıkça durmalı.
+     *
+     * Ortam VE debug bayrağı GERÇEKTEN değiştirilir (`app()->instance('env', ...)`
+     * ve `config(['app.debug' => ...])`) ki guard, provider'ın kendi bir
+     * varsayımını değil GERÇEK production+debug davranışını ölçsün. Guard
+     * boot()'un İLK İŞİ olduğu için, fırlatılan istisna hiçbir yan etki
+     * (rate limiter/policy/health check kaydı) bırakmadan durur. Orijinal
+     * değerler `finally` içinde geri yüklenir — aksi hâlde bu testten sonra
+     * çalışan her test bu ortamda kalırdı.
+     */
+    public function test_the_application_refuses_to_boot_with_debug_enabled_in_production(): void
+    {
+        $originalEnv = app()->environment();
+        $originalDebug = config('app.debug');
+
+        app()->instance('env', 'production');
+        config(['app.debug' => true]);
+
+        try {
+            $this->assertTrue(app()->environment('production'), 'Ortam gerçekten production yapılamadı.');
+            $this->assertTrue(config('app.debug'), 'Debug bayrağı gerçekten true yapılamadı.');
+
+            $thrown = null;
+
+            try {
+                (new AppServiceProvider(app()))->boot();
+            } catch (RuntimeException $exception) {
+                $thrown = $exception;
+            }
+
+            $this->assertNotNull($thrown, 'Uygulama production+debug=true iken boot oldu — sessiz no-op.');
+            $this->assertStringContainsString('APP_DEBUG', $thrown->getMessage());
+            $this->assertStringContainsString('production', $thrown->getMessage());
+        } finally {
+            app()->instance('env', $originalEnv);
+            config(['app.debug' => $originalDebug]);
+        }
+
+        $this->assertSame($originalEnv, app()->environment(), 'Ortam bir sonraki teste sızdı.');
+        $this->assertSame($originalDebug, config('app.debug'), 'Debug bayrağı bir sonraki teste sızdı.');
+    }
+
+    /**
+     * REGRESYON: production + debug=false → uygulama normal boot olur.
+     * Bu, gerçek bir production dağıtımının çalışması gereken durumdur.
+     */
+    public function test_the_application_boots_normally_in_production_with_debug_disabled(): void
+    {
+        $originalEnv = app()->environment();
+        $originalDebug = config('app.debug');
+
+        app()->instance('env', 'production');
+        config(['app.debug' => false]);
+
+        try {
+            $this->assertTrue(app()->environment('production'));
+            $this->assertFalse(config('app.debug'));
+
+            (new AppServiceProvider(app()))->boot();
+
+            $this->assertNotNull(RateLimiter::limiter('login'), 'Guard geçtikten sonra normal boot devam etmedi.');
+        } finally {
+            app()->instance('env', $originalEnv);
+            config(['app.debug' => $originalDebug]);
+        }
+
+        $this->assertSame($originalEnv, app()->environment(), 'Ortam bir sonraki teste sızdı.');
+        $this->assertSame($originalDebug, config('app.debug'), 'Debug bayrağı bir sonraki teste sızdı.');
+    }
+
+    /**
+     * REGRESYON: local/testing'de debug=true GAYET NORMALDİR (bkz. .env) ve
+     * guard'la BOZULMAMALI. Testler zaten bu tam kombinasyonla çalışıyor
+     * (ortam 'testing', debug varsayılan olarak true) — bu yüzden ayrıca bir
+     * ortam kurulumu YAPILMAZ, gerçek test ortamı kullanılır.
+     */
+    public function test_the_guard_does_not_fire_outside_production(): void
+    {
+        $this->assertFalse(app()->environment('production'));
+
+        (new AppServiceProvider(app()))->boot();
+
+        $this->assertNotNull(RateLimiter::limiter('login'), 'Guard dışı ortamda normal boot devam etmedi.');
     }
 
     // ===============================================================

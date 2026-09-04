@@ -35,7 +35,7 @@ class AppServiceProvider extends ServiceProvider
         // Laravel'in her istek/job sonunda çağırdığı forgetScopedInstances()
         // ile örneği sıfırlar.
         $this->app->scoped(CompanyContext::class, function (): CompanyContext {
-            return new CompanyContext();
+            return new CompanyContext;
         });
     }
 
@@ -44,11 +44,40 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        $this->guardAgainstDebugModeInProduction();
         $this->configureLoginRateLimiter();
         $this->registerPolicies();
         $this->configurePasswordPolicy();
         $this->configurePasswordResetLink();
         $this->configureHealthCheck();
+    }
+
+    /**
+     * PRODUCTION + APP_DEBUG=true → uygulama BOOT sırasında fail-fast.
+     *
+     * debug=true iken oluşan her istisna, kullanıcıya stack trace, dosya
+     * yolu ve SQL sorgusunu olduğu gibi döner (Laravel'in varsayılan hata
+     * sayfası/JSON yanıtı — bkz. exceptions.debug render'ı). Bu,
+     * production'da doğrudan bir bilgi sızıntısı riskidir: .env dosyası
+     * yanlışlıkla ya da bir deploy hatasıyla APP_DEBUG=true bırakılabilir.
+     *
+     * Kontrol boot()'un İLK İŞİ olarak yapılır ve SESSİZCE NO-OP OLMAZ:
+     * production + debug=true durumunda uygulamanın geri kalanı (rate
+     * limiter, policy, health check kayıtları) hiç kurulmaz — sessizce
+     * çalışmaya devam etmek, hatayı yalnızca ilk gerçek istisna
+     * production'a sızdığında görünür kılardı. local/testing'de debug
+     * her zaman true olabilir (bkz. .env) ve bu tamamen normaldir; kontrol
+     * yalnızca `environment('production')` doğruysa devreye girer.
+     */
+    private function guardAgainstDebugModeInProduction(): void
+    {
+        if ($this->app->environment('production') && config('app.debug')) {
+            throw new RuntimeException(
+                'APP_DEBUG=true production ortamında ÇALIŞTIRILAMAZ: hata detayları, '.
+                'stack trace ve SQL/dosya yolları açığa çıkar. .env dosyasında '.
+                'APP_DEBUG=false olarak ayarlayın.'
+            );
+        }
     }
 
     /**
