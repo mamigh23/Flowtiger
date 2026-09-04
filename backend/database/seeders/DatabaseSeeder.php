@@ -8,6 +8,7 @@ use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use RuntimeException;
 
 class DatabaseSeeder extends Seeder
 {
@@ -19,9 +20,28 @@ class DatabaseSeeder extends Seeder
      * Idempotent: tekrar tekrar çalıştırılabilir, duplicate kayıt üretmez.
      * Tüm adımlar tek transaction içindedir — yarım kalmış bir seed
      * tutarsız üyelik/müşteri verisi bırakmaz.
+     *
+     * PRODUCTION GUARD (release-readiness hardening):
+     * Bu seeder sabit bir şifreyle ("password") tahmin edilebilir bir
+     * owner hesabı (owner@flowtiger.test) üretir. Bu, geliştirme/test
+     * ortamında kabul edilebilir ama gerçek bir production veritabanında
+     * çalıştırılırsa doğrudan bir hesap ele geçirme riskidir. Bu yüzden
+     * kontrol İLK İŞ olarak yapılır — transaction açılmadan, tek bir
+     * satır bile yazılmadan ÖNCE — ve sessizce no-op OLMAZ: production'da
+     * çağıran taraf (bir operatör, bir deploy script'i) bunun neden hiçbir
+     * şey yapmadığını asla bilemezdi; açık bir istisna, hatayı o anda
+     * görünür kılar.
      */
     public function run(): void
     {
+        if (app()->environment('production')) {
+            throw new RuntimeException(
+                'DatabaseSeeder production ortamında çalıştırılamaz: sabit şifreli bir '.
+                'owner hesabı (owner@flowtiger.test) ve örnek şirket/müşteri kayıtları '.
+                'üretir. Bu yalnızca local/testing ortamları içindir.'
+            );
+        }
+
         DB::transaction(function (): void {
             $owner = $this->seedOwner();
             $company = $this->seedCompany();
@@ -75,7 +95,7 @@ class DatabaseSeeder extends Seeder
                 ->first();
 
             if ($customer === null) {
-                $customer = new Customer();
+                $customer = new Customer;
 
                 // company_id ve customer_no mass-assignable değildir (§9);
                 // sistem tarafından açıkça atanır.

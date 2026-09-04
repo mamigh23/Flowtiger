@@ -4,9 +4,12 @@ namespace Tests\Feature\Hardening;
 
 use App\Models\AuditLog;
 use App\Models\Company;
+use App\Models\Customer;
 use App\Models\User;
+use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Route;
 use LogicException;
@@ -321,6 +324,103 @@ class ProductionHardeningTest extends TestCase
         $this->assertNotNull($definition);
         $this->assertStringContainsString('user_id', $definition->indexdef);
         $this->assertStringContainsString('created_at', $definition->indexdef);
+    }
+
+    // ===============================================================
+    // SEEDER PRODUCTION GUARD
+    // ===============================================================
+
+    /**
+     * DatabaseSeeder sabit şifreli bir owner hesabı (owner@flowtiger.test)
+     * üretir. Production'da çalıştırılırsa doğrudan bir hesap ele geçirme
+     * riski olur — bu yüzden production'da SESSİZCE NO-OP olmak yerine
+     * açık bir istisnayla durmalı, ve hiçbir satır yazılmadan önce
+     * durmalı (transaction hiç açılmamalı).
+     *
+     * Ortam GERÇEKTEN 'production' yapılır (`app()->instance('env', ...)`
+     * — Laravel'in `app()->environment()` metodunun okuduğu container
+     * bağlaması) ki guard, seeder'ın kendi bir metodunu değil GERÇEK
+     * production davranışını ölçsün. Orijinal değer `finally` içinde
+     * assertion'lar başarısız olsa bile geri yüklenir — aksi hâlde bu
+     * testten sonra çalışan her test 'production' ortamında kalırdı.
+     */
+    public function test_the_seeder_refuses_to_run_in_production_and_writes_nothing(): void
+    {
+        $originalEnv = app()->environment();
+
+        app()->instance('env', 'production');
+
+        try {
+            $this->assertTrue(app()->environment('production'), 'Ortam gerçekten production yapılamadı.');
+
+            $thrown = null;
+
+            try {
+                (new DatabaseSeeder)->run();
+            } catch (RuntimeException $exception) {
+                $thrown = $exception;
+            }
+
+            $this->assertNotNull($thrown, 'Seeder production ortamında istisna fırlatmadı — sessiz no-op oldu.');
+            $this->assertStringContainsString('production', $thrown->getMessage());
+
+            // Fail-fast: transaction hiç açılmamalı, tek satır bile yazılmamalı.
+            $this->assertDatabaseMissing('users', ['email' => 'owner@flowtiger.test']);
+            $this->assertDatabaseMissing('companies', ['name' => 'FlowTiger Test Company']);
+        } finally {
+            app()->instance('env', $originalEnv);
+        }
+
+        $this->assertSame($originalEnv, app()->environment(), 'Ortam bir sonraki teste sızdı.');
+    }
+
+    /**
+     * REGRESYON: guard eklenmeden önceki davranış (local/testing'de seed)
+     * BOZULMADI. Testler zaten `flowtiger_test` veritabanında çalışıyor
+     * (TestCase'in fail-closed bariyeri) — bu yüzden ayrıca bir ortam
+     * kurulumu YAPILMAZ, gerçek test ortamı kullanılır.
+     */
+    public function test_the_seeder_still_creates_the_expected_fixtures_outside_production(): void
+    {
+        $this->assertFalse(app()->environment('production'));
+
+        (new DatabaseSeeder)->run();
+
+        $owner = User::where('email', 'owner@flowtiger.test')->firstOrFail();
+        $company = Company::where('name', 'FlowTiger Test Company')->firstOrFail();
+
+        $this->assertTrue($owner->password !== 'password', 'Şifre düz metin saklanmamalı (hashed cast).');
+        $this->assertTrue(Hash::check('password', $owner->password));
+
+        $this->assertSame(
+            'owner',
+            $company->users()->where('users.id', $owner->getKey())->first()->pivot->role,
+        );
+
+        $this->assertDatabaseHas('customers', [
+            'company_id' => $company->getKey(),
+            'customer_no' => 1,
+            'name' => 'Ahmet',
+        ]);
+        $this->assertDatabaseHas('customers', [
+            'company_id' => $company->getKey(),
+            'customer_no' => 2,
+            'name' => 'Mehmet',
+        ]);
+    }
+
+    /**
+     * İkinci kez çalıştırmak duplicate kayıt ÜRETMEMELİ — mevcut
+     * idempotency sözleşmesi guard'la bozulmadı.
+     */
+    public function test_the_seeder_remains_idempotent_outside_production(): void
+    {
+        (new DatabaseSeeder)->run();
+        (new DatabaseSeeder)->run();
+
+        $this->assertSame(1, User::where('email', 'owner@flowtiger.test')->count());
+        $this->assertSame(1, Company::where('name', 'FlowTiger Test Company')->count());
+        $this->assertSame(2, Customer::withoutTenantScope('test doğrulaması')->count());
     }
 
     // ===============================================================
