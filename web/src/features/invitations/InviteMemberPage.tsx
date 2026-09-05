@@ -1,7 +1,7 @@
 import { useId, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api, endpoints } from '@/lib/api';
-import { Button, Card, ErrorState, Input } from '@/components/ui';
+import { Button, Card, ErrorState, Input, useFocusFirstInvalidFieldOnError } from '@/components/ui';
 import type { Role } from '@/types/api';
 import { invitationErrorMessage, invitationFieldError } from './invitationErrors';
 
@@ -27,6 +27,9 @@ export function InviteMemberPage() {
   const [role, setRole] = useState<Role>('member');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<unknown>(null);
+
+  // P1-06: submit başarısız olduğunda odağı ilk geçersiz alana taşır.
+  useFocusFirstInvalidFieldOnError(error);
 
   // Çift gönderim koruması ref ile: state güncellemesi asenkrondur ve
   // hızlı iki tıklama arasında henüz uygulanmamış olabilir.

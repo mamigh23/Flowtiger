@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { api, endpoints } from '@/lib/api';
-import { Button, Card, ErrorState, Input, Select, Textarea } from '@/components/ui';
+import { Button, Card, ErrorState, Input, Select, Textarea, useFocusFirstInvalidFieldOnError } from '@/components/ui';
 import type { Customer, Member, TaskInput } from '@/types/api';
 import { fieldErrorOf, taskErrorMessage } from './taskErrors';
 
@@ -65,6 +65,9 @@ export function TaskForm({
 
   const [error, setError] = useState<unknown>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  // P1-06: submit başarısız olduğunda odağı ilk geçersiz alana taşır.
+  useFocusFirstInvalidFieldOnError(error);
 
   // Çift gönderim koruması ref ile: state güncellemesi asenkrondur ve
   // hızlı iki tıklama arasında henüz uygulanmamış olabilir.

@@ -1,7 +1,13 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { ApiError, api, endpoints, toUserMessage } from '@/lib/api';
-import { Button, Card, ErrorState, PasswordInput } from '@/components/ui';
+import {
+  Button,
+  Card,
+  ErrorState,
+  PasswordInput,
+  useFocusFirstInvalidFieldOnError,
+} from '@/components/ui';
 
 /**
  * Parola değiştirme.
@@ -41,6 +47,9 @@ export function PasswordCard() {
   );
   const [error, setError] = useState<unknown>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  // P1-06: submit başarısız olduğunda odağı ilk geçersiz alana taşır.
+  useFocusFirstInvalidFieldOnError(error);
 
   const isValidation = error instanceof ApiError && error.isValidation;
   const currentError = isValidation ? error.fieldError('current_password') : undefined;

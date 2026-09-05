@@ -1,7 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { api, endpoints } from '@/lib/api';
-import { Button, Card, ErrorState, Input, LoadingScreen } from '@/components/ui';
+import {
+  Button,
+  Card,
+  ErrorState,
+  Input,
+  LoadingScreen,
+  useFocusFirstInvalidFieldOnError,
+} from '@/components/ui';
 import type { Member } from '@/types/api';
 import { memberErrorMessage, memberFieldError } from './memberErrors';
 
@@ -28,6 +35,9 @@ export function MemberEditPage() {
   const [email, setEmail] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<unknown>(null);
+
+  // P1-06: submit başarısız olduğunda odağı ilk geçersiz alana taşır.
+  useFocusFirstInvalidFieldOnError(submitError);
 
   // Çift gönderim koruması ref ile: state güncellemesi asenkrondur.
   const inFlight = useRef(false);

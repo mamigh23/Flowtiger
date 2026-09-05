@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { ApiError, api, endpoints, toUserMessage } from '@/lib/api';
-import { Button, Card, ErrorState, Input } from '@/components/ui';
+import { Button, Card, ErrorState, Input, useFocusFirstInvalidFieldOnError } from '@/components/ui';
 import { useAuth } from '@/lib/auth/AuthContext';
 import type { User } from '@/types/api';
 
@@ -38,6 +38,9 @@ export function AccountCard({
   const [error, setError] = useState<unknown>(null);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+
+  // P1-06: submit başarısız olduğunda odağı ilk geçersiz alana taşır.
+  useFocusFirstInvalidFieldOnError(error);
 
   const isValidation = error instanceof ApiError && error.isValidation;
   const nameError = isValidation ? error.fieldError('name') : undefined;

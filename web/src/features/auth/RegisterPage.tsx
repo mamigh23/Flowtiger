@@ -3,7 +3,7 @@ import type { FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth/AuthContext';
 import { ApiError, toUserMessage } from '@/lib/api';
-import { Button, Card, ErrorState, Input, PasswordInput } from '@/components/ui';
+import { Button, Card, ErrorState, Input, PasswordInput, useFocusFirstInvalidFieldOnError } from '@/components/ui';
 import { FlowTigerMark } from '@/features/brand/FlowTigerMark';
 
 /**
@@ -48,6 +48,9 @@ export function RegisterPage() {
     password?: string;
     company_name?: string;
   }>({});
+
+  // P1-06: submit başarısız olduğunda odağı ilk geçersiz alana taşır.
+  useFocusFirstInvalidFieldOnError(fieldErrors);
 
   /**
    * Çift gönderim koruması — LoginPage'deki AYNI gerekçe: yalnızca

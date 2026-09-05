@@ -155,6 +155,42 @@ describe('LoginPage', () => {
     expect(await screen.findByText('E-posta alanı zorunludur.')).toBeInTheDocument();
   });
 
+  /**
+   * P1-06 — form doğrulama erişilebilirliği.
+   *
+   * Dört şey birlikte kanıtlanır: geçersiz alan `aria-invalid="true"`
+   * taşır, `aria-describedby` gerçek hata elemanının id'sine işaret eder,
+   * o hata elemanı `role="alert"` taşır (ekran okuyucu duyurusu için) ve
+   * başarısız gönderimden sonra odak DOM'daki ilk geçersiz alana taşınır.
+   */
+  it('422 doğrulama hatasında alanı aria ile işaretler ve odağı ona taşır', async () => {
+    vi.stubGlobal(
+      'fetch',
+      mockApi({
+        '/auth/login': () =>
+          jsonResponse(422, {
+            message: 'Gönderilen bilgiler geçersiz.',
+            errors: { email: ['E-posta alanı zorunludur.'] },
+          }),
+      }),
+    );
+
+    const user = userEvent.setup();
+    renderApp('/login');
+
+    await fillCredentials(user);
+    await user.click(screen.getByRole('button', { name: 'Giriş yap' }));
+
+    const emailInput = await screen.findByLabelText('E-posta');
+    const errorMessage = await screen.findByText('E-posta alanı zorunludur.');
+
+    expect(emailInput).toHaveAttribute('aria-invalid', 'true');
+    expect(emailInput).toHaveAttribute('aria-describedby', errorMessage.id);
+    expect(errorMessage).toHaveAttribute('role', 'alert');
+
+    await waitFor(() => expect(emailInput).toHaveFocus());
+  });
+
   it('429 durumunda bekleme süresini söyler', async () => {
     vi.stubGlobal(
       'fetch',

@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Button, Card, ErrorState, Input } from '@/components/ui';
+import { Button, Card, ErrorState, Input, useFocusFirstInvalidFieldOnError } from '@/components/ui';
 import { customerErrorMessage, fieldErrorOf } from './customerErrors';
 
 /**
@@ -39,6 +39,9 @@ export function CustomerForm({
   const [phone, setPhone] = useState(initialValues?.phone ?? '');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<unknown>(null);
+
+  // P1-06: submit başarısız olduğunda odağı ilk geçersiz alana taşır.
+  useFocusFirstInvalidFieldOnError(error);
 
   // Çift gönderim koruması ref ile: state güncellemesi asenkrondur ve
   // hızlı iki tıklama arasında henüz uygulanmamış olabilir.

@@ -70,7 +70,7 @@ export function Input({ label, error, id, ...rest }: InputProps) {
         aria-describedby={error ? errorId : undefined}
       />
       {error && (
-        <span className="ft-field__error" id={errorId}>
+        <span className="ft-field__error" id={errorId} role="alert">
           {error}
         </span>
       )}
@@ -116,7 +116,7 @@ export function PasswordInput({ label, error, id, ...rest }: InputProps) {
       </div>
 
       {error && (
-        <span className="ft-field__error" id={errorId}>
+        <span className="ft-field__error" id={errorId} role="alert">
           {error}
         </span>
       )}
@@ -160,7 +160,7 @@ export function Select({ label, error, id, children, ...rest }: SelectProps) {
         {children}
       </select>
       {error && (
-        <span className="ft-field__error" id={errorId}>
+        <span className="ft-field__error" id={errorId} role="alert">
           {error}
         </span>
       )}
@@ -192,7 +192,7 @@ export function Textarea({ label, error, id, ...rest }: TextareaProps) {
         aria-describedby={error ? errorId : undefined}
       />
       {error && (
-        <span className="ft-field__error" id={errorId}>
+        <span className="ft-field__error" id={errorId} role="alert">
           {error}
         </span>
       )}
@@ -300,4 +300,41 @@ export function Skeleton({ width = '100%' }: { width?: string }) {
 
 export function Badge({ children, tone = 'neutral' }: { children: ReactNode; tone?: 'neutral' | 'accent' }) {
   return <span className={`ft-badge ft-badge--${tone}`}>{children}</span>;
+}
+
+/**
+ * Submit başarısız olduğunda odağı DOM'daki İLK geçersiz alana taşır
+ * (P1-06).
+ *
+ * `triggers`, çağıran formun hata(ları)nı tuttuğu STATE'İN KENDİSİDİR
+ * (`error`, `submitError`, `fieldErrors` — hangisiyse; birden fazla
+ * bağımsız hata kaynağı olan formlar — ör. PaymentForm'un hem sunucu
+ * `error`'ı hem yerel `amountError`/`rowErrors`'ı — hepsini geçirebilir).
+ * Her başarısız submit bu state'(ler)i YENİDEN yazar (form handler'ları
+ * her denemede önce temizleyip sonra dolduruyor), bu yüzden aynı hatayla
+ * ikinci bir deneme bile bağımlılığı gerçekten DEĞİŞTİRİR ve efekt
+ * yeniden çalışır.
+ *
+ * NEDEN useEffect: React state güncellemesi ile DOM'un gerçekten
+ * güncellenmesi ARASINDA bir gecikme vardır. `catch` bloğunun içinde
+ * senkron bir sorgu, React henüz `aria-invalid`i yazmadan çalışırdı.
+ * useEffect DOM commit'İNDEN SONRA çalıştığı için sorgulandığı anda
+ * attribute zaten oradadır.
+ *
+ * ELEMENT BULUNAMAZSA HİÇBİR ŞEY YAPILMAZ: yalnızca form seviyesi bir
+ * hata varsa (hiçbir alan `aria-invalid` değilse) bu bilinçli bir
+ * no-op'tur — o durumda zaten `role="alert"` taşıyan `ErrorState` kendi
+ * duyurusunu yapar.
+ *
+ * Sayfada aynı anda birden fazla form YOKTUR (her ekran tek form), bu
+ * yüzden `document` genelinde aramak yeterlidir; bir form ref'i/kapsayıcı
+ * parametresi gerektirmez.
+ */
+export function useFocusFirstInvalidFieldOnError(...triggers: unknown[]): void {
+  // triggers, çağıranın verdiği bağımlılık listesidir — bu hook'un TEK
+  // amacı bu listeyi useEffect'e olduğu gibi aktarmaktır.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    document.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus();
+  }, triggers);
 }

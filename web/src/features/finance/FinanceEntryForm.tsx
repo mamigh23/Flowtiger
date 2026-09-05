@@ -2,7 +2,15 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { api, endpoints } from '@/lib/api';
-import { Button, Card, ErrorState, Input, Select, Textarea } from '@/components/ui';
+import {
+  Button,
+  Card,
+  ErrorState,
+  Input,
+  Select,
+  Textarea,
+  useFocusFirstInvalidFieldOnError,
+} from '@/components/ui';
 import { MoneyFormatError, parseMinorAmount } from '@/lib/finance/money';
 import type { Customer, FinanceEntryInput } from '@/types/api';
 import { VAT_RATE_OPTIONS, directionLabel, todayAsCalendarDay } from './financeLabels';
@@ -101,6 +109,11 @@ export function FinanceEntryForm({
   const [amountError, setAmountError] = useState<string | undefined>(undefined);
   const [error, setError] = useState<unknown>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  // P1-06: submit başarısız olduğunda odağı ilk geçersiz alana taşır.
+  // İki bağımsız hata kaynağı var: sunucu (`error`) ve yerel tutar
+  // ayrıştırma (`amountError`) — ikisi de izlenir.
+  useFocusFirstInvalidFieldOnError(error, amountError);
 
   // Çift gönderim koruması ref ile: state güncellemesi asenkrondur ve
   // hızlı iki tıklama arasında henüz uygulanmamış olabilir.

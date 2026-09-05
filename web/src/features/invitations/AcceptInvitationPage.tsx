@@ -4,7 +4,15 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/lib/auth/AuthContext';
 import { useCompanies } from '@/lib/company/CompanyContext';
 import { api, endpoints } from '@/lib/api';
-import { Button, Card, ErrorState, Input, LoadingScreen, PasswordInput } from '@/components/ui';
+import {
+  Button,
+  Card,
+  ErrorState,
+  Input,
+  LoadingScreen,
+  PasswordInput,
+  useFocusFirstInvalidFieldOnError,
+} from '@/components/ui';
 import { FlowTigerMark } from '@/features/brand/FlowTigerMark';
 import type { Invitation } from '@/types/api';
 import { acceptInvitationErrorMessage, acceptInvitationFieldError } from './invitationAcceptErrors';
@@ -61,6 +69,9 @@ export function AcceptInvitationPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<unknown>(null);
   const [result, setResult] = useState<Invitation | null>(null);
+
+  // P1-06: submit başarısız olduğunda odağı ilk geçersiz alana taşır.
+  useFocusFirstInvalidFieldOnError(error);
 
   // Çift gönderim koruması: state güncellemesi asenkrondur, hızlı iki
   // tıklama arasında henüz uygulanmamış olabilir (bkz. InviteMemberPage).
