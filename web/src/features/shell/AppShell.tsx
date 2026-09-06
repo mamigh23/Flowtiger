@@ -64,16 +64,41 @@ export function AppShell() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [splashDone, setSplashDone] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const mainRef = useRef<HTMLElement>(null);
+  const isFirstRender = useRef(true);
 
   // Kimliği sabit: FlowTigerSplash'in efekti her render'da yeniden
   // kurulmasın, yoksa zamanlayıcı sürekli sıfırlanır ve perde hiç
   // kapanmaz.
   const finishSplash = useCallback(() => setSplashDone(true), []);
 
-  /** Gezinme sonrası çekmece kapanır. */
+  /**
+   * Gezinme sonrası çekmece kapanır VE ODAK ANA İÇERİĞE TAŞINIR.
+   *
+   * ODAK NEDEN TAŞINIR: tıklanan kenar çubuğu bağlantısı tıklamadan sonra
+   * odaklı KALIR (tarayıcı varsayılanı). `.ft-shell__sidebar:focus-within`
+   * kuralı bu yüzden gezinmeden SONRA da tetikli kalır ve çubuğu genişletir;
+   * genişleme "içeriği itmez, üstüne biner" (bkz. yukarısı) — yani yeni
+   * sayfanın başlığı, kullanıcı fareyi/odağı başka yere taşıyana kadar bu
+   * genişlemiş çubuğun ALTINDA görünmez kalır. Odağı programatik olarak ana
+   * içeriğe taşımak `:focus-within`i hemen sonlandırır (çubuk dar hâline
+   * döner) ve ayrıca SPA'lar için standart pratiği karşılar: ekran okuyucu
+   * kullanıcısına yeni sayfaya geçildiği bildirilir.
+   *
+   * İLK RENDER HARİÇ: kabuk ilk kurulduğunda henüz kenar çubuğunda bir
+   * bağlantı odaklı değildir; odağı o an ana içeriğe zorlamak tarayıcının
+   * kendi ilk odak/scroll davranışına gereksizce müdahale ederdi.
+   */
   useEffect(() => {
     setNavOpen(false);
     setMenuOpen(false);
+
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+
+    mainRef.current?.focus({ preventScroll: true });
   }, [location.pathname]);
 
   /** Menü dışına tıklama ve Esc ile kapanır — klavye kullanıcısı kilitlenmez. */
@@ -199,7 +224,7 @@ export function AppShell() {
           </div>
         </header>
 
-        <main className="ft-shell__main">
+        <main className="ft-shell__main" ref={mainRef} tabIndex={-1}>
           <Outlet />
         </main>
       </div>

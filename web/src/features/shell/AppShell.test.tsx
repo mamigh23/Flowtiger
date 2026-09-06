@@ -318,6 +318,43 @@ describe('AppShell', () => {
   });
 
   /**
+   * REGRESYON — GEZİNME SONRASI ODAK KENAR ÇUBUĞUNDA KALMAZ.
+   *
+   * Tıklanan bağlantı, tıklamadan sonra tarayıcı varsayımıyla odaklı
+   * KALIR. `.ft-shell__sidebar:focus-within` kuralı bu yüzden gezinmeden
+   * SONRA da tetikli kalıp çubuğu genişletiyordu; genişleme içeriği
+   * itmiyor, ÜSTÜNE biniyor (bkz. AppShell.tsx) — yani yeni sayfanın
+   * başlığı, kullanıcı fareyi/odağı başka yere taşıyana kadar genişlemiş
+   * çubuğun ALTINDA görünmez kalıyordu (gerçek tarayıcıda doğrulandı,
+   * jsdom bunu ölçemez çünkü layout/örtüşme hesaplamaz — bu yüzden test
+   * odağın KENDİSİNİ, görsel örtüşmeyi değil, kilitliyor).
+   *
+   * Odağın gezinme sonrası ana içeriğe taşınması hem `:focus-within`i
+   * hemen sonlandırır (çubuk dar hâline döner) hem de SPA'lar için
+   * standart pratiği karşılar: ekran okuyucu kullanıcısına yeni sayfaya
+   * geçildiği bildirilir.
+   */
+  it('gezinme sonrası odak ana içeriğe taşınır, kenar çubuğunda kalmaz', async () => {
+    vi.stubGlobal(
+      'fetch',
+      mockApi({
+        ...routes,
+        '/finance-entries': () => jsonResponse(200, fixtures.paginated([], 0)),
+      }),
+    );
+
+    const user = userEvent.setup();
+    renderApp('/app', { token: 'gecerli-token' });
+
+    const nav = await screen.findByRole('navigation', { name: 'Ana gezinme' });
+    await user.click(within(nav).getByRole('link', { name: 'Finans' }));
+
+    await screen.findByRole('heading', { name: 'Finans' });
+
+    expect(document.activeElement).toBe(screen.getByRole('main'));
+  });
+
+  /**
    * Rol bazlı gizleme YOKTUR: bazı uçlar owner-only ama bu karar
    * backend'e aittir (playbook §3.1). Bağlantıyı gizlemek, yetki kararını
    * istemcide yeniden uygulamak olurdu.
