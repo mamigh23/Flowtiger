@@ -1406,10 +1406,28 @@ a {
     transition: transform 0.2s ease;
   }
 
+  /*
+   * REGRESYON — ÇEKMECE KENDİ BAĞLANTILARINI ENGELLEMESİN.
+   *
+   * Masaüstü kuralı (yukarısı, `.ft-shell__sidebar:hover,:focus-within`)
+   * fareyle/klavyeyle üzerine gelindiğinde `position: relative; z-index: 20`
+   * uyguluyor — dar rayın masaüstünde içeriğin üstüne binmesi için. Bu
+   * kural medya sorgusuyla sınırlı DEĞİL, yani mobilde de tetikleniyor.
+   * Ama mobilde çekmece `position: fixed; z-index: 30` ile SABİT ve
+   * `.ft-shell__scrim`in (z-index: 25) ÜSTÜNDE durmalı; bir bağlantıya
+   * dokunmak/tıklamak onu hover/focus-within yaptığı an z-index 20'ye
+   * düşüyor, kararan katmanın (25) ALTINDA kalıyor ve tıklama kenar
+   * çubuğundaki bağlantıya değil, çekmeceyi kapatan katmana gidiyor —
+   * yani çekmece açıldıktan sonra HİÇBİR bağlantısına dokunulamıyordu
+   * (gerçek tarayıcıda doğrulandı: 8/8 denemede gezinme başarısız oldu).
+   * `position`/`z-index` burada açıkça sabitlenip geri alınıyor.
+   */
   .ft-shell__sidebar:hover,
   .ft-shell__sidebar:focus-within {
     width: var(--ft-sidebar-width-expanded);
     box-shadow: none;
+    position: fixed;
+    z-index: 30;
   }
 
   .ft-shell__sidebar .ft-nav__label,
