@@ -160,6 +160,49 @@ class RegisterApiTest extends TestCase
             ->assertJsonValidationErrors(['email']);
     }
 
+    /**
+     * REGRESYON — e-posta doğrulamadan ÖNCE normalize edilir (§5, §26).
+     *
+     * ProfileUpdateRequest'te testiyle birlikte zaten kayıtlı olan kural bu
+     * uca hiç uygulanmamıştı: adres yazıldığı hâliyle saklanıyordu.
+     */
+    public function test_the_email_is_normalised_before_validation(): void
+    {
+        $response = $this->postJson(
+            self::REGISTER_URI,
+            $this->validPayload(['email' => '  Mami@FlowTiger.TEST  '])
+        )->assertCreated();
+
+        $response->assertJsonPath('data.user.email', 'mami@flowtiger.test');
+
+        $this->assertSame(
+            'mami@flowtiger.test',
+            User::query()->findOrFail($response->json('data.user.id'))->email
+        );
+    }
+
+    /**
+     * REGRESYON — `unique:users` BÜYÜK/KÜÇÜK HARFE DUYARLIDIR.
+     *
+     * Normalizasyon olmadan "Mami@FlowTiger.TEST" bu kuraldan geçiyordu:
+     * aynı kişi için İKİNCİ bir hesap (ve ikinci bir şirket) açılıyor, o kişi
+     * de sonradan kendi yazımıyla giriş yapamıyordu. InvitationService'in
+     * normaliseEmail() belgesinin uyardığı sonucun ta kendisi.
+     */
+    public function test_a_duplicate_email_is_rejected_case_insensitively(): void
+    {
+        User::factory()->create(['email' => 'mami@flowtiger.test']);
+
+        $this->postJson(self::REGISTER_URI, $this->validPayload(['email' => 'Mami@FlowTiger.TEST']))
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['email']);
+
+        $this->assertSame(
+            1,
+            User::query()->whereRaw('lower(email) = ?', ['mami@flowtiger.test'])->count()
+        );
+    }
+
     public function test_missing_company_name_returns_422(): void
     {
         $payload = $this->validPayload();

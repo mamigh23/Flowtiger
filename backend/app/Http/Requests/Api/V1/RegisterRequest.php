@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Api\V1;
 
+use App\Services\InvitationService;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
@@ -30,6 +31,29 @@ class RegisterRequest extends FormRequest
     public function authorize(): bool
     {
         return true;
+    }
+
+    /**
+     * Normalizasyon DOĞRULAMADAN ÖNCE yapılır (§5, §26) — ProfileUpdateRequest
+     * ile aynı gerekçe, orada testiyle birlikte zaten kayıtlı: normalize
+     * edilmemiş büyük harfli bir adres `unique:users` kontrolünü GEÇER.
+     *
+     * Postgres'te karşılaştırma büyük/küçük harfe duyarlıdır; bu yüzden
+     * "Ali@site.com" ve "ali@site.com" aynı kişi olmasına rağmen İKİ AYRI
+     * hesap (ve iki ayrı şirket) yaratabiliyordu — InvitationService'in
+     * normaliseEmail() belgesinin tam olarak uyardığı sonuç.
+     *
+     * İkinci sonuç girişteydi: adres yazıldığı hâliyle saklandığı için
+     * kullanıcı bir dahaki sefere farklı bir yazımla (telefon klavyesi ilk
+     * harfi küçültür) girmeye çalıştığında hesabına erişemiyordu.
+     */
+    protected function prepareForValidation(): void
+    {
+        $email = $this->input('email');
+
+        if (is_string($email)) {
+            $this->merge(['email' => InvitationService::normaliseEmail($email)]);
+        }
     }
 
     /**

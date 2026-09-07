@@ -4,6 +4,7 @@ namespace App\Http\Requests\Api\V1;
 
 use App\Enums\Role;
 use App\Models\User;
+use App\Services\InvitationService;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
@@ -23,6 +24,22 @@ class MemberStoreRequest extends FormRequest
     public function authorize(): bool
     {
         return Gate::allows('create', User::class);
+    }
+
+    /**
+     * Normalizasyon DOĞRULAMADAN ÖNCE (§5, §26) — RegisterRequest ile aynı
+     * gerekçe: bu uç da HESAP YARATIR ve aşağıdaki `unique:users` kuralı
+     * Postgres'te büyük/küçük harfe duyarlıdır. Normalize edilmemiş bir
+     * adres o kuraldan geçer; ortaya aynı kişi için ikinci bir hesap çıkar
+     * ve o kişi kendi yazımıyla giriş yapamaz.
+     */
+    protected function prepareForValidation(): void
+    {
+        $email = $this->input('email');
+
+        if (is_string($email)) {
+            $this->merge(['email' => InvitationService::normaliseEmail($email)]);
+        }
     }
 
     /**

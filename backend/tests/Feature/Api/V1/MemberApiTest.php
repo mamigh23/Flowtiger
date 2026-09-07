@@ -372,6 +372,53 @@ class MemberApiTest extends TestCase
             ->assertJsonValidationErrors(['email']);
     }
 
+    /**
+     * REGRESYON — bu uç da HESAP YARATIR, `unique:users` ise Postgres'te
+     * büyük/küçük harfe duyarlıdır (§5, §26).
+     *
+     * Normalizasyon olmadan aynı adresin büyük harfli yazımı kuraldan geçiyor,
+     * aynı kişi için ikinci bir hesap açılıyor ve o kişi kendi yazımıyla giriş
+     * yapamıyordu — RegisterApiTest'teki kayıt ucuyla birebir aynı kusur.
+     */
+    public function test_creating_with_an_existing_email_is_rejected_case_insensitively(): void
+    {
+        $this->apiAs($this->owner)
+            ->postJson(self::URI, [
+                'name' => 'Kopya',
+                'email' => mb_strtoupper($this->member->email),
+                'password' => 'gizli-parola',
+                'role' => 'member',
+            ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['email']);
+
+        $this->assertSame(
+            1,
+            User::query()->whereRaw('lower(email) = ?', [$this->member->email])->count()
+        );
+    }
+
+    /**
+     * REGRESYON — yaratılan üyenin adresi normalize edilmiş saklanır, böylece
+     * üye kendi yazımıyla (büyük harfli) giriş yapabilir.
+     */
+    public function test_a_created_members_email_is_normalised(): void
+    {
+        $this->apiAs($this->owner)
+            ->postJson(self::URI, [
+                'name' => 'Yeni Uye',
+                'email' => '  Yeni.Uye@FlowTiger.TEST  ',
+                'password' => 'gizli-parola',
+                'role' => 'member',
+            ])
+            ->assertCreated()
+            ->assertJsonPath('data.email', 'yeni.uye@flowtiger.test');
+
+        $this->assertTrue(
+            User::query()->where('email', 'yeni.uye@flowtiger.test')->exists()
+        );
+    }
+
     public function test_creating_with_an_invalid_role_returns_422(): void
     {
         $this->apiAs($this->owner)

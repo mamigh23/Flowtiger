@@ -215,6 +215,48 @@ class AuthApiTest extends TestCase
         );
     }
 
+    /**
+     * REGRESYON — GİRİŞ E-POSTASI BÜYÜK/KÜÇÜK HARFE DUYARLI OLMAMALI.
+     *
+     * Kimlik doğrulama kullanıcıyı e-postayla bulur; normalize edilmemiş bir
+     * adres sessizce "kullanıcı yok"a düşüp 401 döndürüyordu. Kullanıcı doğru
+     * parolayı yazdığı hâlde giremiyor, arayüzde de sebebini gösteren hiçbir
+     * işaret bulunmuyordu.
+     *
+     * Audit katmanı bu adresleri ZATEN aynı hesap sayıyor (AuditTrailTest:
+     * "Kurban@FlowTiger.test" denemesi küçük harfli hash'e korele edilir);
+     * kimlik doğrulamanın aynı kabulü paylaşmaması ürün içi bir çelişkiydi.
+     */
+    public function test_login_is_case_insensitive_for_the_email(): void
+    {
+        $user = User::factory()->create(['email' => 'mami@flowtiger.test']);
+
+        $this->postJson(self::LOGIN_URI, [
+            'email' => '  MAMI@FlowTiger.TEST  ',
+            'password' => self::FACTORY_PASSWORD,
+        ])->assertOk()->assertJsonPath('data.user.id', $user->getKey());
+    }
+
+    /**
+     * REGRESYON — DAVETLE AÇILAN HESAP KİLİTLENMEMELİ.
+     *
+     * InvitationService davet edilen adresi küçük harfe çevirerek hesabı
+     * yaratır (normaliseEmail). Giriş ucu normalize etmediği sürece, davetli
+     * kendi adresini HER ZAMAN yazdığı gibi (büyük harfli) girdiğinde 401
+     * alıyordu: yeni kurulan hesabına hiç giremiyordu ve arayüzde bunu
+     * açıklayan bir yol yoktu.
+     */
+    public function test_an_invited_account_can_log_in_with_the_address_as_the_invitee_types_it(): void
+    {
+        // Davet akışının bıraktığı hâl: adres küçük harfe normalize edilmiş.
+        $invited = User::factory()->create(['email' => 'yeni.uye@flowtiger.test']);
+
+        $this->postJson(self::LOGIN_URI, [
+            'email' => 'Yeni.Uye@FlowTiger.test',
+            'password' => self::FACTORY_PASSWORD,
+        ])->assertOk()->assertJsonPath('data.user.id', $invited->getKey());
+    }
+
     // ---------------------------------------------------------------
     // C) LOGIN — BAŞARISIZ
     // ---------------------------------------------------------------
