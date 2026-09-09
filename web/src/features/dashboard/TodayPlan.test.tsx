@@ -3,10 +3,11 @@ import { screen, within } from '@testing-library/react';
 import { fixtures, renderElement } from '@/test/harness';
 import type { Task } from '@/types/api';
 import { TodayPlan } from './TodayPlan';
+import type { FocusNextStop } from './TodayPlan';
 import type { Panel } from './useDashboardData';
 
 /**
- * Bugünün Planı — ana ekranın odak alanı.
+ * Bugünün Odağı — ana ekranın odak alanı.
  *
  * Bileşen SAF: router, API ve context olmadan sınanır. Veri prop olarak
  * gelir, böylece "boş durum", "yetki yok" ve "dolu liste" halleri tek tek
@@ -51,7 +52,7 @@ describe('TodayPlan', () => {
   it('başlığı ve bugünün tarihini gösterir', () => {
     renderPlan(ready([]));
 
-    expect(screen.getByRole('heading', { name: 'Bugünün Planı' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Bugünün Odağı' })).toBeInTheDocument();
     expect(screen.getByText(today)).toBeInTheDocument();
   });
 
@@ -269,5 +270,78 @@ describe('TodayPlan', () => {
     renderPlan({ status: 'error', data: null });
 
     expect(screen.getByTestId('plan-error')).toHaveTextContent('Alınamadı');
+  });
+
+  // ------------------------------------------------------ öncelik zinciri
+
+  /**
+   * ÖNCELİK ZİNCİRİ: görevler → finans → ödemeler → ekip → boş durum.
+   *
+   * Bölüm hiçbir durumda KAYBOLMAZ; görev yokken sıradaki gerçek
+   * duraklara yön gösterir. Duraklar birer `meta.total` değeridir.
+   */
+  const stops: FocusNextStop[] = [
+    {
+      key: 'finance',
+      glyph: '≡',
+      label: 'Finans',
+      count: 12,
+      countLabel: 'kayıt',
+      to: '/app/finance',
+    },
+    { key: 'team', glyph: '◎', label: 'Ekip', count: 3, countLabel: 'kişi', to: '/app/team' },
+  ];
+
+  it('görev yokken sıradaki gerçek durakları gösterir', () => {
+    renderElement(<TodayPlan today={today} panel={ready([])} nextStops={stops} />);
+
+    expect(screen.getByTestId('focus-next')).toBeInTheDocument();
+    expect(screen.getByTestId('focus-next-finance')).toHaveTextContent('Finans');
+    expect(screen.getByTestId('focus-next-finance')).toHaveTextContent('12 kayıt');
+    expect(screen.getByTestId('focus-next-team')).toHaveTextContent('3 kişi');
+  });
+
+  it('durakları ilgili ekranlara bağlar', () => {
+    renderElement(<TodayPlan today={today} panel={ready([])} nextStops={stops} />);
+
+    expect(screen.getByTestId('focus-next-finance')).toHaveAttribute('href', '/app/finance');
+    expect(screen.getByTestId('focus-next-team')).toHaveAttribute('href', '/app/team');
+  });
+
+  /**
+   * REGRESYON — ZİNCİR BİR UYARI DEĞİL.
+   *
+   * "12 finans kaydı" bir yön göstergesidir. "3 ödeme kontrol bekliyor"
+   * demek için backend'de veri YOK; eksik bir sayıyı uyarıya çevirmek
+   * uydurmak olurdu.
+   */
+  it('duraklarda uyarı diliyle konuşmaz', () => {
+    renderElement(<TodayPlan today={today} panel={ready([])} nextStops={stops} />);
+
+    expect(screen.queryByText(/kontrol bekliyor/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/gecikmiş|acil|uyarı/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
+  /** Durak yoksa bölüm sade boş durumda kalır — doldurmak için durak uydurulmaz. */
+  it('durak yokken sade boş durumda kalır', () => {
+    renderPlan(ready([]));
+
+    expect(screen.getByTestId('plan-empty')).toBeInTheDocument();
+    expect(screen.queryByTestId('focus-next')).not.toBeInTheDocument();
+  });
+
+  /** Görev VARSA zincir hiç görünmez: odak günün işlerindedir. */
+  it('görev varken durakları göstermez', () => {
+    renderElement(
+      <TodayPlan
+        today={today}
+        panel={ready([fixtures.task({ id: 1, title: 'Teklif hazırla' }) as Task])}
+        nextStops={stops}
+      />,
+    );
+
+    expect(screen.getByText('Teklif hazırla')).toBeInTheDocument();
+    expect(screen.queryByTestId('focus-next')).not.toBeInTheDocument();
   });
 });

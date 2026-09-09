@@ -151,7 +151,7 @@ describe('RegisterPage', () => {
     await waitFor(() => expect(tokenStorage.get()).toBe('yeni-token'));
 
     // Yönlendirme: kayıt formu kalkar, panel (/app) açılır.
-    expect(await screen.findByRole('heading', { name: 'Bugünün Planı' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Bugünün Odağı' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Kayıt ol' })).not.toBeInTheDocument();
   });
 

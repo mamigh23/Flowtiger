@@ -374,7 +374,7 @@ describe('AcceptInvitationPage', () => {
 
       // /app'e ulaştığının kanıtı: panel açılır (RequireActiveCompany
       // aktif şirketi zaten seçili görür, company-select'e SAPMAZ).
-      expect(await screen.findByRole('heading', { name: 'Bugünün Planı' })).toBeInTheDocument();
+      expect(await screen.findByRole('heading', { name: 'Bugünün Odağı' })).toBeInTheDocument();
     });
 
     it('403 invitation_email_mismatch mesajını gösterir (owner-only mesajı DEĞİL)', async () => {

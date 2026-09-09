@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { auditActionLabel } from './auditLabels';
+import { auditActionGlyph, auditActionLabel, auditActionTone } from './auditLabels';
 import { describeChanges, visibleMetadata } from './auditFormat';
 
 /**
@@ -201,6 +201,15 @@ describe('describeChanges', () => {
  * eylemlerden birinin etiketinin silinmesi ya da bozulmasıdır.
  */
 describe('auditActionLabel', () => {
+  /**
+   * `AuditAction` enum'ının TAMAMI — 33 değer, backend'deki sırayla.
+   *
+   * BU LİSTE EKSİKTİ. On değer (company.created, *.billing_updated,
+   * finance_entry.*, payment.*, task.deleted) enum'a eklenmiş ama buraya
+   * hiç yazılmamıştı; test yeşil kalırken kullanıcı panelde ham kod
+   * görüyordu ("payment.created"). Eksik bir liste, kendisini kontrol
+   * ettiğini sanan bir testtir.
+   */
   const BACKEND_ACTIONS = [
     'login.success',
     'login.failed',
@@ -214,6 +223,7 @@ describe('auditActionLabel', () => {
     'password.reset.completed',
     'session.revoked',
     'sessions.revoked_others',
+    'company.created',
     'company.selected',
     'member.created',
     'member.updated',
@@ -225,6 +235,15 @@ describe('auditActionLabel', () => {
     'customer.created',
     'customer.updated',
     'customer.deleted',
+    'company.billing_updated',
+    'customer.billing_updated',
+    'finance_entry.created',
+    'finance_entry.updated',
+    'finance_entry.voided',
+    'payment.created',
+    'payment.updated',
+    'payment.voided',
+    'task.deleted',
   ];
 
   it('backend enum değerlerinin hepsini çevirir', () => {
@@ -237,6 +256,18 @@ describe('auditActionLabel', () => {
     expect(auditActionLabel('customer.created')).toBe('Müşteri oluşturuldu');
     expect(auditActionLabel('member.role_changed')).toBe('Üye rolü değiştirildi');
     expect(auditActionLabel('invitation.revoked')).toBe('Davet iptal edildi');
+    expect(auditActionLabel('payment.created')).toBe('Yeni ödeme oluşturuldu');
+  });
+
+  /**
+   * REGRESYON — `voided` "SİLİNDİ" DEĞİL "İPTAL EDİLDİ".
+   *
+   * Kayıt yerinde duruyor; yalnızca mali geçerliliği sona erdi.
+   * "Silindi" demek, bir denetimde olayı yanlış anlatmak olurdu.
+   */
+  it('iptal edilen kaydı silinmiş gibi adlandırmaz', () => {
+    expect(auditActionLabel('finance_entry.voided')).toBe('Finans kaydı iptal edildi');
+    expect(auditActionLabel('payment.voided')).toBe('Ödeme iptal edildi');
   });
 
   /**
@@ -246,5 +277,38 @@ describe('auditActionLabel', () => {
    */
   it('tanınmayan eylem kodunu ham hâliyle döner', () => {
     expect(auditActionLabel('warehouse.exported')).toBe('warehouse.exported');
+  });
+
+  // ------------------------------------------------------------- tonlar
+
+  /**
+   * TON YALNIZCA GÖRSEL BİR GRUPLAMADIR.
+   *
+   * Panelde akışın hangi alana ait olduğunu gözle ayırmaya yarar. Anlamı
+   * eylemin ADI taşır; ton bir bilgi kaynağı değildir (WCAG 1.4.1).
+   */
+  it('eylemi ait olduğu alana göre gruplar', () => {
+    expect(auditActionTone('payment.created')).toBe('money');
+    expect(auditActionTone('finance_entry.voided')).toBe('money');
+    expect(auditActionTone('customer.updated')).toBe('customer');
+    expect(auditActionTone('customer.billing_updated')).toBe('customer');
+    expect(auditActionTone('member.role_changed')).toBe('team');
+    expect(auditActionTone('invitation.accepted')).toBe('team');
+    expect(auditActionTone('task.deleted')).toBe('task');
+    expect(auditActionTone('login.success')).toBe('auth');
+    expect(auditActionTone('logout')).toBe('auth');
+    expect(auditActionTone('sessions.revoked_others')).toBe('auth');
+    expect(auditActionTone('company.selected')).toBe('other');
+  });
+
+  it('tanınmayan eylemi other olarak gruplar', () => {
+    expect(auditActionTone('warehouse.exported')).toBe('other');
+  });
+
+  /** Her eylemin bir işareti vardır: akışta boş bir rozet kalmaz. */
+  it('her backend eylemi için bir işaret döner', () => {
+    const missing = BACKEND_ACTIONS.filter((action) => auditActionGlyph(action).length === 0);
+
+    expect(missing).toEqual([]);
   });
 });

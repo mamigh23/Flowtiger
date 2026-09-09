@@ -1,5 +1,10 @@
 import { Skeleton } from '@/components/ui';
-import { auditActionLabel, relativeTime } from '@/features/audit/auditLabels';
+import {
+  auditActionGlyph,
+  auditActionLabel,
+  auditActionTone,
+  relativeTime,
+} from '@/features/audit/auditLabels';
 import type { Panel } from './useDashboardData';
 
 /**
@@ -75,8 +80,20 @@ function ActivityBody({
   return (
     <ol className="ft-timeline">
       {panel.data.map((entry) => (
-        <li key={entry.id} className="ft-timeline__item">
-          <span className="ft-timeline__dot" aria-hidden="true" />
+        <li
+          key={entry.id}
+          className="ft-timeline__item"
+          /*
+            Ton yalnızca STİL kancasıdır. Eylemin ne olduğunu anlatan şey
+            `ft-timeline__label` metnidir; renk ya da simge tek başına
+            hiçbir bilgi taşımaz (WCAG 1.4.1).
+          */
+          data-tone={auditActionTone(entry.action)}
+          data-testid={`activity-${entry.id}`}
+        >
+          <span className="ft-timeline__dot" aria-hidden="true">
+            {auditActionGlyph(entry.action)}
+          </span>
           <span className="ft-timeline__label">{auditActionLabel(entry.action)}</span>
           <span className="ft-timeline__time ft-muted">{relativeTime(entry.created_at)}</span>
         </li>

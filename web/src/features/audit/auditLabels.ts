@@ -25,7 +25,9 @@ const LABELS: Record<string, string> = {
   'session.revoked': 'Oturum kapatıldı',
   'sessions.revoked_others': 'Diğer oturumlar kapatıldı',
 
+  'company.created': 'Şirket oluşturuldu',
   'company.selected': 'Şirket seçildi',
+  'company.billing_updated': 'Şirket fatura bilgileri güncellendi',
 
   'member.created': 'Üye eklendi',
   'member.updated': 'Üye güncellendi',
@@ -39,10 +41,80 @@ const LABELS: Record<string, string> = {
   'customer.created': 'Müşteri oluşturuldu',
   'customer.updated': 'Müşteri güncellendi',
   'customer.deleted': 'Müşteri silindi',
+  'customer.billing_updated': 'Müşteri fatura bilgileri güncellendi',
+
+  /*
+   * Finans ve ödeme.
+   *
+   * `voided` "silindi" DEĞİL "iptal edildi"dir ve öyle yazılmalıdır:
+   * kayıt yerinde duruyor, yalnızca mali geçerliliği sona erdi. "Silindi"
+   * demek, bir denetimde olayı yanlış anlatmak olurdu.
+   */
+  'finance_entry.created': 'Finans kaydı oluşturuldu',
+  'finance_entry.updated': 'Finans kaydı güncellendi',
+  'finance_entry.voided': 'Finans kaydı iptal edildi',
+
+  'payment.created': 'Yeni ödeme oluşturuldu',
+  'payment.updated': 'Ödeme güncellendi',
+  'payment.voided': 'Ödeme iptal edildi',
+
+  'task.deleted': 'Görev silindi',
 };
 
 export function auditActionLabel(action: string): string {
   return LABELS[action] ?? action;
+}
+
+/**
+ * Eylemin AİT OLDUĞU ALAN — akışta görsel ayrım için.
+ *
+ * Panel bir tabloya dönüşmeden, "para" ile "kimlik" olaylarını gözle
+ * ayırmaya yarar. RENK TEK BAŞINA TAŞIYICI DEĞİL: eylem adı zaten metin
+ * olarak orada; ton yalnızca göz taramasını hızlandırır (WCAG 1.4.1).
+ *
+ * Tanınmayan kod 'other' döner — uydurma bir sınıflandırma, olayı yanlış
+ * gruplamaktan iyidir.
+ */
+export type AuditTone = 'auth' | 'team' | 'customer' | 'money' | 'task' | 'other';
+
+export function auditActionTone(action: string): AuditTone {
+  if (action.startsWith('payment.') || action.startsWith('finance_entry.')) return 'money';
+  if (action.startsWith('customer.')) return 'customer';
+  if (action.startsWith('member.') || action.startsWith('invitation.')) return 'team';
+  if (action.startsWith('task.')) return 'task';
+
+  if (
+    action.startsWith('login.') ||
+    action === 'logout' ||
+    action.startsWith('password.') ||
+    action.startsWith('email.') ||
+    action.startsWith('session') ||
+    action === 'profile.updated'
+  ) {
+    return 'auth';
+  }
+
+  return 'other';
+}
+
+/**
+ * Tonun dekoratif işareti.
+ *
+ * `aria-hidden` bir süs: anlamı taşıyan şey eylemin adıdır. Simgeler
+ * kenar çubuğununkilerle aynı ailedendir — aynı şey iki farklı işaretle
+ * anlatılmasın.
+ */
+const TONE_GLYPHS: Record<AuditTone, string> = {
+  auth: '⌂',
+  team: '◎',
+  customer: '☺',
+  money: '₺',
+  task: '✓',
+  other: '◈',
+};
+
+export function auditActionGlyph(action: string): string {
+  return TONE_GLYPHS[auditActionTone(action)];
 }
 
 /**

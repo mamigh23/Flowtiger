@@ -4,7 +4,11 @@ import type { Task } from '@/types/api';
 import type { Panel } from './useDashboardData';
 
 /**
- * Bugünün Planı — ana ekranın odak alanı.
+ * Bugünün Odağı — ana ekranın odak alanı.
+ *
+ * ADI "PLAN" DEĞİL "ODAK": bölüm yalnızca bir takvim listesi değil,
+ * "şu an neye bakmalıyım" sorusunun cevabı. Görev varsa görevler odaktır;
+ * yoksa bölüm boşalmaz, sıradaki gerçek durağa yön gösterir.
  *
  * VERİ `GET /tasks/today`TEN GELİR. Arayüz kendi "bugün"ünü hesaplayıp
  * `?date=` göndermez: saat dilimi şirketinkinden farklı bir kullanıcı
@@ -20,25 +24,51 @@ import type { Panel } from './useDashboardData';
  *                 sıralıyor; yeniden sıralamak saatsiz işleri randevuların
  *                 önüne geçirirdi
  *
+ * ÖNCELİK ZİNCİRİ: görevler → finans → ödemeler → ekip → boş durum.
+ * Bölüm HİÇBİR DURUMDA KAYBOLMAZ. Zincirin alt basamakları YALNIZCA
+ * GERÇEK `meta.total` DEĞERLERİDİR ve birer YÖN GÖSTERGESİDİR — "12
+ * finans kaydı" der, "3 ödeme kontrol bekliyor" DEMEZ. İkincisi için
+ * backend'de veri yok; onu yazmak bir uyarıyı uydurmak olurdu.
+ *
  * BOŞ DURUM YERİNİ ŞİMDİDEN TUTAR: görevler geldiğinde ekranın dengesi
  * değişmesin. Ama bir hata gibi de görünmez — kırmızı yok, ünlem yok.
  */
-export function TodayPlan({ today, panel }: { today: string; panel: Panel<Task[]> }) {
+export interface FocusNextStop {
+  key: string;
+  /** Dekoratif; anlam metinde. */
+  glyph: string;
+  label: string;
+  /** Gerçek `meta.total`. Sıfır olanlar çağıran tarafta elenir. */
+  count: number;
+  countLabel: string;
+  to: string;
+}
+
+export function TodayPlan({
+  today,
+  panel,
+  nextStops = [],
+}: {
+  today: string;
+  panel: Panel<Task[]>;
+  /** Görev yokken gösterilecek gerçek duraklar; boş bırakılabilir. */
+  nextStops?: FocusNextStop[];
+}) {
   return (
     <section className="ft-panel ft-panel--focus" aria-labelledby="ft-plan-title">
       <div className="ft-panel__head">
         <h2 id="ft-plan-title" className="ft-panel__title">
-          Bugünün Planı
+          Bugünün Odağı
         </h2>
         <p className="ft-panel__meta">{today}</p>
       </div>
 
-      <PlanBody panel={panel} />
+      <PlanBody panel={panel} nextStops={nextStops} />
     </section>
   );
 }
 
-function PlanBody({ panel }: { panel: Panel<Task[]> }) {
+function PlanBody({ panel, nextStops }: { panel: Panel<Task[]>; nextStops: FocusNextStop[] }) {
   if (panel.status === 'loading') {
     return (
       <div className="ft-stack" data-testid="plan-loading">
@@ -77,6 +107,33 @@ function PlanBody({ panel }: { panel: Panel<Task[]> }) {
         <p className="ft-plan-empty__hint">
           Planlama hazır olduğunda günün işleri burada sırasıyla görünecek.
         </p>
+
+        {/*
+          ZİNCİRİN ALT BASAMAKLARI. Yalnızca gerçek kaydı olan duraklar
+          gelir (sıfır olanlar çağıran tarafta elendi); hiçbiri yoksa
+          bölüm sade boş durumda kalır — doldurmak için durak
+          UYDURULMAZ.
+        */}
+        {nextStops.length > 0 && (
+          <nav className="ft-focus-next" aria-label="Sıradaki duraklar" data-testid="focus-next">
+            {nextStops.map((stop) => (
+              <Link
+                key={stop.key}
+                className="ft-focus-next__item"
+                to={stop.to}
+                data-testid={`focus-next-${stop.key}`}
+              >
+                <span className="ft-focus-next__glyph" aria-hidden="true">
+                  {stop.glyph}
+                </span>
+                <span className="ft-focus-next__label">{stop.label}</span>
+                <span className="ft-focus-next__count">
+                  {stop.count} {stop.countLabel}
+                </span>
+              </Link>
+            ))}
+          </nav>
+        )}
       </div>
     );
   }

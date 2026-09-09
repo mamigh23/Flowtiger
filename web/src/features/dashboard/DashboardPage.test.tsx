@@ -34,6 +34,18 @@ describe('DashboardPage', () => {
      */
     '/tasks/today': () => jsonResponse(200, fixtures.paginated([], 0)),
     '/audit-logs': () => jsonResponse(200, fixtures.paginated([], 0)),
+
+    /*
+     * ÖZET ŞERİDİNİN SAYIM UÇLARI.
+     *
+     * Hepsi `meta.total` için çağrılıyor; gövdeleri BOŞ ama toplamları
+     * gerçek. Böylece "ekranda görünen sayı, sayfadaki satır sayısı
+     * değil, backend'in toplamıdır" kuralı testlerde de geçerli olur.
+     */
+    '/customers': () => jsonResponse(200, fixtures.paginated([], 128)),
+    '/finance-entries': () => jsonResponse(200, fixtures.paginated([], 12)),
+    '/payments': () => jsonResponse(200, fixtures.paginated([], 9)),
+    '/members': () => jsonResponse(200, fixtures.paginated([], 4)),
   };
 
   /** Sahte saati kurup uygulamayı açar. */
@@ -118,12 +130,18 @@ describe('DashboardPage', () => {
   });
 
   /**
-   * REGRESYON — ANA EKRANDA YALNIZCA İKİ BÖLÜM VAR.
+   * REGRESYON — ANA EKRANDA YALNIZCA İKİ BAŞLIKLI BÖLÜM VAR.
    *
-   * Referans tasarımda dört blok var; üçünün (görev listesi, "dikkat
-   * gerekenler", gün özeti) backend'de karşılığı YOK. Bu test o üçünün
-   * sessizce geri sızmasını engelliyor: yeni bir bölüm ancak gerçek bir
-   * veri kaynağıyla birlikte gelebilir.
+   * Referans tasarımda dört blok var; ikisinin ("dikkat gerekenler"
+   * uyarıları ve gün özeti yüzdesi) backend'de karşılığı YOK. Bu test
+   * onların sessizce geri sızmasını engelliyor: yeni bir bölüm ancak
+   * gerçek bir veri kaynağıyla birlikte gelebilir.
+   *
+   * ÖZET ŞERİDİ BU LİSTEDE YOK ve olmamalı: o bir bölüm değil, hero'nun
+   * altındaki bir kısayol şerididir. Kendi h2'si olsaydı ekranın başlık
+   * hiyerarşisinde "Bugünün Odağı" ile eşit ağırlıkta görünürdü; oysa
+   * asıl içerik odak bölümüdür. Şeridin erişilebilir adını `aria-label`
+   * taşıyor (`<section aria-label="Özet">`).
    */
   it('yalnızca gerçek veri kaynağı olan bölümleri gösterir', async () => {
     vi.stubGlobal('fetch', mockApi(ownerRoutes));
@@ -134,18 +152,18 @@ describe('DashboardPage', () => {
 
     const sections = screen.getAllByRole('heading', { level: 2 }).map((node) => node.textContent);
 
-    expect(sections).toEqual(['Bugünün Planı', 'Son hareketler']);
+    expect(sections).toEqual(['Bugünün Odağı', 'Son hareketler']);
   });
 
   // -------------------------------------------------------------- bugün
 
-  it('bugünün planı bölümünü tarihiyle gösterir', async () => {
+  it('bugünün odağı bölümünü tarihiyle gösterir', async () => {
     vi.stubGlobal('fetch', mockApi(ownerRoutes));
 
     renderAtHour(9);
 
     expect(
-      await screen.findByRole('heading', { name: 'Bugünün Planı' }),
+      await screen.findByRole('heading', { name: 'Bugünün Odağı' }),
     ).toBeInTheDocument();
     expect(screen.getByText('22 Ağustos 2026, Cumartesi')).toBeInTheDocument();
   });
@@ -283,30 +301,156 @@ describe('DashboardPage', () => {
     expect(screen.queryByText(/geri dönüş bekliyor/i)).not.toBeInTheDocument();
   });
 
-  // ------------------------------------------------- kaldırılan bölümler
+  // ---------------------------------------------------------- özet şeridi
+
+  /*
+   * UI-01 GERİ ALINDI — ÜRÜN SAHİBİ KARARI.
+   *
+   * Bu bölümde eskiden "müşteri ve ekip sayım kartlarını göstermez"
+   * testi vardı ve sayımların ana ekranda BULUNMAMASINI kilitliyordu.
+   * O karar değişti: şerit geri geldi. Test SİLİNMEDİ, YERİNİ aşağıdaki
+   * testler aldı ve kilitledikleri kural aslında daha dar:
+   *
+   *   sayımlar gösterilebilir — AMA yalnızca `meta.total`.
+   *   para toplamı, yüzde ve dönem farkı HÂLÂ YASAK, çünkü onları veren
+   *   bir uç yok ve üretmek uydurmak olurdu.
+   */
+
+  it('özet şeridinde backend toplamlarını gösterir', async () => {
+    vi.stubGlobal('fetch', mockApi(ownerRoutes));
+
+    renderAtHour(9);
+
+    expect(await screen.findByTestId('stat-customers')).toHaveTextContent('128');
+    expect(screen.getByTestId('stat-finance')).toHaveTextContent('12');
+    expect(screen.getByTestId('stat-payments')).toHaveTextContent('9');
+    expect(screen.getByTestId('stat-team')).toHaveTextContent('4');
+  });
 
   /**
-   * REGRESYON — ESKİ KPI KARTLARI ANA EKRANDA YOK.
+   * REGRESYON — SAYIM `meta.total`DIR, SAYFADAKİ SATIR SAYISI DEĞİL.
    *
-   * Kartlar kalkınca sayım istekleri de kalkmalı: ekranda görünmeyen bir
-   * veri için ağ isteği yapmak, kullanıcının bant genişliğini ve
-   * veritabanını görünmez bir şey için harcamaktır.
+   * Yanıtın `data`sı BOŞ ama toplamı 128. Arayüz satırları saysaydı
+   * ekranda 0 yazardı. Sayfalanmış bir listenin ilk sayfasını saymak,
+   * eksik bir sayıyı gerçekmiş gibi göstermektir.
    */
-  it('müşteri ve ekip sayım kartlarını göstermez', async () => {
+  it('sayımı sayfadaki satırlardan türetmez', async () => {
+    vi.stubGlobal('fetch', mockApi(ownerRoutes));
+
+    renderAtHour(9);
+
+    const card = await screen.findByTestId('stat-customers');
+
+    expect(card).toHaveTextContent('128');
+    expect(card).not.toHaveTextContent('0 kayıtlı müşteri');
+  });
+
+  /** Sayımlar `per_page=1` ile istenir: ekranda tek bir sayı görünüyor. */
+  it('sayım uçlarını per_page=1 ile ister', async () => {
     const fetchMock = mockApi(ownerRoutes);
 
     vi.stubGlobal('fetch', fetchMock);
     renderAtHour(9);
 
-    await screen.findByTestId('plan-empty');
+    await screen.findByTestId('stat-customers');
 
-    expect(screen.queryByTestId('stat-customers')).not.toBeInTheDocument();
-    expect(screen.queryByTestId('stat-members')).not.toBeInTheDocument();
+    await waitFor(() => {
+      const urls = fetchMock.mock.calls.map(([url]) => String(url));
+
+      expect(urls.some((url) => url.includes('/customers?per_page=1'))).toBe(true);
+      expect(urls.some((url) => url.includes('/finance-entries?per_page=1'))).toBe(true);
+      expect(urls.some((url) => url.includes('/payments?per_page=1'))).toBe(true);
+      expect(urls.some((url) => url.includes('/members?per_page=1'))).toBe(true);
+    });
+  });
+
+  /**
+   * REGRESYON — GÖREV SAYISI İÇİN İKİNCİ İSTEK YAPILMAZ.
+   *
+   * Karttaki sayı, listenin geldiği `GET /tasks/today` yanıtının
+   * `meta.total`ıdır. Ayrı bir istek olsaydı iki değer bir gün
+   * birbiriyle çelişebilirdi.
+   */
+  it('görev sayısını bugünün işleri yanıtından okur', async () => {
+    const fetchMock = mockApi({
+      ...ownerRoutes,
+      '/tasks/today': () =>
+        jsonResponse(200, fixtures.paginated([fixtures.task({ id: 1 })], 3)),
+    });
+
+    vi.stubGlobal('fetch', fetchMock);
+    renderAtHour(9);
+
+    expect(await screen.findByTestId('stat-tasks')).toHaveTextContent('3');
 
     const urls = fetchMock.mock.calls.map(([url]) => String(url));
-    expect(urls.some((url) => url.includes('/customers?per_page=1'))).toBe(false);
-    expect(urls.some((url) => url.includes('/members?per_page=1'))).toBe(false);
+    expect(urls.filter((url) => url.includes('/tasks')).length).toBe(1);
   });
+
+  /**
+   * REGRESYON — PARA TOPLAMI VE YÜZDE ÜRETİLMEZ.
+   *
+   * Referans tasarımda "₺84.250" ve "%20 bu ay" var; ikisinin de
+   * backend'de karşılığı YOK (ne toplam ucu ne de önceki dönem verisi).
+   * Şeritteki değerler KAYIT SAYISIDIR ve alt satırları bunu söyler.
+   */
+  it('özet şeridinde tutar ya da dönem yüzdesi göstermez', async () => {
+    vi.stubGlobal('fetch', mockApi(ownerRoutes));
+
+    renderAtHour(9);
+
+    const strip = await screen.findByTestId('dashboard-stats');
+
+    expect(strip.textContent).not.toMatch(/₺|TL|TRY/);
+    expect(strip.textContent).not.toMatch(/%/);
+    expect(strip.textContent).not.toMatch(/bu ay|geçen ay|artış|azalış/i);
+
+    // Sayının NE olduğu yazılı: tutar sanılmasın.
+    expect(screen.getByTestId('stat-finance')).toHaveTextContent('finans kaydı');
+    expect(screen.getByTestId('stat-payments')).toHaveTextContent('ödeme kaydı');
+  });
+
+  /**
+   * REGRESYON — 403 ALAN KART HİÇ RENDER EDİLMEZ.
+   *
+   * /finance-entries, /payments ve /members owner-only'dir. "Yetkiniz
+   * yok" yazan üç kutu göstermek, üyeye kendi ekranında göremeyeceği
+   * şeylerin listesini çıkarmak olurdu.
+   */
+  it('yetkisi olmayan sayım kartını göstermez', async () => {
+    vi.stubGlobal(
+      'fetch',
+      mockApi({
+        '/me': () => jsonResponse(200, { data: fixtures.user() }),
+        '/companies': () =>
+          jsonResponse(200, {
+            data: [fixtures.company({ role: 'member' })],
+            meta: { active_company_id: 7 },
+          }),
+        '/tasks/today': () => jsonResponse(200, fixtures.paginated([], 0)),
+        '/customers': () => jsonResponse(200, fixtures.paginated([], 5)),
+        '/audit-logs': () => jsonResponse(403, { message: 'Bu işlem için yetkiniz yok.' }),
+        '/finance-entries': () => jsonResponse(403, { message: 'Bu işlem için yetkiniz yok.' }),
+        '/payments': () => jsonResponse(403, { message: 'Bu işlem için yetkiniz yok.' }),
+        '/members': () => jsonResponse(403, { message: 'Bu işlem için yetkiniz yok.' }),
+      }),
+    );
+
+    renderAtHour(9);
+
+    expect(await screen.findByTestId('stat-customers')).toHaveTextContent('5');
+
+    await waitFor(() => {
+      expect(screen.queryByTestId('stat-finance')).not.toBeInTheDocument();
+    });
+    expect(screen.queryByTestId('stat-payments')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('stat-team')).not.toBeInTheDocument();
+
+    // Yetki eksikliği bir arıza değil: uyarı gösterilmez.
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
+  // ------------------------------------------------- kaldırılan bölümler
 
   /** Hızlı erişim listesi kalktı: kenar çubuğu zaten aynı işi yapıyor. */
   it('hızlı erişim listesini göstermez', async () => {
