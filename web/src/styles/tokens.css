@@ -90,8 +90,68 @@
   --ft-font-weight-medium: 500;
   --ft-font-weight-bold: 600;
 
+  /*
+   * DERİNLİK — her kartın üç katmanı.
+   *
+   * Koyu bir arayüzde en sık yapılan hata, kartları düz siyah dikdörtgenler
+   * olarak bırakmaktır: ekran "kapalı" görünür ve hiçbir yüzey diğerinin
+   * önünde durmaz. Üç katman bunu çözer ve hepsi buradan gelir, tek tek
+   * kurallardan değil:
+   *
+   *   ZEMİN  → çok hafif bir gradyan (üst köşe aydınlık, alt köşe koyu)
+   *   KENAR  → beyazın çok düşük opaklıkta bir kılı; düz gri çizgi değil
+   *   IŞIK   → yüzeyin içine düşen sönük bir aydınlık
+   *
+   * Gradyanın açısı (158deg) ekranın sol üstünden gelen tek bir ışık
+   * kaynağını varsayar; tüm kartlarda aynı açı kullanılır ki yüzeyler
+   * birbirine tutarlı görünsün.
+   */
+  --ft-surface-raised: linear-gradient(158deg, #1b2029 0%, #12151c 58%, #0e1015 100%);
+  --ft-surface-sunken: linear-gradient(158deg, #14181f 0%, #0f1218 100%);
+
+  /*
+   * Kenar rengi BEYAZIN OPAKLIĞIDIR, sabit bir gri değil.
+   *
+   * Sabit gri (#1e222c) altındaki yüzey koyulaştıkça kayboluyor,
+   * açıldıkça çizgi gibi duruyordu. Şeffaf beyaz her yüzeyde aynı
+   * "ışık yakalayan kenar" etkisini verir.
+   */
+  --ft-border-hairline: rgb(255 255 255 / 0.09);
+  --ft-border-hairline-strong: rgb(255 255 255 / 0.14);
+
+  /* Turuncunun opaklık basamakları — her yerde aynı beş değer. */
+  --ft-orange-06: rgb(255 122 0 / 0.06);
+  --ft-orange-10: rgb(255 122 0 / 0.10);
+  --ft-orange-16: rgb(255 122 0 / 0.16);
+  --ft-orange-28: rgb(255 122 0 / 0.28);
+  --ft-orange-45: rgb(255 122 0 / 0.45);
+  --ft-orange-60: rgb(255 122 0 / 0.60);
+
   /* Yükseklik */
   --ft-shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
+
+  /*
+   * Kart gölgesi İKİ PARÇALI: içeride üst kenarda bir highlight (yüzeyin
+   * ışığı yakaladığı yer), dışarıda geniş ve çok yumuşak bir gölge.
+   * Tek parçalı sert bir gölge, kartı zemine yapıştırılmış bir etiket
+   * gibi gösterirdi.
+   */
+  --ft-shadow-card:
+    inset 0 1px 0 rgb(255 255 255 / 0.04),
+    0 12px 28px -18px rgb(0 0 0 / 0.9);
+  --ft-shadow-card-hover:
+    inset 0 1px 0 rgb(255 255 255 / 0.06),
+    0 18px 36px -18px rgb(0 0 0 / 0.95);
+
+  /*
+   * HAREKET TEK YERDEN.
+   *
+   * 200ms, kullanıcının fark ettiği ama beklemediği süre. Eğri sonunda
+   * yavaşlar: hareket bir yere "varmış" gibi durur, aniden kesilmez.
+   */
+  --ft-ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --ft-duration: 200ms;
+
   --ft-control-height: 2.5rem;
 
   /* Kabuk ölçüleri — sidebar dar, içerik geniş. */

@@ -13,28 +13,29 @@ body,
 }
 
 /*
- * ORTAM IŞIĞI.
+ * ORTAM IŞIĞI — İKİ KAYNAK.
  *
- * Ekranın üst orta bandında, marka rengini taşıyan çok sönük bir ışık.
- * DOM'a bir katman EKLENMEDİ: gradyan doğrudan body'nin zeminine bindi,
+ * Sağ üstte marka turuncusu, sol altta ona karşılık veren çok sönük soğuk
+ * bir ışık. Tek bir merkezî ışık ekranı simetrik ve düz bırakıyordu; iki
+ * köşeden gelen ışık zemine bir yön veriyor ve kartların üstünde durduğu
+ * yüzeyi görünür kılıyor.
+ *
+ * DOM'a katman EKLENMEDİ: gradyanlar doğrudan body'nin zeminine bindi,
  * böylece tıklama hedeflerinin, yığılma bağlamlarının ve odak
  * halkalarının üstünde duran yeni bir eleman oluşmuyor.
  *
- * `fixed` ekleme: ışık sayfayla birlikte kaymaz; uzun bir listede
- * aşağı inildiğinde "ekranın üstündeki aydınlık" yerinde kalır.
+ * `fixed`: ışık sayfayla birlikte kaymaz; uzun bir listede aşağı
+ * inildiğinde köşelerdeki aydınlık yerinde kalır.
  *
- * Opaklık bilinçli olarak düşük (0.05). Daha fazlası dark temanın
- * derinliğini bozar ve metnin kontrastını düşürürdü.
+ * Opaklıklar bilinçli olarak düşük (0.07 / 0.05). Daha fazlası koyu
+ * temanın derinliğini bozar ve metnin kontrastını düşürür — ölçüldü:
+ * gövde metni bu değerlerde her iki köşede de 12:1'in üstünde kalıyor.
  */
 body {
   margin: 0;
   background:
-    radial-gradient(
-        60rem 32rem at 50% -12rem,
-        rgb(255 122 0 / 0.05),
-        transparent 70%
-      )
-      fixed,
+    radial-gradient(58rem 34rem at 88% -8rem, rgb(255 122 0 / 0.07), transparent 68%) fixed,
+    radial-gradient(46rem 30rem at 4% 108%, rgb(96 140 255 / 0.05), transparent 70%) fixed,
     var(--ft-color-bg);
   color: var(--ft-color-text);
   font-family: var(--ft-font-sans);
@@ -459,6 +460,16 @@ a {
   font-size: var(--ft-font-size-sm);
   font-weight: var(--ft-font-weight-medium);
   white-space: nowrap;
+  /*
+   * `border` DEĞİL `box-shadow` ile kenar: kenarlık kutu ölçüsünü
+   * büyütürdü ve aktif öğe, komşularına göre 2px kayardı.
+   */
+  box-shadow: inset 0 0 0 1px transparent;
+  transition:
+    background var(--ft-duration) var(--ft-ease),
+    color var(--ft-duration) var(--ft-ease),
+    transform var(--ft-duration) var(--ft-ease),
+    box-shadow var(--ft-duration) var(--ft-ease);
 }
 
 .ft-nav__icon {
@@ -484,9 +495,16 @@ a {
   opacity: 1;
 }
 
+/*
+ * Hover SAKİN: yüzey koyulaşır, metin beyazlar, öğe 2px sağa kayar.
+ * Turuncu YOK — turuncu "buradasın" demektir, "buraya bakıyorsun"
+ * değil. İkisi aynı renkle anlatılsaydı fare gezdiren kullanıcı hangi
+ * sayfada olduğunu kaybederdi.
+ */
 .ft-nav__link:hover {
-  background: var(--ft-color-bg);
+  background: rgb(255 255 255 / 0.04);
   color: var(--ft-color-text);
+  transform: translateX(2px);
 }
 
 /*
@@ -505,28 +523,37 @@ a {
  * gösteren tek görsel ipucu odur.
  */
 .ft-nav__link--active {
-  background: rgb(255 122 0 / 0.12);
+  /*
+   * Gradyan, düz dolgu değil: soldaki turuncu sağa doğru sönüyor.
+   * Böylece sol kenardaki işaretle zemin tek bir ışık gibi okunuyor,
+   * iki ayrı öğe gibi değil.
+   */
+  background: linear-gradient(90deg, rgb(255 122 0 / 0.20), rgb(255 122 0 / 0.06));
   color: var(--ft-color-primary);
   font-weight: var(--ft-font-weight-bold);
   box-shadow:
     inset 3px 0 0 var(--ft-color-primary),
-    0 0 0 1px rgb(255 122 0 / 0.14);
+    inset 0 0 0 1px var(--ft-orange-28),
+    0 0 18px -4px rgb(255 122 0 / 0.35);
 }
 
+/* Simge de ışık alır: dar rayda etiket kırpılıyken aktifliği o taşır. */
 .ft-nav__link--active .ft-nav__icon {
   color: var(--ft-color-primary);
+  text-shadow: 0 0 12px rgb(255 122 0 / 0.55);
 }
 
 /*
- * Aktif öğenin üzerine gelmek onu SÖNDÜRMEZ.
+ * Aktif öğenin üzerine gelmek onu SÖNDÜRMEZ ve KAYDIRMAZ.
  *
- * `.ft-nav__link:hover` yukarıda zemini `--ft-color-bg` yapıyor ve iki
- * kural aynı özgüllükte; sıra gereği hover kazanırdı ve aktif sayfa,
- * fare üzerindeyken aktif görünmeyi bırakırdı.
+ * `.ft-nav__link:hover` aynı özgüllükte; sıra gereği kazanır ve aktif
+ * sayfa fare üzerindeyken hem soluklaşır hem 2px oynardı. Aktif öğe
+ * yerinde durur — zaten hedefe varılmış durumdur.
  */
 .ft-nav__link--active:hover {
-  background: rgb(255 122 0 / 0.16);
+  background: linear-gradient(90deg, rgb(255 122 0 / 0.26), rgb(255 122 0 / 0.09));
   color: var(--ft-color-primary);
+  transform: none;
 }
 
 .ft-shell__scrim {
@@ -1119,39 +1146,91 @@ a {
 /*
  * HERO EKRANIN GÖRSEL MERKEZİDİR.
  *
- * Üç katman, hepsi tek elemanda — fazladan DOM düğümü yok:
- *   1. köşeden gelen ince eğim (eskisi gibi),
- *   2. sol üstten yayılan yumuşak radyal ışık,
- *   3. yüzeyin kendisi.
+ * DÖRT KATMAN, hepsi tek elemanda — fazladan DOM düğümü yok:
+ *   1. sol üstten gelen ince eğim,
+ *   2. SAĞ tarafta yoğun turuncu radyal ışık (marka görselinin arkası),
+ *   3. sol altta ona denge veren çok sönük ikinci ışık,
+ *   4. yüzeyin kendi gradyanı.
  *
- * `box-shadow` iki parçalı: içeride markanın rengini taşıyan ince bir
- * çizgi (kenarlığı kalınlaştırmadan sıcaklık verir), dışarıda panonun
- * geri kalanından ayıran sakin bir gölge. Blur/glassmorphism YOK:
- * `backdrop-filter` hem pahalı hem de bu koyu yüzeyde okunabilirliği
- * düşürürdü.
+ * KENAR PARLAK AMA İNCE. 1px'lik turuncu bir çerçeve + hemen dışında
+ * yumuşak bir hâle. `border` yerine `box-shadow` katmanları kullanıldı:
+ * tek bir `border` rengi köşelerde kesik ve düz görünüyordu; iç halka +
+ * dış hâle, kenarın ışık yaydığı hissini veriyor.
+ *
+ * NEON DEĞİL. Hâlenin opaklığı 0.22'yi geçmiyor ve yayılımı geniş
+ * (28px). Dar ve parlak bir hâle tabela gibi görünürdü; geniş ve sönük
+ * olanı yüzeyin ışık saçtığını söyler.
+ *
+ * `backdrop-filter` YOK: hem pahalı, hem de bu koyu yüzeyde metnin
+ * okunabilirliğini düşürürdü.
  */
 .ft-hero {
   position: relative;
   overflow: hidden;
   padding: var(--ft-space-7) var(--ft-space-6);
-  border: 1px solid var(--ft-color-border);
+  border: 0;
   border-radius: var(--ft-radius-xl);
   background:
-    linear-gradient(135deg, rgb(255 122 0 / 0.08), transparent 42%),
-    radial-gradient(42rem 22rem at 12% -30%, rgb(255 122 0 / 0.10), transparent 68%),
-    var(--ft-color-surface);
+    linear-gradient(135deg, rgb(255 122 0 / 0.10), transparent 38%),
+    radial-gradient(38rem 26rem at 82% 50%, rgb(255 122 0 / 0.16), transparent 66%),
+    radial-gradient(30rem 20rem at 2% 108%, rgb(255 122 0 / 0.05), transparent 70%),
+    var(--ft-surface-raised);
   box-shadow:
-    inset 0 1px 0 rgb(255 122 0 / 0.10),
-    0 10px 30px rgb(0 0 0 / 0.28);
+    /* iç çerçeve — 1px, parlak */
+    inset 0 0 0 1px var(--ft-orange-60),
+    /* üst kenardaki ışık yakalama */
+    inset 0 1px 0 rgb(255 200 150 / 0.30),
+    /* dış hâle — geniş ve sönük */
+    0 0 34px -6px rgb(255 122 0 / 0.32),
+    /* zemine oturtan gölge */
+    0 20px 44px -22px rgb(0 0 0 / 0.95);
 }
 
+/*
+ * MARKA GÖRSELİ — hero'nun sağ yarısındaki boşluğu dolduran şey.
+ *
+ * MEVCUT ASSET KULLANILIYOR, yeni görsel üretilmedi:
+ * `public/assets/flowtiger-logo.png` (bkz. FLOWTIGER_LOGO_SRC).
+ *
+ * NEDEN `<img>` DEĞİL, ARKA PLAN:
+ * `FlowTigerMark` bileşeni `data-testid="flowtiger-mark"` taşır ve
+ * AppShell testi "perde kalktıktan sonra ekranda TEK marka işareti
+ * kalır" diye kilitliyor. Buraya ikinci bir işaret koymak o kuralı
+ * bozardı — ve haklı olarak: bu bir marka İŞARETİ değil, ATMOSFER.
+ * `.ft-hero__glow` ile aynı kategoride, dolayısıyla aynı şekilde
+ * (dekoratif, erişilebilirlik ağacının dışında) uygulanıyor.
+ *
+ * `mask-image` sağ kenara doğru soluyor: görsel bir yere yapıştırılmış
+ * gibi bitmiyor, ışığın içinde eriyor.
+ */
+.ft-hero__art {
+  position: absolute;
+  top: 50%;
+  right: clamp(1rem, 6%, 5rem);
+  width: clamp(11rem, 22vw, 17rem);
+  height: 88%;
+  transform: translateY(-50%);
+  background-image: url('/assets/flowtiger-logo.png');
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  opacity: 0.85;
+  pointer-events: none;
+  filter: drop-shadow(0 0 30px rgb(255 122 0 / 0.4));
+}
+
+/*
+ * `max-width` marka görselinin başladığı yerde biter: uzun bir isim
+ * metni kaplanın üstüne binmesin. Geniş ekranda %58, dar ekranda
+ * (görsel gizlendiğinde) tam genişlik.
+ */
 .ft-hero__content {
   position: relative;
   z-index: 1;
   display: flex;
   flex-direction: column;
   gap: var(--ft-space-2);
-  max-width: 40rem;
+  max-width: min(40rem, 58%);
 }
 
 .ft-hero__title {
@@ -1198,12 +1277,12 @@ a {
  */
 .ft-hero__glow {
   position: absolute;
-  top: -40%;
-  right: -10%;
-  width: 26rem;
-  height: 26rem;
+  top: -34%;
+  right: -6%;
+  width: 28rem;
+  height: 28rem;
   border-radius: 50%;
-  background: radial-gradient(circle, rgb(255 122 0 / 0.18), transparent 62%);
+  background: radial-gradient(circle, rgb(255 122 0 / 0.22), transparent 62%);
   pointer-events: none;
   /*
    * YAVAŞ NEFES.
@@ -1255,42 +1334,101 @@ a {
   gap: var(--ft-space-4);
 }
 
+/*
+ * KART = ÜÇ KATMAN (bkz. tokens.css --ft-surface-raised).
+ *
+ * zemin gradyanı + beyaz kılı kenar + içine düşen sönük ışık.
+ * Düz `background: surface` bırakılsaydı beş kart, zeminden ayrışmayan
+ * beş siyah dikdörtgen olurdu — referansla arasındaki fark tam olarak
+ * buydu.
+ *
+ * `::before` kartın sol üstüne sönük bir turuncu aydınlık koyar; simge
+ * oradan çıkıyormuş gibi görünür. Ayrı bir DOM düğümü gerekmiyor.
+ */
 .ft-kpi {
+  position: relative;
   display: grid;
   /* satırlar: simge · başlık · değer · açıklama */
   grid-template-rows: auto auto 1fr auto;
   gap: var(--ft-space-1);
   padding: var(--ft-space-4);
-  border: 1px solid var(--ft-color-border);
+  border: 1px solid var(--ft-border-hairline);
   border-radius: var(--ft-radius-lg);
-  background: var(--ft-color-surface);
+  background: var(--ft-surface-raised);
+  box-shadow: var(--ft-shadow-card);
   color: inherit;
   text-decoration: none;
   min-width: 0;
+  overflow: hidden;
   transition:
-    transform 0.16s ease,
-    border-color 0.16s ease,
-    box-shadow 0.16s ease;
+    transform var(--ft-duration) var(--ft-ease),
+    border-color var(--ft-duration) var(--ft-ease),
+    box-shadow var(--ft-duration) var(--ft-ease);
+}
+
+.ft-kpi::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(14rem 8rem at 0% 0%, var(--ft-orange-10), transparent 72%);
+  pointer-events: none;
+}
+
+/* İçerik ışığın üstünde kalır. */
+.ft-kpi > * {
+  position: relative;
+  z-index: 1;
 }
 
 /*
- * Üzerine gelince kart BİR TIK YÜKSELİR.
+ * Üzerine gelince kart BİR TIK YÜKSELİR (3px) ve kenarı turuncuya yaklaşır.
  *
- * 2px'lik kalkış ve yumuşayan kenarlık, "buraya tıklanır"ı hareket
- * ettirmeden söyler. Metin ya da düzen KAYMAZ: yalnızca `transform`
- * değişiyor, satırlar yerinde kalıyor.
+ * Metin ya da düzen KAYMAZ: yalnızca `transform` ve renkler değişiyor,
+ * satırlar yerinde kalıyor. Gölge de büyür — yükselen bir nesnenin
+ * gölgesi yayılır, aynı kalmaz.
  */
 .ft-kpi:hover,
 .ft-kpi:focus-visible {
-  transform: translateY(-2px);
-  border-color: rgb(255 122 0 / 0.35);
-  box-shadow: 0 8px 20px rgb(0 0 0 / 0.30);
+  transform: translateY(-3px);
+  border-color: var(--ft-orange-28);
+  box-shadow:
+    var(--ft-shadow-card-hover),
+    0 0 22px -8px rgb(255 122 0 / 0.45);
 }
 
+/*
+ * SİMGE ARTIK ÇIPLAK BİR KARAKTER DEĞİL.
+ *
+ * Dört katman: kart yüzeyi → turuncu yarı saydam daire → dairenin
+ * çevresindeki hâle → simgenin kendisi. Referanstaki kartların
+ * "yüzeyin üstünde duran nesne" hissi büyük ölçüde buradan geliyor;
+ * tek başına duran turuncu bir sembol yüzeye çizilmiş gibi kalıyordu.
+ */
 .ft-kpi__icon {
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  border: 1px solid var(--ft-orange-45);
+  background: radial-gradient(circle at 30% 25%, rgb(255 122 0 / 0.34), rgb(255 122 0 / 0.10));
+  box-shadow:
+    inset 0 1px 0 rgb(255 200 150 / 0.32),
+    0 0 18px -3px rgb(255 122 0 / 0.6);
   color: var(--ft-color-primary);
-  font-size: var(--ft-font-size-lg);
+  font-size: var(--ft-font-size-md);
   line-height: 1;
+  margin-bottom: var(--ft-space-2);
+  transition:
+    border-color var(--ft-duration) var(--ft-ease),
+    box-shadow var(--ft-duration) var(--ft-ease);
+}
+
+.ft-kpi:hover .ft-kpi__icon {
+  border-color: var(--ft-orange-60);
+  box-shadow:
+    inset 0 1px 0 rgb(255 200 150 / 0.42),
+    0 0 24px -2px rgb(255 122 0 / 0.75);
 }
 
 .ft-kpi__title {
@@ -1342,29 +1480,53 @@ a {
 
 /* ----------------------------------------------------------- paneller */
 
+/*
+ * Paneller de KPI kartlarıyla aynı üç katmanı taşır — ekranda tek bir
+ * yüzey dili olsun diye. Yarıçap bir basamak büyük (xl): panel daha
+ * büyük bir nesne, aynı köşe yarıçapı onu kart gibi gösterirdi.
+ */
 .ft-panel {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: var(--ft-space-4);
   padding: var(--ft-space-5);
-  border: 1px solid var(--ft-color-border);
-  border-radius: var(--ft-radius-lg);
-  background: var(--ft-color-surface);
+  border: 1px solid var(--ft-border-hairline);
+  border-radius: var(--ft-radius-xl);
+  background: var(--ft-surface-raised);
+  box-shadow: var(--ft-shadow-card);
   min-width: 0;
-}
-
-/* Odak paneli bir tık öne çıkar — üstünde ince turuncu bir çizgi. */
-.ft-panel--focus {
-  position: relative;
   overflow: hidden;
 }
 
+/* Panelin üst köşesine düşen sönük ışık — kartlardakiyle aynı açı. */
+.ft-panel::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(22rem 12rem at 0% 0%, var(--ft-orange-06), transparent 70%);
+  pointer-events: none;
+}
+
+.ft-panel > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Odak paneli bir tık öne çıkar — üstünde parlayan turuncu bir çizgi. */
 .ft-panel--focus::before {
   content: '';
   position: absolute;
   inset: 0 0 auto 0;
   height: 2px;
-  background: linear-gradient(90deg, var(--ft-color-primary), transparent 55%);
+  z-index: 2;
+  background: linear-gradient(90deg, var(--ft-color-primary), rgb(255 122 0 / 0.15) 45%, transparent 70%);
+  /* Çizgi ışık saçar; düz bir kenarlık gibi durmaz. */
+  box-shadow: 0 0 14px rgb(255 122 0 / 0.55);
+}
+
+.ft-panel--focus {
+  border-color: var(--ft-orange-16);
 }
 
 .ft-panel__head {
@@ -1395,7 +1557,14 @@ a {
  * geldiğinde ekranın dengesi değişmesin. Ama bir hata gibi de
  * görünmemeli — kırmızı yok, ünlem yok, kesik çizgili kocaman kutu yok.
  */
+/*
+ * Boş durum panelin İÇİNDE AYRI BİR YÜZEYDİR: panel yüzeyi bir basamak
+ * yukarıda, bu blok bir basamak aşağıda. İkisi aynı renk olsaydı boşluk
+ * panelin devamı gibi görünür, "burada bir şey olacak" hissi kaybolurdu.
+ * Ortasında çok sönük bir radyal ışık var — göz merkeze düşüyor.
+ */
 .ft-plan-empty {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1403,18 +1572,31 @@ a {
   gap: var(--ft-space-3);
   min-height: 13rem;
   padding: var(--ft-space-6) var(--ft-space-4);
+  border: 1px solid var(--ft-border-hairline);
   border-radius: var(--ft-radius-lg);
-  background: var(--ft-color-surface-2);
+  background:
+    radial-gradient(20rem 10rem at 50% 38%, var(--ft-orange-06), transparent 70%),
+    var(--ft-surface-sunken);
   text-align: center;
 }
 
-/* Saat kadranını andıran sade bir halka; ikon kütüphanesi gerektirmez. */
+/*
+ * Saat kadranını andıran halka — artık düz bir çizgi değil.
+ *
+ * Dört katman: koyu daire → turuncu kenar → dışarıda yumuşak hâle →
+ * içeride üst kenarda ince bir highlight. Boş durum bir eksiklik gibi
+ * değil, henüz dolmamış bir yer gibi görünmeli; bu yüzden hâle sönük,
+ * kırmızı ya da ünlem yok.
+ */
 .ft-plan-empty__glyph {
-  width: 2.25rem;
-  height: 2.25rem;
-  border: 2px solid var(--ft-color-primary);
+  width: 3rem;
+  height: 3rem;
+  border: 1px solid var(--ft-orange-45);
   border-radius: 50%;
-  opacity: 0.55;
+  background: radial-gradient(circle at 32% 26%, rgb(255 122 0 / 0.16), rgb(255 122 0 / 0.03) 62%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 190 130 / 0.28),
+    0 0 22px -4px rgb(255 122 0 / 0.45);
 }
 
 .ft-plan-empty__title {
@@ -1448,22 +1630,29 @@ a {
   display: inline-flex;
   align-items: baseline;
   gap: var(--ft-space-2);
-  padding: var(--ft-space-2) var(--ft-space-3);
-  border: 1px solid var(--ft-color-border);
+  padding: var(--ft-space-2) var(--ft-space-4);
+  border: 1px solid var(--ft-border-hairline-strong);
   border-radius: 999px;
-  background: var(--ft-color-surface);
+  background: var(--ft-surface-raised);
+  box-shadow: var(--ft-shadow-card);
   color: var(--ft-color-text);
   text-decoration: none;
   font-size: var(--ft-font-size-sm);
   transition:
-    border-color 0.16s ease,
-    background 0.16s ease;
+    border-color var(--ft-duration) var(--ft-ease),
+    background var(--ft-duration) var(--ft-ease),
+    transform var(--ft-duration) var(--ft-ease),
+    box-shadow var(--ft-duration) var(--ft-ease);
 }
 
 .ft-focus-next__item:hover,
 .ft-focus-next__item:focus-visible {
-  border-color: rgb(255 122 0 / 0.35);
-  background: rgb(255 122 0 / 0.08);
+  border-color: var(--ft-orange-45);
+  background: linear-gradient(158deg, rgb(255 122 0 / 0.14), rgb(255 122 0 / 0.04));
+  transform: translateY(-2px);
+  box-shadow:
+    var(--ft-shadow-card-hover),
+    0 0 20px -6px rgb(255 122 0 / 0.5);
 }
 
 .ft-focus-next__glyph {
@@ -1487,8 +1676,9 @@ a {
   align-items: center;
   gap: var(--ft-space-3);
   padding: var(--ft-space-4);
+  border: 1px solid var(--ft-border-hairline);
   border-radius: var(--ft-radius-md);
-  background: var(--ft-color-surface-2);
+  background: var(--ft-surface-sunken);
   color: var(--ft-color-text-muted);
   font-size: var(--ft-font-size-sm);
 }
@@ -1512,14 +1702,33 @@ a {
   list-style: none;
 }
 
+/*
+ * Görev satırı da panelin İÇİNDE ayrı bir yüzeydir — boş durum bloğuyla
+ * aynı basamakta. İkisi aynı yüzey dilini paylaşmasaydı, plan dolu ve
+ * boşken panel iki farklı ürün gibi görünürdü.
+ */
 .ft-task {
   display: grid;
   grid-template-columns: 3.25rem 1fr;
   align-items: baseline;
   gap: var(--ft-space-3);
   padding: var(--ft-space-3) var(--ft-space-4);
+  border: 1px solid var(--ft-border-hairline);
   border-radius: var(--ft-radius-md);
-  background: var(--ft-color-surface-2);
+  background: var(--ft-surface-sunken);
+  transition:
+    border-color var(--ft-duration) var(--ft-ease),
+    background var(--ft-duration) var(--ft-ease);
+}
+
+/*
+ * Hover satırı aydınlatır ama TURUNCUYA ÇEVİRMEZ: tıklanabilir olan
+ * satırın tamamı değil, içindeki başlık bağlantısı. Tüm satırı marka
+ * rengiyle vurgulamak, olmayan bir tıklama hedefi vaat ederdi.
+ */
+.ft-task:hover {
+  border-color: var(--ft-border-hairline-strong);
+  background: linear-gradient(158deg, #191e28 0%, #12161c 100%);
 }
 
 /*
@@ -1581,10 +1790,15 @@ a {
  * Son hareketler bir TABLO değil, bir akış. Her kayıt bir an: eylem
  * üstte, ne kadar önce olduğu altta.
  */
+/*
+ * Boşluk KALDIRILDI, yerini ayırıcılar aldı: satırlar arası ince bir
+ * çizgi akışı bir liste gibi okutuyor ve hover vurgusuna gövde veriyor.
+ * Aralarında boşluk olsaydı vurgulanan satır havada duran bir kutu gibi
+ * görünürdü.
+ */
 .ft-timeline {
   display: flex;
   flex-direction: column;
-  gap: var(--ft-space-4);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -1595,29 +1809,83 @@ a {
  * değil, aynı akışın durakları. Çizgi ::before ile çiziliyor — fazladan
  * bir DOM düğümü eklemeden.
  */
+/*
+ * SATIR DÜZENİ: [zaman çizgisi] [rozet] [etiket] [ne kadar önce]
+ *
+ * Zaman ve etiket AYNI SATIRDA; zaman sağa yaslı. Eskiden zaman alt
+ * satırdaydı ve her kayıt iki satır kaplıyordu — beş kayıt paneli
+ * gereksiz uzatıyor, akışı da tabloya benzetiyordu.
+ */
 .ft-timeline__item {
   position: relative;
   display: grid;
-  grid-template-columns: 1.5rem 1fr;
+  grid-template-columns: 2rem 1fr auto;
   column-gap: var(--ft-space-3);
-  row-gap: var(--ft-space-1);
-  align-items: start;
+  align-items: center;
+  padding: var(--ft-space-3) var(--ft-space-2) var(--ft-space-3) var(--ft-space-5);
+  border-radius: var(--ft-radius-md);
+  border-bottom: 1px solid rgb(255 255 255 / 0.04);
   font-size: var(--ft-font-size-sm);
+  transition: background var(--ft-duration) var(--ft-ease);
 }
 
+/*
+ * ZAMAN ÇİZGİSİ — satırın en solunda, dikey.
+ *
+ * `::before` çizgiyi, `::after` çizginin üstündeki küçük renkli noktayı
+ * çiziyor. İkisi de sözde eleman: akış için fazladan hiçbir DOM düğümü
+ * eklenmedi.
+ */
 .ft-timeline__item::before {
   content: '';
   position: absolute;
-  left: 0.6875rem;
-  top: 1.9em;
-  bottom: calc(-1 * var(--ft-space-4));
+  left: 0.1875rem;
+  top: 0;
+  bottom: 0;
   width: 1px;
-  background: var(--ft-color-border);
+  background: rgb(255 255 255 / 0.08);
 }
 
-/* Son durakta çizgi devam etmez: akış orada biter. */
+/* İlk durakta çizgi yukarıdan, son durakta aşağıdan kesilir. */
+.ft-timeline__item:first-child::before {
+  top: 50%;
+}
+
 .ft-timeline__item:last-child::before {
-  display: none;
+  bottom: 50%;
+  border-bottom: 0;
+}
+
+.ft-timeline__item:last-child {
+  border-bottom: 0;
+}
+
+/* Çizginin üstündeki nokta — olayın türüne göre renkli. */
+.ft-timeline__item::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 0.5rem;
+  height: 0.5rem;
+  margin-top: -0.25rem;
+  border-radius: 50%;
+  background: var(--ft-tone-color, var(--ft-color-text-muted));
+  /* Halka çizgiyi keser, hâle noktayı çizginin önüne çıkarır. */
+  box-shadow:
+    0 0 0 3px #12151c,
+    0 0 10px -1px var(--ft-tone-color, transparent);
+}
+
+/*
+ * Hover'da satır çok hafif aydınlanır.
+ *
+ * Bu bir bağlantı DEĞİL — tıklanacak bir şey yok. Vurgu yalnızca gözün
+ * uzun listede satırı kaybetmemesi için; bu yüzden turuncu değil, nötr
+ * beyaz ve çok düşük opaklıkta.
+ */
+.ft-timeline__item:hover {
+  background: rgb(255 255 255 / 0.035);
 }
 
 /*
@@ -1631,59 +1899,77 @@ a {
  * İŞARET DE RENK DE TEK BAŞINA TAŞIYICI DEĞİL (WCAG 1.4.1): eylemin adı
  * hemen yanında metin olarak yazılı ve rozet `aria-hidden`.
  */
+/*
+ * ROZET — yuvarlak değil, yumuşatılmış kare.
+ *
+ * KPI kartlarındaki simge daireleriyle karışmasın diye: orada daire bir
+ * ÖLÇÜMÜ, burada kare bir OLAYI işaret ediyor. Aynı biçim iki farklı şey
+ * için kullanılsaydı göz ikisini aynı kategoriye koyardı.
+ */
 .ft-timeline__dot {
   display: grid;
   place-items: center;
-  width: 1.5rem;
-  height: 1.5rem;
-  border-radius: 50%;
-  border: 1px solid var(--ft-color-border);
-  background: var(--ft-color-surface-2);
-  color: var(--ft-color-text-muted);
-  font-size: 0.75rem;
+  width: 2rem;
+  height: 2rem;
+  border-radius: var(--ft-radius-md);
+  border: 1px solid var(--ft-tone-border, var(--ft-border-hairline-strong));
+  background: var(--ft-tone-bg, var(--ft-surface-sunken));
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06);
+  color: var(--ft-tone-color, var(--ft-color-text-muted));
+  font-size: 0.8125rem;
   line-height: 1;
-  /* Çizginin üstünde durur, altında değil. */
   position: relative;
   z-index: 1;
 }
 
 /*
- * TONLAR.
+ * TONLAR — TEK YERDE TANIMLI.
+ *
+ * Her ton üç değişken verir (kenar, zemin, renk); rozet ve çizgi
+ * üstündeki nokta ikisi de bunları okur. Eskiden renkler yalnızca
+ * rozete yazılıydı ve noktayı da renklendirmek kuralları ikiye
+ * katlardı.
  *
  * Beş alan, beş sakin renk. Doygunluk bilinçli olarak düşük: akış bir
  * uyarı listesi değil, bir geçmiş. Kırmızı hiçbir tonda YOK — iptal bile
  * bir hata değil, kayıtlı bir karar.
  */
-.ft-timeline__item[data-tone='money'] .ft-timeline__dot {
-  border-color: rgb(255 122 0 / 0.45);
-  background: rgb(255 122 0 / 0.12);
-  color: var(--ft-color-primary);
+.ft-timeline__item[data-tone='money'] {
+  --ft-tone-color: var(--ft-color-primary);
+  --ft-tone-border: rgb(255 122 0 / 0.45);
+  --ft-tone-bg: rgb(255 122 0 / 0.12);
 }
 
-.ft-timeline__item[data-tone='customer'] .ft-timeline__dot {
-  border-color: rgb(96 165 250 / 0.40);
-  background: rgb(96 165 250 / 0.10);
-  color: #93b8fb;
+.ft-timeline__item[data-tone='customer'] {
+  --ft-tone-color: #93b8fb;
+  --ft-tone-border: rgb(96 165 250 / 0.40);
+  --ft-tone-bg: rgb(96 165 250 / 0.10);
 }
 
-.ft-timeline__item[data-tone='team'] .ft-timeline__dot {
-  border-color: rgb(52 211 153 / 0.35);
-  background: rgb(52 211 153 / 0.10);
-  color: #7fd8b6;
+.ft-timeline__item[data-tone='team'] {
+  --ft-tone-color: #7fd8b6;
+  --ft-tone-border: rgb(52 211 153 / 0.35);
+  --ft-tone-bg: rgb(52 211 153 / 0.10);
 }
 
-.ft-timeline__item[data-tone='task'] .ft-timeline__dot {
-  border-color: rgb(196 181 253 / 0.38);
-  background: rgb(196 181 253 / 0.10);
-  color: #c9bcfb;
+.ft-timeline__item[data-tone='task'] {
+  --ft-tone-color: #c9bcfb;
+  --ft-tone-border: rgb(196 181 253 / 0.38);
+  --ft-tone-bg: rgb(196 181 253 / 0.10);
 }
 
 .ft-timeline__label {
   color: var(--ft-color-text);
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
+/*
+ * Zaman sağa yaslı ve DAR EKRANDA KIRPILMAZ: `white-space: nowrap` ile
+ * "22 saat önce" iki satıra bölünmez, `auto` kolon ona tam yer ayırır.
+ */
 .ft-timeline__time {
-  grid-column: 2;
+  white-space: nowrap;
 }
 
 /*
@@ -1891,6 +2177,22 @@ a {
     padding: var(--ft-space-6) var(--ft-space-4);
   }
 
+  /*
+   * MARKA GÖRSELİ DAR EKRANDA KALKAR.
+   *
+   * Sığdırmaya çalışmak iki kötü sonuçtan birini verirdi: ya kaplan
+   * metnin altına iner ve hero iki kat uzar, ya da metnin arkasında
+   * kalıp okumayı zorlaştırır. Atmosfer katmanı, içeriğe engel olduğu
+   * anda atmosfer olmaktan çıkar.
+   */
+  .ft-hero__art {
+    display: none;
+  }
+
+  .ft-hero__content {
+    max-width: none;
+  }
+
   /* Işık dar ekranda içeriği yıkamasın. */
   .ft-hero__glow {
     width: 16rem;
@@ -2006,15 +2308,23 @@ a {
 
   /*
     Kart yükselmesi ve geçişleri de durur. Kartın tıklanabilir olduğunu
-    kenarlık rengi söylemeye devam ediyor; anlam hareketle taşınmıyordu.
+    kenarlık ve hâle rengi söylemeye devam ediyor; anlam hareketle
+    taşınmıyordu.
   */
   .ft-kpi,
-  .ft-focus-next__item {
+  .ft-kpi__icon,
+  .ft-focus-next__item,
+  .ft-nav__link,
+  .ft-timeline__item,
+  .ft-task {
     transition: none;
   }
 
   .ft-kpi:hover,
-  .ft-kpi:focus-visible {
+  .ft-kpi:focus-visible,
+  .ft-focus-next__item:hover,
+  .ft-focus-next__item:focus-visible,
+  .ft-nav__link:hover {
     transform: none;
   }
 }

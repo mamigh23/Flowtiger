@@ -102,6 +102,43 @@ describe('DashboardPage', () => {
     ).toBeInTheDocument();
   });
 
+  /**
+   * REGRESYON — HERO'DAKİ KAPLAN BİR MARKA İŞARETİ DEĞİL, SÜSTÜR.
+   *
+   * Görsel `ft-hero__art` üzerinden CSS arka planı olarak veriliyor;
+   * `FlowTigerMark` bileşeni KULLANILMIYOR. Kullanılsaydı ekranda ikinci
+   * bir `flowtiger-mark` oluşur ve AppShell'in "perde kalktıktan sonra
+   * ekranda TEK marka işareti kalır" kuralı bozulurdu.
+   *
+   * Bu test o sınırı iki taraftan da tutuyor: süs erişilebilirlik
+   * ağacının dışında kalmalı ve panoda ikinci bir marka işareti
+   * belirmemeli.
+   */
+  it('hero süsünü ikinci bir marka işaretine dönüştürmez', async () => {
+    vi.stubGlobal('fetch', mockApi(ownerRoutes));
+
+    renderAtHour(9);
+
+    await screen.findByTestId('plan-empty');
+
+    /*
+     * Hero'nun İÇİNDE marka işareti YOK.
+     *
+     * Ekranın tamamı sayılmıyor çünkü bu testlerde marka perdesi hâlâ
+     * takılı (sahte saat ilerletilmiyor) ve onun kendi işareti var.
+     * Ölçülen şey panonun kendi katkısı: hero bir işaret EKLEMEMELİ.
+     */
+    const hero = document.querySelector('.ft-hero');
+    expect(hero).not.toBeNull();
+    expect(hero?.querySelectorAll('[data-testid="flowtiger-mark"]')).toHaveLength(0);
+
+    const art = document.querySelector('.ft-hero__art');
+    expect(art).not.toBeNull();
+    expect(art).toHaveAttribute('aria-hidden', 'true');
+    // Süs metin taşımaz: ekran okuyucuya okunacak bir şey eklemez.
+    expect(art?.textContent).toBe('');
+  });
+
   it('karşılamanın altında hoş geldiniz yazar', async () => {
     vi.stubGlobal('fetch', mockApi(ownerRoutes));
 

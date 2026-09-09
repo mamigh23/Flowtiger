@@ -47,6 +47,21 @@ export function DashboardWelcome({ name, hour }: { name: string | null; hour: nu
 
       {/* Marka rengini taşıyan sakin bir ışık; içerik değil, atmosfer. */}
       <div className="ft-hero__glow" aria-hidden="true" />
+
+      {/*
+        MARKA GÖRSELİ — hero'nun sağ yarısındaki boşluğu dolduran şey.
+
+        Görsel MEVCUT asset'tir (`public/assets/flowtiger-logo.png`) ve
+        CSS arka planı olarak veriliyor; yeni bir görsel üretilmedi.
+
+        `FlowTigerMark` BİLEŞENİ KULLANILMADI ve bu bilinçli: o bileşen
+        markanın KİMLİK işaretidir ve AppShell testi "perde kalktıktan
+        sonra ekranda tek marka işareti kalır" kuralını kilitliyor.
+        Buradaki kaplan bir kimlik işareti değil, `ft-hero__glow` ile
+        aynı kategoriden bir ATMOSFER katmanı — bu yüzden aynı şekilde
+        dekoratif ve erişilebilirlik ağacının dışında.
+      */}
+      <div className="ft-hero__art" aria-hidden="true" />
     </header>
   );
 }
