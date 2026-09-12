@@ -204,6 +204,18 @@ a {
   color: var(--ft-color-text);
 }
 
+/*
+ * ALAN İPUCU — hata değil.
+ *
+ * Sönük ve sakin: kullanıcıya bir şeyi yanlış yaptığını değil, o alanın
+ * neden şu hâlde olduğunu anlatır. `.ft-field__error` ile aynı yeri
+ * paylaşır ama rengi nötrdür.
+ */
+.ft-field__hint {
+  color: var(--ft-color-text-muted);
+  font-size: var(--ft-font-size-sm);
+}
+
 .ft-field__error {
   font-size: var(--ft-font-size-sm);
   color: var(--ft-color-danger);
@@ -244,6 +256,27 @@ a {
   height: 1rem;
   border-radius: var(--ft-radius-sm);
   background: var(--ft-color-border);
+}
+
+/*
+ * BİLGİ SATIRI — hata değil.
+ *
+ * "Oturumunuz sona erdi" bir arıza değil, beklenen bir son. `.ft-error`
+ * (kırmızı kenar, danger rengi) kullanıcıya bir şeyin bozulduğunu
+ * düşündürürdü. Bu yüzden ayrı ve sakin: nötr yüzey, marka renginde ince
+ * bir sol işaret.
+ */
+.ft-notice {
+  display: flex;
+  align-items: center;
+  gap: var(--ft-space-3);
+  padding: var(--ft-space-3) var(--ft-space-4);
+  border: 1px solid var(--ft-border-hairline);
+  border-radius: var(--ft-radius-md);
+  background: var(--ft-surface-sunken);
+  box-shadow: inset 3px 0 0 var(--ft-color-primary);
+  color: var(--ft-color-text);
+  font-size: var(--ft-font-size-sm);
 }
 
 .ft-error {
@@ -2325,6 +2358,542 @@ a {
   .ft-focus-next__item:hover,
   .ft-focus-next__item:focus-visible,
   .ft-nav__link:hover {
+    transform: none;
+  }
+}
+
+/* ==================================================================== */
+/* MÜŞTERİLER SAYFASI                                                   */
+/*                                                                      */
+/* Yalnızca /app/customers listesine aittir; tüm seçiciler              */
+/* `ft-customers-` önekiyle başlar. Paylaşılan `.ft-button`,            */
+/* `.ft-table`, `.ft-page__header` kuralları DEĞİŞTİRİLMEZ — onlar      */
+/* başka ekranlarda da kullanılıyor. `.ft-table-scroll` aynen           */
+/* kullanılır: dar ekranda tabloyu kendi içinde kaydıran, zaten         */
+/* sınanmış sarmalayıcı odur.                                          */
+/*                                                                      */
+/* Renkler, yüzeyler ve gölgeler tokens.css'ten gelir.                  */
+/* ==================================================================== */
+
+.ft-customers {
+  gap: var(--ft-space-6);
+}
+
+/* ------------------------------------------------------------ başlık */
+
+.ft-customers-hero {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--ft-space-5);
+  flex-wrap: wrap;
+  padding-bottom: var(--ft-space-2);
+}
+
+/* Zemine düşen sönük turuncu ışık — renk değil, ambiyans. */
+.ft-customers-hero::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  top: -40%;
+  left: -6%;
+  width: 26rem;
+  max-width: 80%;
+  height: 12rem;
+  background: radial-gradient(60% 60% at 30% 50%, var(--ft-orange-10) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.ft-customers-hero__text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ft-space-2);
+  min-width: 0;
+}
+
+.ft-customers-hero__title {
+  font-size: clamp(1.75rem, 1.2rem + 1.6vw, 2.25rem);
+  font-weight: var(--ft-font-weight-bold);
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.ft-customers-hero__lead {
+  max-width: 42ch;
+  color: var(--ft-color-text-muted);
+  font-size: var(--ft-font-size-sm);
+}
+
+/* --------------------------------------------------------- eylemler */
+
+/*
+ * BİRİNCİL CTA — bir <a>, yani tarayıcı varsayılanı altı çizili.
+ * `text-decoration: none` bu yüzden zorunlu.
+ */
+.ft-customers-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ft-space-2);
+  min-height: var(--ft-control-height);
+  padding: 0 var(--ft-space-5);
+  border: 1px solid transparent;
+  border-radius: var(--ft-radius-md);
+  background: var(--ft-color-primary);
+  color: var(--ft-color-primary-contrast);
+  font-size: var(--ft-font-size-sm);
+  font-weight: var(--ft-font-weight-medium);
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background var(--ft-duration) var(--ft-ease),
+    box-shadow var(--ft-duration) var(--ft-ease),
+    transform var(--ft-duration) var(--ft-ease);
+}
+
+.ft-customers-cta:hover {
+  background: var(--ft-color-primary-hover);
+  box-shadow: 0 6px 18px -8px var(--ft-orange-45);
+  transform: translateY(-1px);
+}
+
+.ft-customers-cta:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+/* İkincil eylem: "Ayrıntılar", "Tekrar dene", sayfalama. */
+.ft-customers-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.25rem;
+  padding: 0 var(--ft-space-4);
+  border: 1px solid var(--ft-border-hairline);
+  border-radius: var(--ft-radius-md);
+  background: var(--ft-surface-sunken);
+  color: var(--ft-color-text);
+  font: inherit;
+  font-size: var(--ft-font-size-sm);
+  font-weight: var(--ft-font-weight-medium);
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    border-color var(--ft-duration) var(--ft-ease),
+    background var(--ft-duration) var(--ft-ease),
+    color var(--ft-duration) var(--ft-ease),
+    box-shadow var(--ft-duration) var(--ft-ease),
+    transform var(--ft-duration) var(--ft-ease);
+}
+
+.ft-customers-action:hover:not(:disabled) {
+  border-color: var(--ft-orange-28);
+  color: var(--ft-color-primary);
+  box-shadow: 0 4px 14px -10px var(--ft-orange-45);
+  transform: translateY(-1px);
+}
+
+.ft-customers-action:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+.ft-customers-action:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/*
+ * Satır içindeki "Ayrıntılar" SESSİZ DURUR: on beş satırda on beş
+ * çerçeveli düğme, listeyi düğme duvarına çevirirdi. Kenarlık satır
+ * hover'ında belirir.
+ */
+.ft-customers-action--quiet {
+  border-color: transparent;
+  background: transparent;
+  color: var(--ft-color-text-muted);
+}
+
+.ft-customers-table tr:hover .ft-customers-action--quiet {
+  border-color: var(--ft-border-hairline);
+  background: var(--ft-surface-sunken);
+  color: var(--ft-color-text);
+}
+
+/* ------------------------------------------------------------- özet */
+
+.ft-customers-summary {
+  display: grid;
+  gap: var(--ft-space-4);
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+}
+
+.ft-customers-stat {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ft-space-1);
+  padding: var(--ft-space-4) var(--ft-space-5);
+  border: 1px solid var(--ft-border-hairline);
+  border-radius: var(--ft-radius-lg);
+  background: var(--ft-surface-raised);
+  box-shadow: var(--ft-shadow-card);
+  transition:
+    transform var(--ft-duration) var(--ft-ease),
+    border-color var(--ft-duration) var(--ft-ease),
+    box-shadow var(--ft-duration) var(--ft-ease);
+}
+
+/* Çok hafif yükselme: kart tıklanabilir DEĞİL, yalnızca canlı. */
+.ft-customers-stat:hover {
+  border-color: var(--ft-border-hairline-strong);
+  box-shadow: var(--ft-shadow-card-hover);
+  transform: translateY(-1px);
+}
+
+.ft-customers-stat__label {
+  color: var(--ft-color-text-muted);
+  font-size: var(--ft-font-size-sm);
+  font-weight: var(--ft-font-weight-medium);
+}
+
+.ft-customers-stat__value {
+  font-size: 1.75rem;
+  font-weight: var(--ft-font-weight-bold);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* "3/4"teki paydası: aynı satırda ama daha sessiz. */
+.ft-customers-stat__suffix {
+  margin-left: 2px;
+  color: var(--ft-color-text-muted);
+  font-size: 1rem;
+  font-weight: var(--ft-font-weight-medium);
+}
+
+/*
+ * KAPSAM NOTU. Telefon sayımı yalnızca açık sayfayı kapsıyor; kart
+ * bunu yazmasaydı sayı toplamı anlatıyormuş gibi okunurdu.
+ */
+.ft-customers-stat__note {
+  color: var(--ft-color-text-muted);
+  font-size: 0.75rem;
+  opacity: 0.75;
+}
+
+/* ------------------------------------------------------------ panel */
+
+.ft-customers-panel {
+  border: 1px solid var(--ft-border-hairline);
+  border-radius: var(--ft-radius-xl);
+  background: var(--ft-surface-raised);
+  box-shadow: var(--ft-shadow-card);
+  overflow: hidden;
+}
+
+.ft-customers-panel__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ft-space-3);
+  padding: var(--ft-space-4) var(--ft-space-5);
+  border-bottom: 1px solid var(--ft-border-hairline);
+  background: linear-gradient(180deg, rgb(255 255 255 / 0.02) 0%, transparent 100%);
+}
+
+.ft-customers-panel__title {
+  font-size: var(--ft-font-size-md);
+  font-weight: var(--ft-font-weight-bold);
+}
+
+.ft-customers-panel__count {
+  color: var(--ft-color-text-muted);
+  font-size: var(--ft-font-size-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.ft-customers-panel--message {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ft-space-4);
+  flex-wrap: wrap;
+  padding: var(--ft-space-5);
+}
+
+/* ------------------------------------------------------------ tablo */
+
+/*
+ * Tablo panelin İÇİNDE yaşar: kendi kenarlığı, kendi zemini yok.
+ * `.ft-table` paylaşılan kuralı olduğu gibi durur; buradaki kurallar
+ * yalnızca `.ft-customers-table` sınıfı da varken uygulanır.
+ */
+.ft-customers-table {
+  border-collapse: separate;
+  border-spacing: 0;
+  width: 100%;
+}
+
+.ft-customers-table th {
+  padding: var(--ft-space-3) var(--ft-space-5);
+  border-bottom: 1px solid var(--ft-border-hairline);
+  color: var(--ft-color-text-muted);
+  font-size: 0.75rem;
+  font-weight: var(--ft-font-weight-medium);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.ft-customers-table td {
+  padding: var(--ft-space-4) var(--ft-space-5);
+  border-bottom: 1px solid var(--ft-border-hairline);
+  vertical-align: middle;
+}
+
+.ft-customers-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.ft-customers-table tbody tr {
+  transition: background var(--ft-duration) var(--ft-ease);
+}
+
+/*
+ * Hover satırı AYDINLATIR ama turuncuya çevirmez: tıklanabilir olan
+ * satırın tamamı değil, içindeki ad ve "Ayrıntılar".
+ */
+.ft-customers-table tbody tr:hover {
+  background: rgb(255 255 255 / 0.025);
+}
+
+.ft-customers-table__no {
+  width: 1%;
+  color: var(--ft-color-text-muted);
+  font-size: var(--ft-font-size-sm);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.ft-customers-table__phone {
+  color: var(--ft-color-text-muted);
+  font-size: var(--ft-font-size-sm);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.ft-customers-table__action {
+  width: 1%;
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* --------------------------------------------------------- kimlik */
+
+.ft-customers-identity {
+  display: flex;
+  align-items: center;
+  gap: var(--ft-space-3);
+  min-width: 0;
+}
+
+/*
+ * Baş harf rozeti: dolu turuncu bir daire DEĞİL. On beş satırda on beş
+ * dolu daire, listenin dikkatini adlardan çalardı — sönük turuncu bir
+ * zemin ve ince kenar yeterli işaret.
+ */
+.ft-customers-avatar {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 1px solid var(--ft-orange-16);
+  border-radius: 999px;
+  background: var(--ft-orange-06);
+  color: var(--ft-color-primary);
+  font-size: 0.75rem;
+  font-weight: var(--ft-font-weight-bold);
+  letter-spacing: 0.02em;
+}
+
+.ft-customers-name {
+  color: var(--ft-color-text);
+  font-size: var(--ft-font-size-sm);
+  font-weight: var(--ft-font-weight-medium);
+  text-decoration: none;
+  /*
+   * `anywhere` DEĞİL `break-word`. `anywhere` min-content genişliğini tek
+   * karaktere indiriyor; 375px'te tarayıcı ad sütununu olabildiğince
+   * daraltıp "Dagitim Testi"yi harf harf alt alta diziyordu (gerçek
+   * Chromium'da ölçüldü). `break-word` yalnızca kelimenin kendisi
+   * sığmadığında böler, tablo da zaten `.ft-table-scroll` içinde kayar.
+   */
+  overflow-wrap: break-word;
+  transition: color var(--ft-duration) var(--ft-ease);
+}
+
+.ft-customers-name:hover {
+  color: var(--ft-color-primary);
+}
+
+/* -------------------------------------------------------- iskeletler */
+
+.ft-customers-skeleton-rows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ft-customers-skeleton-row {
+  display: flex;
+  align-items: center;
+  gap: var(--ft-space-3);
+  padding: var(--ft-space-4) var(--ft-space-5);
+  border-top: 1px solid var(--ft-border-hairline);
+}
+
+.ft-customers-skeleton-rows > .ft-customers-skeleton-row:first-child {
+  border-top: 0;
+}
+
+/*
+ * Metin bloğu avatardan YÜKSEK OLMAMALI: gerçek satırın yüksekliğini
+ * avatar belirliyor (2.25rem + dolgu). Ölçüldü — 8px boşlukla iskelet
+ * satırı 72px, gerçeği 70px oluyordu.
+ */
+.ft-customers-skeleton-row__text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ft-space-1);
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.ft-customers-skeleton-row__text .ft-skeleton {
+  height: 1rem;
+}
+
+.ft-customers-skeleton__head {
+  width: 10rem;
+  height: 1.5rem;
+}
+
+.ft-customers-skeleton__avatar {
+  flex: 0 0 auto;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 999px;
+}
+
+/* -------------------------------------------------------- boş durum */
+
+.ft-customers-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--ft-space-3);
+  padding: var(--ft-space-7) var(--ft-space-5);
+  border: 1px solid var(--ft-border-hairline);
+  border-radius: var(--ft-radius-xl);
+  background: var(--ft-surface-raised);
+  box-shadow: var(--ft-shadow-card);
+  text-align: center;
+}
+
+.ft-customers-empty__icon {
+  display: grid;
+  place-items: center;
+  width: 3rem;
+  height: 3rem;
+  border: 1px solid var(--ft-orange-28);
+  border-radius: var(--ft-radius-lg);
+  background: var(--ft-orange-06);
+  color: var(--ft-color-primary);
+  font-size: 1.25rem;
+}
+
+.ft-customers-empty__title {
+  font-size: var(--ft-font-size-md);
+  font-weight: var(--ft-font-weight-bold);
+}
+
+.ft-customers-empty__text {
+  max-width: 44ch;
+  color: var(--ft-color-text-muted);
+  font-size: var(--ft-font-size-sm);
+}
+
+/* --------------------------------------------------------- sayfalama */
+
+.ft-customers-pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ft-space-4);
+  flex-wrap: wrap;
+}
+
+.ft-customers-pager__status {
+  color: var(--ft-color-text-muted);
+  font-size: var(--ft-font-size-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+/* -------------------------------------------------------- dar ekran */
+
+@media (max-width: 40rem) {
+  .ft-customers-cta {
+    width: 100%;
+  }
+
+  .ft-customers-panel__head,
+  .ft-customers-empty {
+    padding-inline: var(--ft-space-4);
+  }
+
+  /*
+   * Dar ekranda hücre dolgusu daralır: tablo `.ft-table-scroll` içinde
+   * kayabilir, ama daha az kayması daha iyidir.
+   */
+  .ft-customers-table th,
+  .ft-customers-table td {
+    padding-inline: var(--ft-space-4);
+  }
+
+  .ft-customers-skeleton-row {
+    padding-inline: var(--ft-space-4);
+  }
+
+  /*
+   * Satır içi eylem dar ekranda HER ZAMAN görünür kenarlıklıdır: hover
+   * yok, dolayısıyla "ortaya çıkan" bir düğme dokunmatikte hiç
+   * görünmezdi.
+   */
+  .ft-customers-action--quiet {
+    border-color: var(--ft-border-hairline);
+    background: var(--ft-surface-sunken);
+    color: var(--ft-color-text);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ft-customers-cta,
+  .ft-customers-action,
+  .ft-customers-stat,
+  .ft-customers-name,
+  .ft-customers-table tbody tr {
+    transition: none;
+  }
+
+  .ft-customers-cta:hover,
+  .ft-customers-action:hover:not(:disabled),
+  .ft-customers-stat:hover {
     transform: none;
   }
 }
