@@ -3878,3 +3878,428 @@ a {
     transform: none;
   }
 }
+
+/* ---------------------------------------------------- müşteri ayrıntısı */
+
+/*
+ * Müşteri listesi ve Görev ayrıntısıyla AYNI dil: aynı yüzey, aynı
+ * hairline, aynı hâle, aynı onay paneli. Paylaşılan `.ft-details`,
+ * `.ft-page__header`, `.ft-customers-*` ve `.ft-task-detail-*` kuralları
+ * burada yeniden boyanmaz; `.ft-button` yalnızca sayfaya özel bir
+ * sınıfla (0,2,0 özgüllük) üzerine yazılır.
+ */
+.ft-customer-detail {
+  gap: var(--ft-space-5);
+}
+
+/* ---------------------------------------------------------- geri dön */
+
+/*
+ * Bir <a>, yani tarayıcı varsayılanı altı çizili. `text-decoration: none`
+ * bu yüzden zorunlu.
+ */
+.ft-customer-detail__back {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ft-space-2);
+  align-self: flex-start;
+  color: var(--ft-color-text-muted);
+  font-size: var(--ft-font-size-sm);
+  font-weight: var(--ft-font-weight-medium);
+  text-decoration: none;
+  transition: color var(--ft-duration) var(--ft-ease);
+}
+
+.ft-customer-detail__back:hover {
+  color: var(--ft-color-primary);
+}
+
+/* ------------------------------------------------------ kimlik kartı */
+
+.ft-customer-detail__hero {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--ft-space-5);
+  flex-wrap: wrap;
+}
+
+/* Zemine düşen sönük turuncu ışık — renk değil, ambiyans. */
+.ft-customer-detail__hero::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  top: -60%;
+  left: -6%;
+  width: 26rem;
+  max-width: 80%;
+  height: 12rem;
+  background: radial-gradient(60% 60% at 30% 50%, var(--ft-orange-10) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.ft-customer-detail__identity {
+  display: flex;
+  align-items: center;
+  gap: var(--ft-space-4);
+  min-width: 0;
+}
+
+/*
+ * Baş harf rozeti listedekiyle aynı kural — ama ayrıntıda tek kayıt
+ * olduğu için daha büyük: kimlik kartının görsel çapası bu.
+ */
+.ft-customer-detail__avatar {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 3.5rem;
+  height: 3.5rem;
+  border: 1px solid var(--ft-orange-16);
+  border-radius: 999px;
+  background: var(--ft-orange-06);
+  color: var(--ft-color-primary);
+  font-size: var(--ft-font-size-md);
+  font-weight: var(--ft-font-weight-bold);
+  letter-spacing: 0.02em;
+}
+
+.ft-customer-detail__headline {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--ft-space-1);
+  min-width: 0;
+}
+
+/*
+ * "Müşteri" üst etiketi: başlık bir kayıt adı, sayfa adı değil.
+ * Kullanıcı hangi tür kaydın içinde olduğunu başlığa bakarak
+ * anlayamazdı.
+ */
+.ft-customer-detail__eyebrow {
+  color: var(--ft-color-text-muted);
+  font-size: 0.75rem;
+  font-weight: var(--ft-font-weight-medium);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.ft-customer-detail__title {
+  font-size: clamp(1.5rem, 1.1rem + 1.4vw, 2rem);
+  font-weight: var(--ft-font-weight-bold);
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  overflow-wrap: break-word;
+}
+
+/* Müşteri numarası sessiz bir rozet: kimlik, veri değil. */
+.ft-customer-detail__no {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.125rem var(--ft-space-3);
+  border: 1px solid var(--ft-border-hairline);
+  border-radius: 999px;
+  background: var(--ft-surface-sunken);
+  color: var(--ft-color-text-muted);
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* --------------------------------------------------------- eylemler */
+
+.ft-customer-detail__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--ft-space-3);
+  flex-wrap: wrap;
+}
+
+/*
+ * "Düzenle" bir bağlantıdır ama düğme gibi görünmeli: "Sil" ile yan yana
+ * duruyor ve biri metin gibi görünseydi hiyerarşi bozulurdu.
+ */
+.ft-customer-detail__action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--ft-control-height);
+  padding: 0 var(--ft-space-4);
+  border: 1px solid var(--ft-border-hairline);
+  border-radius: var(--ft-radius-md);
+  background: var(--ft-surface-sunken);
+  color: var(--ft-color-text);
+  font-size: var(--ft-font-size-sm);
+  font-weight: var(--ft-font-weight-medium);
+  text-decoration: none;
+  white-space: nowrap;
+  transition:
+    border-color var(--ft-duration) var(--ft-ease),
+    color var(--ft-duration) var(--ft-ease),
+    box-shadow var(--ft-duration) var(--ft-ease),
+    transform var(--ft-duration) var(--ft-ease);
+}
+
+.ft-customer-detail__action:hover {
+  border-color: var(--ft-orange-28);
+  color: var(--ft-color-primary);
+  box-shadow: 0 4px 14px -10px var(--ft-orange-45);
+  transform: translateY(-1px);
+}
+
+.ft-customer-detail__action:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+/*
+ * PAYLAŞILAN `.ft-button` DEĞİŞTİRİLMEZ. Bu sınıf onunla BİRLİKTE
+ * kullanılır; iki sınıflı seçici (0,2,0) tek sınıflıyı (0,1,0) yener,
+ * dolayısıyla başka ekranlardaki düğmeler etkilenmez.
+ */
+.ft-button.ft-customer-detail__btn {
+  min-height: var(--ft-control-height);
+  padding: 0 var(--ft-space-4);
+  border-radius: var(--ft-radius-md);
+  font-size: var(--ft-font-size-sm);
+  font-weight: var(--ft-font-weight-medium);
+  transition:
+    background var(--ft-duration) var(--ft-ease),
+    border-color var(--ft-duration) var(--ft-ease),
+    color var(--ft-duration) var(--ft-ease),
+    box-shadow var(--ft-duration) var(--ft-ease),
+    transform var(--ft-duration) var(--ft-ease);
+}
+
+.ft-button.ft-customer-detail__btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.ft-button.ft-customer-detail__btn:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+.ft-button.ft-customer-detail__btn--confirm:hover:not(:disabled) {
+  background: var(--ft-color-primary-hover);
+  box-shadow: 0 6px 18px -8px var(--ft-orange-45);
+}
+
+.ft-button.ft-customer-detail__btn--secondary {
+  border-color: var(--ft-border-hairline);
+  background: var(--ft-surface-sunken);
+  color: var(--ft-color-text);
+}
+
+.ft-button.ft-customer-detail__btn--secondary:hover:not(:disabled) {
+  border-color: var(--ft-orange-28);
+  color: var(--ft-color-primary);
+  box-shadow: 0 4px 14px -10px var(--ft-orange-45);
+}
+
+/*
+ * SİLME SESSİZ DURUR, KIRMIZI PARLAMAZ. Dolu kırmızı bir düğme, sayfanın
+ * ilk baktığın yeri olurdu; silme geri alınamaz (soft delete yok) ama
+ * davet de etmemeli. Renk yalnızca üzerine gelindiğinde belirir.
+ */
+.ft-button.ft-customer-detail__btn--danger {
+  border-color: transparent;
+  background: transparent;
+  color: var(--ft-color-text-muted);
+}
+
+.ft-button.ft-customer-detail__btn--danger:hover:not(:disabled) {
+  border-color: var(--ft-color-danger);
+  background: var(--ft-color-danger-bg);
+  color: var(--ft-color-danger);
+  box-shadow: none;
+}
+
+/* ------------------------------------------------------------- onay */
+
+/*
+ * Onay kartı DANGER zeminli: buradan sonrası geri alınamaz ve kart bunu
+ * kendi rengiyle söylüyor.
+ */
+.ft-customer-detail__confirm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ft-space-4);
+  padding: var(--ft-space-5);
+  border: 1px solid var(--ft-color-danger);
+  border-radius: var(--ft-radius-lg);
+  background: var(--ft-color-danger-bg);
+}
+
+.ft-customer-detail__confirm:focus-visible {
+  outline: 2px solid var(--ft-color-focus);
+  outline-offset: 2px;
+}
+
+.ft-customer-detail__confirm-text {
+  color: var(--ft-color-text);
+  font-size: var(--ft-font-size-sm);
+  overflow-wrap: break-word;
+}
+
+.ft-customer-detail__confirm-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--ft-space-3);
+  flex-wrap: wrap;
+}
+
+/* ------------------------------------------------------ bilgi kartları */
+
+.ft-customer-detail__grid {
+  display: grid;
+  gap: var(--ft-space-4);
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+}
+
+.ft-customer-detail__card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ft-space-4);
+  padding: var(--ft-space-5);
+  border: 1px solid var(--ft-border-hairline);
+  border-radius: var(--ft-radius-xl);
+  background: var(--ft-surface-raised);
+  box-shadow: var(--ft-shadow-card);
+}
+
+.ft-customer-detail__card-title {
+  color: var(--ft-color-text-muted);
+  font-size: 0.75rem;
+  font-weight: var(--ft-font-weight-medium);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.ft-customer-detail__facts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ft-space-4);
+  margin: 0;
+}
+
+.ft-customer-detail__fact {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ft-space-1);
+  min-width: 0;
+}
+
+.ft-customer-detail__label {
+  color: var(--ft-color-text-muted);
+  font-size: 0.75rem;
+}
+
+/*
+ * Değer etiketten GÜÇLÜ: kullanıcı kartta önce veriyi arar, etiketi
+ * değil. `tabular-nums` telefon ve tarihleri hizalı tutar.
+ */
+.ft-customer-detail__value {
+  margin: 0;
+  color: var(--ft-color-text);
+  font-size: var(--ft-font-size-sm);
+  font-weight: var(--ft-font-weight-medium);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: break-word;
+}
+
+/* ------------------------------------------------------- hata ekranı */
+
+.ft-customer-detail__notice {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--ft-space-4);
+  padding: var(--ft-space-6) var(--ft-space-5);
+  border: 1px solid var(--ft-border-hairline);
+  border-radius: var(--ft-radius-xl);
+  background: var(--ft-surface-raised);
+  box-shadow: var(--ft-shadow-card);
+}
+
+/* -------------------------------------------------------- iskeletler */
+
+.ft-customer-detail__skeleton-back {
+  width: 8rem;
+  height: 1.25rem;
+}
+
+.ft-customer-detail__skeleton-avatar {
+  flex: 0 0 auto;
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 999px;
+}
+
+.ft-customer-detail__skeleton-title {
+  width: min(18rem, 60vw);
+  height: 2rem;
+}
+
+.ft-customer-detail__skeleton-no {
+  width: 3.5rem;
+  height: 1.25rem;
+  border-radius: 999px;
+}
+
+.ft-customer-detail__skeleton-card-title {
+  width: 7rem;
+  height: 0.875rem;
+}
+
+.ft-customer-detail__skeleton-line {
+  width: 100%;
+  height: 2.25rem;
+}
+
+/* -------------------------------------------------------- dar ekran */
+
+@media (max-width: 40rem) {
+  /*
+   * 375px'te eylemler TAM GENİŞLİK ve alt alta: yan yana iki kontrol
+   * dokunma hedefini daraltıyordu.
+   */
+  .ft-customer-detail__actions,
+  .ft-customer-detail__confirm-actions {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .ft-customer-detail__action,
+  .ft-button.ft-customer-detail__btn {
+    width: 100%;
+  }
+
+  .ft-customer-detail__card,
+  .ft-customer-detail__notice {
+    padding-inline: var(--ft-space-4);
+  }
+
+  /* Dar ekranda avatar küçülür: başlığa daha fazla yer kalsın. */
+  .ft-customer-detail__avatar,
+  .ft-customer-detail__skeleton-avatar {
+    width: 3rem;
+    height: 3rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ft-customer-detail__back,
+  .ft-customer-detail__action,
+  .ft-button.ft-customer-detail__btn {
+    transition: none;
+  }
+
+  .ft-customer-detail__action:hover,
+  .ft-button.ft-customer-detail__btn:hover:not(:disabled) {
+    transform: none;
+  }
+}
