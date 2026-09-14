@@ -3472,3 +3472,409 @@ a {
     transform: none;
   }
 }
+
+/* ------------------------------------------------------ görev ayrıntısı */
+
+/*
+ * Görevler listesiyle AYNI dil: aynı yüzey, aynı hairline, aynı hâle,
+ * aynı rozet. Paylaşılan `.ft-details`, `.ft-page__header` ve listenin
+ * `.ft-tasks-*` kuralları burada yeniden boyanmaz; `.ft-button` yalnızca
+ * sayfaya özel bir sınıfla (0,2,0 özgüllük) üzerine yazılır.
+ */
+.ft-task-detail {
+  gap: var(--ft-space-5);
+}
+
+/* ---------------------------------------------------------- geri dön */
+
+/*
+ * Bir <a>, yani tarayıcı varsayılanı altı çizili. `text-decoration: none`
+ * bu yüzden zorunlu.
+ */
+.ft-task-detail__back {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ft-space-2);
+  align-self: flex-start;
+  color: var(--ft-color-text-muted);
+  font-size: var(--ft-font-size-sm);
+  font-weight: var(--ft-font-weight-medium);
+  text-decoration: none;
+  transition: color var(--ft-duration) var(--ft-ease);
+}
+
+.ft-task-detail__back:hover {
+  color: var(--ft-color-primary);
+}
+
+/* ------------------------------------------------------ kimlik kartı */
+
+.ft-task-detail__hero {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--ft-space-5);
+  flex-wrap: wrap;
+}
+
+/* Zemine düşen sönük turuncu ışık — renk değil, ambiyans. */
+.ft-task-detail__hero::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  top: -60%;
+  left: -6%;
+  width: 26rem;
+  max-width: 80%;
+  height: 12rem;
+  background: radial-gradient(60% 60% at 30% 50%, var(--ft-orange-10) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.ft-task-detail__headline {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--ft-space-2);
+  min-width: 0;
+}
+
+/*
+ * "Görev" üst etiketi: başlık bir kayıt adı, sayfa adı değil. Kullanıcı
+ * hangi tür kaydın içinde olduğunu başlığa bakarak anlayamazdı.
+ */
+.ft-task-detail__eyebrow {
+  color: var(--ft-color-text-muted);
+  font-size: 0.75rem;
+  font-weight: var(--ft-font-weight-medium);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.ft-task-detail__title {
+  font-size: clamp(1.5rem, 1.1rem + 1.4vw, 2rem);
+  font-weight: var(--ft-font-weight-bold);
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  overflow-wrap: break-word;
+}
+
+/* Liste ekranındaki durum rozetiyle AYNI biçim. */
+.ft-task-detail__state {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.125rem var(--ft-space-3);
+  border: 1px solid var(--ft-border-hairline);
+  border-radius: 999px;
+  font-size: var(--ft-font-size-sm);
+  white-space: nowrap;
+}
+
+.ft-task-detail__state--open {
+  border-color: var(--ft-orange-28);
+  background: var(--ft-orange-06);
+  color: var(--ft-color-primary);
+}
+
+.ft-task-detail__state--done {
+  color: var(--ft-color-text-muted);
+}
+
+/* --------------------------------------------------------- eylemler */
+
+.ft-task-detail__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--ft-space-3);
+  flex-wrap: wrap;
+}
+
+/*
+ * "Düzenle" bir bağlantıdır ama düğme gibi görünmeli: eylem sırasında
+ * ikisi yan yana duruyor ve biri metin gibi görünseydi hiyerarşi
+ * bozulurdu.
+ */
+.ft-task-detail__action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--ft-control-height);
+  padding: 0 var(--ft-space-4);
+  border: 1px solid var(--ft-border-hairline);
+  border-radius: var(--ft-radius-md);
+  background: var(--ft-surface-sunken);
+  color: var(--ft-color-text);
+  font-size: var(--ft-font-size-sm);
+  font-weight: var(--ft-font-weight-medium);
+  text-decoration: none;
+  white-space: nowrap;
+  transition:
+    border-color var(--ft-duration) var(--ft-ease),
+    color var(--ft-duration) var(--ft-ease),
+    box-shadow var(--ft-duration) var(--ft-ease),
+    transform var(--ft-duration) var(--ft-ease);
+}
+
+.ft-task-detail__action:hover {
+  border-color: var(--ft-orange-28);
+  color: var(--ft-color-primary);
+  box-shadow: 0 4px 14px -10px var(--ft-orange-45);
+  transform: translateY(-1px);
+}
+
+.ft-task-detail__action:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+/*
+ * PAYLAŞILAN `.ft-button` DEĞİŞTİRİLMEZ. Bu sınıf onunla BİRLİKTE
+ * kullanılır; iki sınıflı seçici (0,2,0) tek sınıflıyı (0,1,0) yener,
+ * dolayısıyla başka ekranlardaki düğmeler etkilenmez.
+ */
+.ft-button.ft-task-detail__btn {
+  min-height: var(--ft-control-height);
+  padding: 0 var(--ft-space-4);
+  border-radius: var(--ft-radius-md);
+  font-size: var(--ft-font-size-sm);
+  font-weight: var(--ft-font-weight-medium);
+  transition:
+    background var(--ft-duration) var(--ft-ease),
+    border-color var(--ft-duration) var(--ft-ease),
+    color var(--ft-duration) var(--ft-ease),
+    box-shadow var(--ft-duration) var(--ft-ease),
+    transform var(--ft-duration) var(--ft-ease);
+}
+
+.ft-button.ft-task-detail__btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.ft-button.ft-task-detail__btn:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+.ft-button.ft-task-detail__btn--primary:hover:not(:disabled),
+.ft-button.ft-task-detail__btn--confirm:hover:not(:disabled) {
+  background: var(--ft-color-primary-hover);
+  box-shadow: 0 6px 18px -8px var(--ft-orange-45);
+}
+
+.ft-button.ft-task-detail__btn--secondary {
+  border-color: var(--ft-border-hairline);
+  background: var(--ft-surface-sunken);
+  color: var(--ft-color-text);
+}
+
+.ft-button.ft-task-detail__btn--secondary:hover:not(:disabled) {
+  border-color: var(--ft-orange-28);
+  color: var(--ft-color-primary);
+  box-shadow: 0 4px 14px -10px var(--ft-orange-45);
+}
+
+/*
+ * SİLME SESSİZ DURUR, KIRMIZI PARLAMAZ. Dolu kırmızı bir düğme, sayfanın
+ * ilk baktığın yeri olurdu; yıkıcı eylem görünür olmalı ama davet
+ * etmemeli. Renk yalnızca üzerine gelindiğinde belirir.
+ */
+.ft-button.ft-task-detail__btn--danger {
+  border-color: transparent;
+  background: transparent;
+  color: var(--ft-color-text-muted);
+}
+
+.ft-button.ft-task-detail__btn--danger:hover:not(:disabled) {
+  border-color: var(--ft-color-danger);
+  background: var(--ft-color-danger-bg);
+  color: var(--ft-color-danger);
+  box-shadow: none;
+}
+
+/* ------------------------------------------------------------- onay */
+
+/*
+ * Onay kartı DANGER zeminli: buradan sonrası geri alınamaz ve kart bunu
+ * kendi rengiyle söylüyor.
+ */
+.ft-task-detail__confirm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ft-space-4);
+  padding: var(--ft-space-5);
+  border: 1px solid var(--ft-color-danger);
+  border-radius: var(--ft-radius-lg);
+  background: var(--ft-color-danger-bg);
+}
+
+.ft-task-detail__confirm:focus-visible {
+  outline: 2px solid var(--ft-color-focus);
+  outline-offset: 2px;
+}
+
+.ft-task-detail__confirm-text {
+  color: var(--ft-color-text);
+  font-size: var(--ft-font-size-sm);
+  overflow-wrap: break-word;
+}
+
+.ft-task-detail__confirm-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--ft-space-3);
+  flex-wrap: wrap;
+}
+
+/* ------------------------------------------------------ bilgi kartları */
+
+.ft-task-detail__grid {
+  display: grid;
+  gap: var(--ft-space-4);
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+}
+
+.ft-task-detail__card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ft-space-4);
+  padding: var(--ft-space-5);
+  border: 1px solid var(--ft-border-hairline);
+  border-radius: var(--ft-radius-xl);
+  background: var(--ft-surface-raised);
+  box-shadow: var(--ft-shadow-card);
+}
+
+.ft-task-detail__card-title {
+  color: var(--ft-color-text-muted);
+  font-size: 0.75rem;
+  font-weight: var(--ft-font-weight-medium);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.ft-task-detail__facts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ft-space-4);
+  margin: 0;
+}
+
+.ft-task-detail__fact {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ft-space-1);
+  min-width: 0;
+}
+
+.ft-task-detail__label {
+  color: var(--ft-color-text-muted);
+  font-size: 0.75rem;
+}
+
+/*
+ * Değer etiketten GÜÇLÜ: kullanıcı kartta önce veriyi arar, etiketi
+ * değil. `tabular-nums` tarih ve saatleri hizalı tutar.
+ */
+.ft-task-detail__value {
+  margin: 0;
+  color: var(--ft-color-text);
+  font-size: var(--ft-font-size-sm);
+  font-weight: var(--ft-font-weight-medium);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: break-word;
+}
+
+/* Not serbest metindir: satır aralığı daha rahat, genişlik sınırlı. */
+.ft-task-detail__card--note {
+  grid-column: 1 / -1;
+}
+
+.ft-task-detail__note {
+  max-width: 70ch;
+  color: var(--ft-color-text);
+  font-size: var(--ft-font-size-sm);
+  line-height: 1.65;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+}
+
+/* ------------------------------------------------------- hata ekranı */
+
+.ft-task-detail__notice {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--ft-space-4);
+  padding: var(--ft-space-6) var(--ft-space-5);
+  border: 1px solid var(--ft-border-hairline);
+  border-radius: var(--ft-radius-xl);
+  background: var(--ft-surface-raised);
+  box-shadow: var(--ft-shadow-card);
+}
+
+/* -------------------------------------------------------- iskeletler */
+
+.ft-task-detail__skeleton-back {
+  width: 8rem;
+  height: 1.25rem;
+}
+
+.ft-task-detail__skeleton-title {
+  width: min(22rem, 70vw);
+  height: 2rem;
+}
+
+.ft-task-detail__skeleton-state {
+  width: 5rem;
+  height: 1.5rem;
+  border-radius: 999px;
+}
+
+.ft-task-detail__skeleton-card-title {
+  width: 7rem;
+  height: 0.875rem;
+}
+
+.ft-task-detail__skeleton-line {
+  width: 100%;
+  height: 2.25rem;
+}
+
+/* -------------------------------------------------------- dar ekran */
+
+@media (max-width: 40rem) {
+  /*
+   * 375px'te eylemler TAM GENİŞLİK ve alt alta: yan yana üç kontrol
+   * dokunma hedefini 44px'in altına indiriyordu.
+   */
+  .ft-task-detail__actions,
+  .ft-task-detail__confirm-actions {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .ft-task-detail__action,
+  .ft-button.ft-task-detail__btn {
+    width: 100%;
+  }
+
+  .ft-task-detail__card,
+  .ft-task-detail__notice {
+    padding-inline: var(--ft-space-4);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ft-task-detail__back,
+  .ft-task-detail__action,
+  .ft-button.ft-task-detail__btn {
+    transition: none;
+  }
+
+  .ft-task-detail__action:hover,
+  .ft-button.ft-task-detail__btn:hover:not(:disabled) {
+    transform: none;
+  }
+}
