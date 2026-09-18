@@ -4303,3 +4303,129 @@ a {
     transform: none;
   }
 }
+
+/* ==================================================================== */
+/* PANEL — PREMIUM RÖTUŞ KATMANI                                        */
+/*                                                                      */
+/* Ana ekran zaten bu dilde tasarlanmıştı (yüzey, hairline, hâle);      */
+/* bu blok onu Müşteriler / Görevler / Finans turlarında yerleşen       */
+/* SON hâlle hizalar. Hiçbir kural SİLİNMEZ: her seçici `.ft-dashboard` */
+/* ile kapsanır (0,2,0) ve kendinden önceki `.ft-kpi` (0,1,0)           */
+/* kurallarının üzerine yazar. Kapsam sayesinde başka hiçbir ekran      */
+/* etkilenmez.                                                          */
+/* ==================================================================== */
+
+/*
+ * KART KÖŞESİ PANELLERLE AYNI BASAMAKTA.
+ *
+ * Özet kartları `lg`, hemen altındaki paneller `xl` yarıçap
+ * kullanıyordu; yan yana durunca iki ayrı kart dili gibi okunuyordu.
+ * Yeni sayfalardaki özet kartları da `lg` — orada panel `xl`, kart
+ * `lg` ve aradaki fark bilinçli. Burada korunan da o: yalnızca gölge
+ * ve kenar dili eşitlenir.
+ */
+.ft-dashboard .ft-kpi {
+  padding: var(--ft-space-4) var(--ft-space-5);
+  gap: var(--ft-space-1);
+}
+
+/*
+ * KÖŞE IŞIĞI SÖNDÜ.
+ *
+ * Beş kart yan yana durduğunda beş ayrı turuncu aydınlık, şeridi
+ * kartlardan çok ışıklardan oluşan bir sıra gibi gösteriyordu. Yeni
+ * sayfalardaki özet kartlarında böyle bir katman yok; buradaki de
+ * yalnızca bir iz bırakacak kadar iniyor.
+ */
+.ft-dashboard .ft-kpi::before {
+  background: radial-gradient(14rem 8rem at 0% 0%, var(--ft-orange-06), transparent 72%);
+}
+
+/*
+ * SİMGE ARTIK NEON DEĞİL.
+ *
+ * Eski hâlde simge dairesi dolu turuncu bir gradyan + 18px'lik dış
+ * hâle taşıyordu; beş tanesi yan yana "tabela" etkisi yapıyor ve
+ * Stripe/Linear sakinliğinden uzaklaştırıyordu. Yeni ölçüler
+ * Müşteriler listesindeki baş harf rozetiyle AYNI: sönük turuncu
+ * zemin, ince turuncu kenar, hâle yok.
+ */
+.ft-dashboard .ft-kpi__icon {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-color: var(--ft-orange-16);
+  background: var(--ft-orange-06);
+  box-shadow: none;
+  font-size: var(--ft-font-size-sm);
+}
+
+.ft-dashboard .ft-kpi:hover .ft-kpi__icon {
+  border-color: var(--ft-orange-28);
+  box-shadow: none;
+}
+
+/*
+ * BAŞLIK KÜÇÜK BÜYÜK HARF — büyük rakamla arasındaki basamak farkı
+ * artsın diye. Yeni sayfalardaki kart etiketleriyle aynı ölçü.
+ */
+.ft-dashboard .ft-kpi__title {
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* Alt satır bir dipnottur: başlıkla aynı ağırlıkta olmamalı. */
+.ft-dashboard .ft-kpi__helper {
+  font-size: 0.75rem;
+  opacity: 0.75;
+}
+
+/*
+ * HOVER BİR TIK: 3px yükselme + turuncu halka, diğer ekranlardaki
+ * 1px'lik sakin harekete göre abartılı kalıyordu. Kart hâlâ
+ * tıklanabilir olduğunu söylüyor; bağırmadan.
+ */
+.ft-dashboard .ft-kpi:hover,
+.ft-dashboard .ft-kpi:focus-visible {
+  transform: translateY(-1px);
+  border-color: var(--ft-border-hairline-strong);
+  box-shadow: var(--ft-shadow-card-hover);
+}
+
+/* Aynı sadeleşme odak zincirindeki pillerde de: 2px → 1px, halka yok. */
+.ft-dashboard .ft-focus-next__item:hover,
+.ft-dashboard .ft-focus-next__item:focus-visible {
+  border-color: var(--ft-orange-28);
+  background: var(--ft-surface-sunken);
+  transform: translateY(-1px);
+  box-shadow: var(--ft-shadow-card-hover);
+}
+
+/* -------------------------------------------------------- dar ekran */
+
+/*
+ * BEŞ KART, İKİ KOLON: SONUNCUSU YALNIZ KALMASIN.
+ *
+ * 768px ve 375px'te ızgara iki kolona düşüyor ve beşinci kart tek
+ * başına yarım satırda kalıyordu — yanındaki boşluk, eksik bir kart
+ * varmış gibi duruyordu (gerçek Chromium'da ölçüldü). Tek başına kalan
+ * son kart satırın tamamını kaplar; şerit kapanır.
+ */
+@media (max-width: 48rem) {
+  .ft-dashboard .ft-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .ft-dashboard .ft-kpis > .ft-kpi:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ft-dashboard .ft-kpi:hover,
+  .ft-dashboard .ft-kpi:focus-visible,
+  .ft-dashboard .ft-focus-next__item:hover,
+  .ft-dashboard .ft-focus-next__item:focus-visible {
+    transform: none;
+  }
+}
