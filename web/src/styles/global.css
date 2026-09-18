@@ -4429,3 +4429,312 @@ a {
     transform: none;
   }
 }
+
+/* ==================================================================== */
+/* FORM EKRANI — PREMIUM YÜZEY                                          */
+/*                                                                      */
+/* Kapsam sınıfı `ft-form-page` bir sarmalayıcıdan ibarettir; form      */
+/* işaretlemesi paylaşılan `CustomerForm` içinde durur ve bu turda      */
+/* değişmez. Bütün seçiciler `.ft-form-page` ile kapsanır (0,2,0) ve    */
+/* kendinden önceki paylaşılan `.ft-card` / `.ft-input` / `.ft-button`  */
+/* kurallarının üzerine yazar — SİLMEZ. Kapsam sayesinde aynı formu     */
+/* kullanan düzenleme ekranı ve diğer bütün formlar etkilenmez.         */
+/*                                                                      */
+/* Dil listeyle ve ayrıntıyla aynı: charcoal yüzey, hairline kenar,     */
+/* yumuşak gölge, sönük turuncu hâle, tokens.css'ten gelen renkler.     */
+/* ==================================================================== */
+
+/* ------------------------------------------------------------ başlık */
+
+.ft-form-page .ft-page__header {
+  position: relative;
+  margin-bottom: var(--ft-space-1);
+}
+
+/* Zemine düşen sönük turuncu ışık — renk değil, ambiyans. */
+.ft-form-page .ft-page__header::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  top: -140%;
+  left: -6%;
+  width: 26rem;
+  max-width: 80%;
+  height: 12rem;
+  background: radial-gradient(60% 60% at 30% 50%, var(--ft-orange-10) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.ft-form-page .ft-page__title {
+  font-size: clamp(1.5rem, 1.1rem + 1.4vw, 2rem);
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+/* -------------------------------------------------------------- kart */
+
+/*
+ * Form kartı ayrıntı ekranlarındaki kartla AYNI: raised yüzey, hairline
+ * kenar, yumuşak gölge, bir basamak büyük yarıçap. Eski hâli düz
+ * `surface` zemin + `border` idi ve zeminden ayrışmıyordu.
+ */
+.ft-form-page .ft-card {
+  /*
+   * FORM KARTI SAYFA GENİŞLİĞİNİ DOLDURMAZ. İki alanlık bir form 64rem
+   * boyunca uzadığında satırlar okunamayacak kadar uzuyor ve ekran boş
+   * görünüyordu; ölçü, göz için rahat bir form genişliği.
+   */
+  max-width: 42rem;
+  padding: var(--ft-space-6) var(--ft-space-5);
+  border: 1px solid var(--ft-border-hairline);
+  border-radius: var(--ft-radius-xl);
+  background: var(--ft-surface-raised);
+  box-shadow: var(--ft-shadow-card);
+}
+
+/*
+ * ALANLAR ARASINDA NEFES. Form elemanları arasında hiç boşluk kuralı
+ * yoktu; iki alan ve düğme sırası birbirine yapışıyordu.
+ */
+.ft-form-page .ft-card > form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ft-space-5);
+}
+
+/* Hata satırı kartın içinde kendi nefesini alır. */
+.ft-form-page .ft-error {
+  margin: 0;
+}
+
+/* ------------------------------------------------------------- alan */
+
+.ft-form-page .ft-field {
+  gap: var(--ft-space-2);
+}
+
+/*
+ * ETİKET OKUNUR: eski hâlde `text-muted` idi ve boş bir kutunun üstünde
+ * neredeyse kayboluyordu. Alan adını okumak için gözü zorlamak, formu
+ * yavaşlatır.
+ */
+.ft-form-page .ft-field__label {
+  color: var(--ft-color-text);
+  font-size: var(--ft-font-size-sm);
+  font-weight: var(--ft-font-weight-medium);
+}
+
+/*
+ * GERÇEK KUTU ALAN.
+ *
+ * Daha yüksek (2.75rem), sunken zemin, hairline kenar ve iç gölge:
+ * alan yüzeye çizilmiş bir çizgi değil, içine yazılan bir kutu gibi
+ * duruyor. Dokunmatik hedefi de büyüdü.
+ */
+.ft-form-page .ft-input,
+.ft-form-page .ft-select,
+.ft-form-page .ft-textarea {
+  min-height: 2.75rem;
+  padding: 0 var(--ft-space-4);
+  border-color: var(--ft-border-hairline);
+  border-radius: var(--ft-radius-md);
+  background: var(--ft-surface-sunken);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.02);
+  transition:
+    border-color var(--ft-duration) var(--ft-ease),
+    box-shadow var(--ft-duration) var(--ft-ease);
+}
+
+.ft-form-page .ft-textarea {
+  padding: var(--ft-space-3) var(--ft-space-4);
+}
+
+.ft-form-page .ft-input:hover:not(:disabled),
+.ft-form-page .ft-select:hover:not(:disabled),
+.ft-form-page .ft-textarea:hover:not(:disabled) {
+  border-color: var(--ft-border-hairline-strong);
+}
+
+/*
+ * ODAK HALKASI TURUNCU VE YUMUŞAK. Tarayıcının kendi odak çizgisi
+ * (`:focus-visible`, 2px turuncu) yerinde kalır — bu yalnızca kutunun
+ * kendisinin de uyandığını gösteren ikinci bir ipucu.
+ */
+.ft-form-page .ft-input:focus,
+.ft-form-page .ft-select:focus,
+.ft-form-page .ft-textarea:focus {
+  border-color: var(--ft-orange-45);
+  box-shadow: 0 0 0 3px var(--ft-orange-10);
+}
+
+/* Geçersiz alan kutunun kendisinde de görünür; metin zaten altında. */
+.ft-form-page .ft-input[aria-invalid='true'],
+.ft-form-page .ft-select[aria-invalid='true'],
+.ft-form-page .ft-textarea[aria-invalid='true'] {
+  border-color: var(--ft-color-danger);
+}
+
+.ft-form-page .ft-input[aria-invalid='true']:focus,
+.ft-form-page .ft-select[aria-invalid='true']:focus,
+.ft-form-page .ft-textarea[aria-invalid='true']:focus {
+  box-shadow: 0 0 0 3px rgb(255 107 96 / 0.16);
+}
+
+/* --------------------------------------------------------- eylemler */
+
+.ft-form-page .ft-form__actions {
+  gap: var(--ft-space-3);
+  margin-top: var(--ft-space-1);
+}
+
+/*
+ * "VAZGEÇ" ARTIK ALTI ÇİZİLİ DEĞİL.
+ *
+ * O bir <a>, `ft-button--ghost` ise `text-decoration` sıfırlamıyordu;
+ * gerçek tarayıcıda ölçüldü — dört viewport'ta da altı çizili
+ * görünüyordu. Aynı zamanda çerçeve kazanıyor: "Kaydet"in yanındaki
+ * ikincil eylem, düz metin değil bir kontrol olmalı.
+ */
+.ft-form-page .ft-button.ft-button--ghost {
+  border-color: var(--ft-border-hairline);
+  background: var(--ft-surface-sunken);
+  color: var(--ft-color-text);
+  text-decoration: none;
+  transition:
+    border-color var(--ft-duration) var(--ft-ease),
+    color var(--ft-duration) var(--ft-ease),
+    box-shadow var(--ft-duration) var(--ft-ease),
+    transform var(--ft-duration) var(--ft-ease);
+}
+
+.ft-form-page .ft-button.ft-button--ghost:hover:not(:disabled) {
+  border-color: var(--ft-orange-28);
+  color: var(--ft-color-primary);
+  box-shadow: 0 4px 14px -10px var(--ft-orange-45);
+  transform: translateY(-1px);
+}
+
+.ft-form-page .ft-button.ft-button--primary {
+  transition:
+    background var(--ft-duration) var(--ft-ease),
+    box-shadow var(--ft-duration) var(--ft-ease),
+    transform var(--ft-duration) var(--ft-ease);
+}
+
+.ft-form-page .ft-button.ft-button--primary:hover:not(:disabled) {
+  box-shadow: 0 6px 18px -8px var(--ft-orange-45);
+  transform: translateY(-1px);
+}
+
+.ft-form-page .ft-button:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+/* -------------------------------------------------------- dar ekran */
+
+@media (max-width: 40rem) {
+  /*
+   * 375px'te iki eylem TAM GENİŞLİK ve alt alta: yan yana 90px ve 75px
+   * genişliğinde iki düğme, dokunma hedefi olarak dar kalıyordu
+   * (gerçek Chromium'da ölçüldü).
+   */
+  .ft-form-page .ft-form__actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .ft-form-page .ft-form__actions > .ft-button {
+    width: 100%;
+  }
+
+  .ft-form-page .ft-card {
+    padding: var(--ft-space-5) var(--ft-space-4);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ft-form-page .ft-button,
+  .ft-form-page .ft-input,
+  .ft-form-page .ft-select,
+  .ft-form-page .ft-textarea {
+    transition: none;
+  }
+
+  .ft-form-page .ft-button:hover:not(:disabled) {
+    transform: none;
+  }
+}
+
+/* -------------------------------------------- düzenleme: iki ek durum */
+
+/*
+ * Bu blok YALNIZCA düzenleme ekranında karşılığı olan iki durumu
+ * giydirir — yükleme iskeleti ve hata kartı. Oluşturma ekranında ikisi
+ * de yok; yukarıdaki form kuralları iki ekranda da aynen geçerli.
+ * Hiçbir kural silinmedi, hepsi `.ft-form-page` kapsamında.
+ */
+
+/*
+ * İSKELET ÖLÇÜLERİ GERÇEK FORMLA AYNI: başlık 2.3125rem (37px — clamp'ın
+ * üst ucu 2rem × 1.15 satır yüksekliği), etiket 1.3125rem (21px satır
+ * kutusu), alan kutusu 2.75rem, düğme sırası 2.5rem
+ * (--ft-control-height). Yer tutucu gerçeğinden kısa olursa veri gelince
+ * sayfa zıplar: 2.25rem/1.25rem ile kart 302px ölçülüyordu, gerçeği
+ * 304px (gerçek Chromium'da karşılaştırıldı).
+ */
+.ft-form-page__skeleton-title {
+  width: min(13rem, 60%);
+  height: 2.3125rem;
+  border-radius: var(--ft-radius-md);
+}
+
+.ft-form-page__skeleton-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ft-space-5);
+}
+
+.ft-form-page__skeleton-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ft-space-2);
+}
+
+.ft-form-page__skeleton-label {
+  width: 5rem;
+  height: 1.3125rem;
+}
+
+.ft-form-page__skeleton-input {
+  width: 100%;
+  height: 2.75rem;
+  border-radius: var(--ft-radius-md);
+}
+
+.ft-form-page__skeleton-action {
+  width: 7rem;
+  height: var(--ft-control-height);
+  margin-top: var(--ft-space-1);
+  border-radius: var(--ft-radius-md);
+}
+
+/*
+ * HATA KARTI: form kartıyla aynı yüzey (yukarıdaki `.ft-form-page
+ * .ft-card` kuralından gelir), tek eklenen şey hata metniyle dönüş
+ * kontrolü arasındaki nefes. Kontrol `ft-button--ghost` olduğu için
+ * çerçeveli ve altı çizgisiz görünümü de oradan alır.
+ */
+.ft-form-page__notice {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--ft-space-4);
+}
+
+@media (max-width: 40rem) {
+  /* Dönüş kontrolü de formdaki eylemler gibi tam genişlik. */
+  .ft-form-page__notice > .ft-button {
+    width: 100%;
+  }
+}
