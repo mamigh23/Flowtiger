@@ -4738,3 +4738,14 @@ a {
     width: 100%;
   }
 }
+
+/*
+ * ÇOK SATIRLI ALANIN YER TUTUCUSU — "Not" gibi bir textarea'nın altında
+ * duran iskelet satırı, tek satırlık kutu yüksekliğinde kalırsa veri
+ * gelince kart aniden uzuyor. 98px, `min-height: calc(--ft-control-height
+ * * 2)` + rows=3 ile çizilen gerçek kutunun ölçüsü (gerçek Chromium'da
+ * karşılaştırıldı).
+ */
+.ft-form-page__skeleton-input--tall {
+  height: 6.125rem;
+}
