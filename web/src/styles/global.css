@@ -4749,3 +4749,474 @@ a {
 .ft-form-page__skeleton-input--tall {
   height: 6.125rem;
 }
+
+/* ==================================================================== */
+/* FİNANS EKRANI — GELİR/GİDER + TAHSİLAT TEK YÜZEYDE                   */
+/*                                                                      */
+/* Bütün seçiciler `.ft-finance-hub` ile kapsanır; paylaşılan           */
+/* `.ft-table`, `.ft-button`, `.ft-skeleton` kuralları DEĞİŞTİRİLMEZ,   */
+/* yalnızca bu ekranda üzerine yazılır (0,2,0 > 0,1,0). Dil görev ve    */
+/* müşteri listeleriyle aynı: charcoal yüzey, hairline kenar, yumuşak   */
+/* gölge, sönük turuncu hâle, tokens.css'ten gelen renkler.             */
+/* ==================================================================== */
+
+.ft-finance-hub {
+  gap: var(--ft-space-5);
+}
+
+/* ------------------------------------------------------------ başlık */
+
+.ft-finance-hub__hero {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--ft-space-4);
+}
+
+/* Zemine düşen sönük turuncu ışık — renk değil, ambiyans. */
+.ft-finance-hub__hero::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  top: -150%;
+  left: -6%;
+  width: 34rem;
+  max-width: 85%;
+  height: 15rem;
+  background: radial-gradient(60% 60% at 30% 50%, var(--ft-orange-10) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.ft-finance-hub__hero-text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ft-space-1);
+  min-width: 0;
+}
+
+.ft-finance-hub__eyebrow {
+  color: var(--ft-color-primary);
+  font-size: var(--ft-font-size-sm);
+  font-weight: var(--ft-font-weight-medium);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.ft-finance-hub__title {
+  margin: 0;
+  font-size: clamp(1.6rem, 1.1rem + 1.6vw, 2.25rem);
+  font-weight: var(--ft-font-weight-bold);
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.ft-finance-hub__lead {
+  margin: 0;
+  max-width: 44ch;
+  color: var(--ft-color-text-muted);
+}
+
+.ft-finance-hub__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--ft-space-2);
+  flex-wrap: wrap;
+}
+
+/*
+ * EYLEM BAĞLANTILARI DÜĞME GİBİ GÖRÜNÜR — VE ALTI ÇİZİLİ DEĞİLDİR.
+ * `<a>` oldukları için tarayıcı varsayılanı altını çizerdi; bir eylem
+ * kontrolü düz metin gibi görünmemeli.
+ */
+.ft-finance-hub__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ft-space-2);
+  min-height: var(--ft-control-height);
+  padding: 0 var(--ft-space-4);
+  border: 1px solid var(--ft-border-hairline);
+  border-radius: var(--ft-radius-md);
+  background: var(--ft-surface-sunken);
+  color: var(--ft-color-text);
+  font-weight: var(--ft-font-weight-medium);
+  text-decoration: none;
+  white-space: nowrap;
+  transition:
+    border-color var(--ft-duration) var(--ft-ease),
+    color var(--ft-duration) var(--ft-ease),
+    box-shadow var(--ft-duration) var(--ft-ease),
+    transform var(--ft-duration) var(--ft-ease);
+}
+
+.ft-finance-hub__cta:hover {
+  border-color: var(--ft-orange-28);
+  color: var(--ft-color-primary);
+  box-shadow: 0 4px 14px -10px var(--ft-orange-45);
+  transform: translateY(-1px);
+}
+
+.ft-finance-hub__cta--primary {
+  border-color: transparent;
+  background: var(--ft-color-primary);
+  color: var(--ft-color-primary-contrast);
+}
+
+.ft-finance-hub__cta--primary:hover {
+  border-color: transparent;
+  color: var(--ft-color-primary-contrast);
+  background: var(--ft-color-primary-hover);
+  box-shadow: 0 6px 18px -8px var(--ft-orange-45);
+}
+
+.ft-finance-hub__cta:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+/* -------------------------------------------------------------- özet */
+
+/*
+ * İKİ KART, İKİ SAYI. Kartlar KAYIT SAYISI taşır, para toplamı değil —
+ * toplamı veren bir uç yok ve sayfalanmış listenin ilk sayfasını
+ * toplamak eksik bir tutarı gerçek gibi gösterirdi (bkz. FinanceHubPage).
+ */
+.ft-finance-hub__summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  gap: var(--ft-space-3);
+}
+
+.ft-finance-stat {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ft-space-1);
+  padding: var(--ft-space-4);
+  border: 1px solid var(--ft-border-hairline);
+  border-radius: var(--ft-radius-lg);
+  background: var(--ft-surface-raised);
+  box-shadow: var(--ft-shadow-card);
+}
+
+.ft-finance-stat__label {
+  color: var(--ft-color-text-muted);
+  font-size: var(--ft-font-size-sm);
+  font-weight: var(--ft-font-weight-medium);
+}
+
+.ft-finance-stat__value {
+  font-size: 1.75rem;
+  font-weight: var(--ft-font-weight-bold);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.ft-finance-stat__note {
+  color: var(--ft-color-text-muted);
+  font-size: var(--ft-font-size-sm);
+}
+
+/* ---------------------------------------------------------- bölümler */
+
+/*
+ * BÖLÜM SEÇİMİ SEKME GİBİ GÖRÜNÜR AMA BAĞLANTIDIR: her bölümün kendi
+ * adresi var, yani paylaşılabilir ve geri tuşuyla gezilebilir.
+ */
+.ft-finance-hub__segments {
+  display: flex;
+  gap: var(--ft-space-1);
+  padding: var(--ft-space-1);
+  border: 1px solid var(--ft-border-hairline);
+  border-radius: var(--ft-radius-lg);
+  background: var(--ft-surface-sunken);
+  overflow-x: auto;
+}
+
+.ft-finance-hub__segment {
+  flex: 1 1 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.25rem;
+  padding: 0 var(--ft-space-4);
+  border-radius: var(--ft-radius-md);
+  color: var(--ft-color-text-muted);
+  font-weight: var(--ft-font-weight-medium);
+  text-decoration: none;
+  white-space: nowrap;
+  transition:
+    background var(--ft-duration) var(--ft-ease),
+    color var(--ft-duration) var(--ft-ease);
+}
+
+.ft-finance-hub__segment:hover {
+  color: var(--ft-color-text);
+}
+
+.ft-finance-hub__segment--active {
+  background: var(--ft-surface-raised);
+  border: 1px solid var(--ft-border-hairline);
+  color: var(--ft-color-text);
+  box-shadow: var(--ft-shadow-card);
+}
+
+/* ------------------------------------------------------------- bölüm */
+
+.ft-finance-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ft-space-4);
+}
+
+.ft-finance-section__head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ft-space-1);
+}
+
+.ft-finance-section__title {
+  margin: 0;
+  font-size: var(--ft-font-size-lg);
+  font-weight: var(--ft-font-weight-bold);
+  letter-spacing: -0.01em;
+}
+
+.ft-finance-section__lead {
+  margin: 0;
+  color: var(--ft-color-text-muted);
+  font-size: var(--ft-font-size-sm);
+}
+
+/*
+ * PANEL — kart yüzeyinin kendisi. Tabloyu taşıyan panelde YATAY DOLGU
+ * YOK: tablo kendi hücre dolgusunu taşıyor ve kenarına kadar uzanması,
+ * dar ekranda kaydırma alanının panel kenarında bitmesini sağlıyor.
+ */
+.ft-finance-panel {
+  border: 1px solid var(--ft-border-hairline);
+  border-radius: var(--ft-radius-xl);
+  background: var(--ft-surface-raised);
+  box-shadow: var(--ft-shadow-card);
+  padding: var(--ft-space-4);
+}
+
+.ft-finance-panel--table {
+  padding: var(--ft-space-2) 0;
+}
+
+.ft-finance-panel--notice {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--ft-space-3);
+}
+
+/* ------------------------------------------------------------- tablo */
+
+/*
+ * Tablo kuralları YALNIZCA bu ekranda güçlendirilir: paylaşılan
+ * `.ft-table` denetim, ekip ve davet ekranlarında da kullanılıyor ve
+ * onların görünümü bu turun konusu değil.
+ */
+.ft-finance-hub .ft-table {
+  font-size: var(--ft-font-size-sm);
+}
+
+.ft-finance-hub .ft-table th {
+  padding: var(--ft-space-3) var(--ft-space-4);
+  border-bottom: 1px solid var(--ft-border-hairline);
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.ft-finance-hub .ft-table td {
+  padding: var(--ft-space-3) var(--ft-space-4);
+  border-top: 1px solid var(--ft-border-hairline);
+  vertical-align: middle;
+}
+
+.ft-finance-hub .ft-table tbody tr {
+  transition: background var(--ft-duration) var(--ft-ease);
+}
+
+.ft-finance-hub .ft-table tbody tr:hover {
+  background: var(--ft-orange-06);
+}
+
+/* İptal edilmiş kayıt SÖNÜK ama okunur; işaret rozettir, renk değil. */
+.ft-finance-hub .ft-table tbody tr[data-voided='true'] td {
+  color: var(--ft-color-text-muted);
+}
+
+/* Tutarlar hizalı okunsun: rakamlar sabit genişlikte. */
+.ft-finance-amount {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.ft-finance-amount--strong {
+  color: var(--ft-color-text);
+  font-weight: var(--ft-font-weight-medium);
+}
+
+/* Yön rozeti: gelir ve gider bir bakışta ayrılsın. */
+.ft-finance-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.125rem var(--ft-space-2);
+  border: 1px solid var(--ft-border-hairline);
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: var(--ft-font-weight-medium);
+  white-space: nowrap;
+}
+
+.ft-finance-chip--in {
+  border-color: var(--ft-orange-28);
+  background: var(--ft-orange-10);
+  color: var(--ft-color-primary);
+}
+
+.ft-finance-state {
+  font-size: 0.75rem;
+  font-weight: var(--ft-font-weight-medium);
+  white-space: nowrap;
+}
+
+.ft-finance-state--voided {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.125rem var(--ft-space-2);
+  border: 1px solid var(--ft-border-hairline-strong);
+  border-radius: 999px;
+  color: var(--ft-color-text-muted);
+}
+
+/*
+ * SATIR İÇİ BAĞLANTININ ALTI ÇİZİLİ DEĞİL. Tablo içinde altı çizili bir
+ * bağlantı, hücre kenarlıklarıyla birlikte satırı gürültüye boğuyordu.
+ */
+.ft-finance-link {
+  color: var(--ft-color-primary);
+  font-weight: var(--ft-font-weight-medium);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.ft-finance-link:hover {
+  color: var(--ft-color-primary-hover);
+}
+
+/* --------------------------------------------------- boş / yükleme */
+
+.ft-finance-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--ft-space-2);
+  padding: var(--ft-space-6) var(--ft-space-4);
+  text-align: center;
+}
+
+.ft-finance-empty__title {
+  margin: 0;
+  font-weight: var(--ft-font-weight-medium);
+}
+
+.ft-finance-empty__note {
+  margin: 0;
+  color: var(--ft-color-text-muted);
+  font-size: var(--ft-font-size-sm);
+}
+
+/*
+ * İSKELET SATIRLARI GERÇEK SATIR YÜKSEKLİĞİNDE: yer tutucu kısa
+ * olursa veri gelince panel uzar ve sayfa zıplar.
+ */
+.ft-finance-panel > .ft-skeleton {
+  display: block;
+  width: 100%;
+}
+
+.ft-finance-skeleton__head {
+  height: 1.5rem;
+  margin-bottom: var(--ft-space-3);
+}
+
+.ft-finance-skeleton__row {
+  height: 2.75rem;
+  margin-bottom: var(--ft-space-2);
+}
+
+.ft-finance-skeleton__row:last-child {
+  margin-bottom: 0;
+}
+
+/* --------------------------------------------------------- sayfalama */
+
+.ft-finance-pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ft-space-3);
+  flex-wrap: wrap;
+}
+
+.ft-finance-pager__status {
+  color: var(--ft-color-text-muted);
+  font-size: var(--ft-font-size-sm);
+}
+
+/* Paylaşılan düğme, bu ekranda hairline çerçeveli ikincil kontrol. */
+.ft-button.ft-finance-action {
+  border-color: var(--ft-border-hairline);
+  background: var(--ft-surface-sunken);
+  color: var(--ft-color-text);
+  text-decoration: none;
+}
+
+.ft-button.ft-finance-action:hover:not(:disabled) {
+  border-color: var(--ft-orange-28);
+  background: var(--ft-surface-sunken);
+  color: var(--ft-color-primary);
+}
+
+/* -------------------------------------------------------- dar ekran */
+
+@media (max-width: 40rem) {
+  /* 375px'te eylemler tam genişlik: yan yana iki dar düğme, dokunma
+     hedefi olarak küçük kalıyordu. */
+  .ft-finance-hub__actions {
+    width: 100%;
+  }
+
+  .ft-finance-hub__cta {
+    flex: 1 1 100%;
+    justify-content: center;
+  }
+
+  .ft-finance-pager {
+    justify-content: center;
+  }
+
+  .ft-finance-pager__status {
+    order: -1;
+    width: 100%;
+    text-align: center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ft-finance-hub__cta,
+  .ft-finance-hub__segment,
+  .ft-finance-hub .ft-table tbody tr {
+    transition: none;
+  }
+
+  .ft-finance-hub__cta:hover {
+    transform: none;
+  }
+}

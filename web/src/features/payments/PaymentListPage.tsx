@@ -1,21 +1,35 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api, endpoints } from '@/lib/api';
-import { Badge, Button, Card, ErrorState, Skeleton } from '@/components/ui';
+import { Button, ErrorState } from '@/components/ui';
 import { formatMoney } from '@/lib/finance/money';
 import { formatFinancialDate } from '@/features/finance/financeLabels';
 import type { Paginated, Payment } from '@/types/api';
 import { paymentErrorMessage } from './paymentErrors';
 
 /**
- * Ödeme listesi.
+ * Ödemeler — birleşik Finans ekranının TAHSİLAT BÖLÜMÜ.
+ *
+ * Bu dosya eskiden `/app/payments` rotasının kendisiydi. Artık bölüm;
+ * başlık, özet kartları ve bölüm seçimi `FinanceHubPage`in elinde ve
+ * eski rota oraya yönlendiriliyor (bkz. App.tsx) — mevcut bağlantılar
+ * kırılmadı. BURADA DEĞİŞEN TEK ŞEY ÇERÇEVE:
+ *
+ *   - veri akışı aynı: `GET /payments?page=N`, aynı state, aynı
+ *     hata/boş/yükleme durumları;
+ *   - `per_page` hâlâ gönderilmez, backend'in varsayılanı (15) geçerli;
+ *   - tablo, satır kancaları ve sayfalama aynı;
+ *   - `h1` yerine `h2` — ekranda zaten bir `h1` ("Finans") var.
+ *
+ * Ödeme oluşturma, ayrıntı, düzenleme ve İPTAL (void) akışları KENDİ
+ * ekranlarında kaldı: `/app/payments/new`, `/app/payments/:id`,
+ * `/app/payments/:id/edit`. Bir tahsilatı iptal etmek geri alınamaz ve
+ * dağıtımlarını yerinde bırakır; bu kararı bir liste satırının içine
+ * sıkıştırmak, yanlışlıkla tıklanacak bir yıkıcı eylem üretirdi.
  *
  * SIRALAMA BACKEND'İNDİR: financial_date DESC, id DESC. Uçta
  * sort/search/filter parametresi yok, bu yüzden arayüzde de arama kutusu
  * ya da sıralama kontrolü YOK.
- *
- * per_page GÖNDERİLMEZ: backend'in kendi varsayılanı (15) kullanılır. Üst
- * sınır (100) zaten backend'de.
  *
  * ÜÇ TUTAR DA YANITTAN GELİR. `allocated_minor` ve `remaining_minor`
  * backend'de her okumada hesaplanır; arayüz `amount - allocated` yapmaz.
@@ -27,22 +41,37 @@ import { paymentErrorMessage } from './paymentErrors';
  *
  * İSTEMCİDE ROL KAPISI YOK: uç owner-only ama karar backend'de verilir.
  */
-export function PaymentListPage() {
+interface PaymentsSectionProps {
+  /**
+   * Yüklenen sayfanın `meta.total` değeri — üstteki özet kartı için.
+   * Sayı ikinci bir istekle DEĞİL, zaten gelen yanıttan okunur.
+   */
+  onTotal?: (total: number | null) => void;
+}
+
+export function PaymentsSection({ onTotal }: PaymentsSectionProps) {
   const [page, setPage] = useState(1);
   const [result, setResult] = useState<Paginated<Payment> | null>(null);
   const [error, setError] = useState<unknown>(null);
   const [loading, setLoading] = useState(true);
+
+  /* Geri çağrı ref'te: `load` bir efekt bağımlılığı (bkz. finans bölümü). */
+  const onTotalRef = useRef(onTotal);
+  onTotalRef.current = onTotal;
 
   const load = useCallback(async (requestedPage: number) => {
     setLoading(true);
     setError(null);
 
     try {
-      setResult(await endpoints.payments.list(api, { page: requestedPage }));
+      const page = await endpoints.payments.list(api, { page: requestedPage });
+      setResult(page);
+      onTotalRef.current?.(page.meta.total);
     } catch (caught) {
       // 401 merkezî olarak ApiClient'ta ele alınır.
       setError(caught);
       setResult(null);
+      onTotalRef.current?.(null);
     } finally {
       setLoading(false);
     }
@@ -53,48 +82,49 @@ export function PaymentListPage() {
   }, [load, page]);
 
   return (
-    <div className="ft-page">
-      <header className="ft-page__header">
-        <h1 className="ft-page__title">Ödemeler</h1>
-        <div className="ft-page__actions">
-          <Link className="ft-button ft-button--primary" to="/app/payments/new">
-            Yeni ödeme
-          </Link>
-        </div>
-      </header>
+    <section className="ft-finance-section" aria-labelledby="ft-finance-payments-title">
+      <div className="ft-finance-section__head">
+        <h2 className="ft-finance-section__title" id="ft-finance-payments-title">
+          Ödemeler
+        </h2>
+        <p className="ft-finance-section__lead">
+          Tahsilatlar ve finans kayıtlarına dağıtılan tutarlar.
+        </p>
+      </div>
 
       {loading && (
-        <Card>
-          <div data-testid="payments-loading" className="ft-stack">
-            <Skeleton />
-            <Skeleton width="80%" />
-            <Skeleton width="60%" />
-          </div>
-        </Card>
+        <div className="ft-finance-panel" data-testid="payments-loading" aria-hidden="true">
+          <span className="ft-skeleton ft-finance-skeleton__head" />
+          <span className="ft-skeleton ft-finance-skeleton__row" />
+          <span className="ft-skeleton ft-finance-skeleton__row" />
+          <span className="ft-skeleton ft-finance-skeleton__row" />
+        </div>
       )}
 
       {!loading && error !== null && (
-        <Card>
+        <div className="ft-finance-panel ft-finance-panel--notice">
           <ErrorState message={paymentErrorMessage(error)} />
-          <Button variant="secondary" onClick={() => void load(page)}>
+          <Button
+            className="ft-finance-action"
+            variant="secondary"
+            onClick={() => void load(page)}
+          >
             Tekrar dene
           </Button>
-        </Card>
+        </div>
       )}
 
       {!loading && !error && result && result.data.length === 0 && (
-        <Card>
-          <div className="ft-empty">
-            <p>Henüz ödeme yok.</p>
-            <p className="ft-muted">İlk tahsilatı ekleyerek başlayın.</p>
-          </div>
-        </Card>
+        <div className="ft-finance-panel ft-finance-empty">
+          <p className="ft-finance-empty__title">Henüz ödeme yok.</p>
+          <p className="ft-finance-empty__note">İlk tahsilatı ekleyerek başlayın.</p>
+        </div>
       )}
 
       {!loading && !error && result && result.data.length > 0 && (
         <>
-          <Card>
-            {/* Dar viewportta yalnızca tablo yatayda kayar; kart sayfayı taşırmaz. */}
+          <div className="ft-finance-panel ft-finance-panel--table">
+            {/* Dar viewportta yalnızca tablo yatayda kayar; panel sayfayı taşırmaz. */}
             <div className="ft-table-scroll">
               <table className="ft-table" aria-label="Ödemeler">
                 <thead>
@@ -126,18 +156,36 @@ export function PaymentListPage() {
                         <td data-testid="payment-row-customer">{payment.customer?.name ?? '—'}</td>
                         {/* `method` serbest metindir; ne gelirse yazılır. */}
                         <td data-testid="payment-row-method">{payment.method ?? '—'}</td>
-                        <td data-testid="payment-row-amount">
+                        <td className="ft-finance-amount" data-testid="payment-row-amount">
                           {formatMoney(payment.amount_minor, payment.currency)}
                         </td>
-                        <td data-testid="payment-row-allocated">
+                        <td className="ft-finance-amount" data-testid="payment-row-allocated">
                           {formatMoney(payment.allocated_minor, payment.currency)}
                         </td>
-                        <td data-testid="payment-row-remaining">
+                        {/*
+                          KALAN VURGULANIR: "bu tahsilattan ne kadarı hâlâ
+                          dağıtılmadı" sorusu, listedeki asıl sorudur.
+                        */}
+                        <td
+                          className="ft-finance-amount ft-finance-amount--strong"
+                          data-testid="payment-row-remaining"
+                        >
                           {formatMoney(payment.remaining_minor, payment.currency)}
                         </td>
-                        <td>{voided ? <Badge>İptal edildi</Badge> : 'Aktif'}</td>
                         <td>
-                          <Link to={`/app/payments/${payment.id}`}>Ayrıntılar</Link>
+                          {voided ? (
+                            <span className="ft-finance-state ft-finance-state--voided">
+                              İptal edildi
+                            </span>
+                          ) : (
+                            <span className="ft-finance-state">Aktif</span>
+                          )}
+                        </td>
+                        <td>
+                          {/* Altı çizili bağlantı yok. */}
+                          <Link className="ft-finance-link" to={`/app/payments/${payment.id}`}>
+                            Ayrıntılar
+                          </Link>
                         </td>
                       </tr>
                     );
@@ -145,11 +193,12 @@ export function PaymentListPage() {
                 </tbody>
               </table>
             </div>
-          </Card>
+          </div>
 
           {result.meta.last_page > 1 && (
-            <nav className="ft-pager" aria-label="Sayfalama">
+            <nav className="ft-finance-pager" aria-label="Sayfalama">
               <Button
+                className="ft-finance-action"
                 variant="secondary"
                 onClick={() => setPage((current) => current - 1)}
                 disabled={result.meta.current_page <= 1}
@@ -157,11 +206,12 @@ export function PaymentListPage() {
                 Önceki
               </Button>
 
-              <span className="ft-muted">
+              <span className="ft-finance-pager__status">
                 Sayfa {result.meta.current_page} / {result.meta.last_page}
               </span>
 
               <Button
+                className="ft-finance-action"
                 variant="secondary"
                 onClick={() => setPage((current) => current + 1)}
                 disabled={result.meta.current_page >= result.meta.last_page}
@@ -172,6 +222,6 @@ export function PaymentListPage() {
           )}
         </>
       )}
-    </div>
+    </section>
   );
 }

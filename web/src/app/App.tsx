@@ -19,11 +19,10 @@ import { InvitationListPage } from '@/features/invitations/InvitationListPage';
 import { InviteMemberPage } from '@/features/invitations/InviteMemberPage';
 import { AcceptInvitationPage } from '@/features/invitations/AcceptInvitationPage';
 import { AuditLogListPage } from '@/features/audit/AuditLogListPage';
-import { FinanceEntryListPage } from '@/features/finance/FinanceEntryListPage';
+import { FinanceHubPage } from '@/features/finance/FinanceHubPage';
 import { FinanceEntryCreatePage } from '@/features/finance/FinanceEntryCreatePage';
 import { FinanceEntryDetailPage } from '@/features/finance/FinanceEntryDetailPage';
 import { FinanceEntryEditPage } from '@/features/finance/FinanceEntryEditPage';
-import { PaymentListPage } from '@/features/payments/PaymentListPage';
 import { PaymentCreatePage } from '@/features/payments/PaymentCreatePage';
 import { PaymentDetailPage } from '@/features/payments/PaymentDetailPage';
 import { PaymentEditPage } from '@/features/payments/PaymentEditPage';
@@ -156,7 +155,19 @@ export function App() {
               <Route path="audit" element={<AuditLogListPage />} />
 
               {/*
-                Finans (AŞAMA 7 / WEB-02) — gelir ve gider kayıtları.
+                Finans (AŞAMA 7 / WEB-02) — gelir/gider kayıtları VE
+                tahsilatlar, TEK EKRANDA.
+
+                `FinanceHubPage` başlığı, özet kartlarını ve bölüm
+                seçimini taşır; açık bölüm URL'den gelir:
+                  /app/finance           → gelir/gider kayıtları
+                  /app/finance/payments  → tahsilatlar
+                Bölümü state yerine URL'de tutmak, onu paylaşılabilir ve
+                yer imlenebilir kılar; tarayıcı geri tuşu da çalışır.
+
+                `finance/payments` ile `finance/:id` ÇAKIŞMAZ: React
+                Router rotaları bildirim sırasına değil ÖZGÜLLÜĞE göre
+                sıralar ve sabit segment dinamik olanı yener.
 
                 SİLME ROTASI YOK: backend'de DELETE ucu yok, kayıt iptal
                 edilir ve iptal ayrıntı ekranından yapılır.
@@ -169,7 +180,8 @@ export function App() {
                 /app/finance/new isteği id'si "new" olan bir kayıt araması
                 olarak yorumlanabilirdi.
               */}
-              <Route path="finance" element={<FinanceEntryListPage />} />
+              <Route path="finance" element={<FinanceHubPage segment="entries" />} />
+              <Route path="finance/payments" element={<FinanceHubPage segment="payments" />} />
               <Route path="finance/new/income" element={<FinanceEntryCreatePage direction="in" />} />
               <Route
                 path="finance/new/expense"
@@ -181,6 +193,17 @@ export function App() {
               {/*
                 Ödemeler (AŞAMA 7 / WEB-03) — tahsilat ve dağıtım.
 
+                LİSTE ROTASI ARTIK YÖNLENDİRİR. Ödeme listesi birleşik
+                Finans ekranının bir bölümü oldu; `/app/payments` KALDI ve
+                oraya yönlendiriyor. Rotayı silmek, kenar çubuğundaki
+                bağlantıyı, yer imlerini ve dışarıdan gelen her linki
+                kırardı. `replace`: geri tuşu kullanıcıyı yönlendirme
+                sayfasına geri sokmasın.
+
+                OLUŞTURMA, AYRINTI VE DÜZENLEME KENDİ ROTALARINDA KALDI:
+                ödeme iptali (void) geri alınamaz bir karardır ve bir
+                liste satırının içine sıkıştırılmaz.
+
                 SİLME ROTASI YOK: backend'de DELETE ucu yok, ödeme iptal
                 edilir ve dağıtımları yerinde kalır.
 
@@ -189,7 +212,7 @@ export function App() {
                 ödemeyi aşamaz" kuralı iki isteğe yayılır ve arada geçersiz
                 bir ara durum oluşurdu.
               */}
-              <Route path="payments" element={<PaymentListPage />} />
+              <Route path="payments" element={<Navigate to="/app/finance/payments" replace />} />
               <Route path="payments/new" element={<PaymentCreatePage />} />
               <Route path="payments/:id" element={<PaymentDetailPage />} />
               <Route path="payments/:id/edit" element={<PaymentEditPage />} />
