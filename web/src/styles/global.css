@@ -5220,3 +5220,425 @@ a {
     transform: none;
   }
 }
+
+/* ==================================================================== */
+/* EKİP EKRANI — PREMIUM YÜZEY                                          */
+/*                                                                      */
+/* Bütün seçiciler `.ft-team` ile kapsanır; paylaşılan `.ft-table`,     */
+/* `.ft-button`, `.ft-skeleton` kuralları DEĞİŞTİRİLMEZ, yalnızca bu    */
+/* ekranda üzerine yazılır (0,2,0 > 0,1,0). Denetim, davet ve finans    */
+/* tabloları bu turdan etkilenmez.                                      */
+/* ==================================================================== */
+
+.ft-team {
+  gap: var(--ft-space-5);
+}
+
+/* ------------------------------------------------------------ başlık */
+
+.ft-team-hero {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--ft-space-4);
+}
+
+/* Zemine düşen sönük turuncu ışık — renk değil, ambiyans. */
+.ft-team-hero::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  top: -150%;
+  left: -6%;
+  width: 32rem;
+  max-width: 85%;
+  height: 14rem;
+  background: radial-gradient(60% 60% at 30% 50%, var(--ft-orange-10) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.ft-team-hero__text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ft-space-1);
+  min-width: 0;
+}
+
+.ft-team-hero__eyebrow {
+  color: var(--ft-color-primary);
+  font-size: var(--ft-font-size-sm);
+  font-weight: var(--ft-font-weight-medium);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.ft-team-hero__title {
+  margin: 0;
+  font-size: clamp(1.6rem, 1.1rem + 1.6vw, 2.25rem);
+  font-weight: var(--ft-font-weight-bold);
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.ft-team-hero__lead {
+  margin: 0;
+  max-width: 44ch;
+  color: var(--ft-color-text-muted);
+}
+
+/*
+ * DAVET BAĞLANTISI DÜĞME GİBİ GÖRÜNÜR — VE ALTI ÇİZİLİ DEĞİLDİR.
+ * `<a>` olduğu için tarayıcı varsayılanı altını çizerdi; bir eylem
+ * kontrolü düz metin gibi görünmemeli.
+ */
+.ft-team-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ft-space-2);
+  min-height: var(--ft-control-height);
+  padding: 0 var(--ft-space-4);
+  border: 1px solid var(--ft-border-hairline);
+  border-radius: var(--ft-radius-md);
+  background: var(--ft-surface-sunken);
+  color: var(--ft-color-text);
+  font-weight: var(--ft-font-weight-medium);
+  text-decoration: none;
+  white-space: nowrap;
+  transition:
+    border-color var(--ft-duration) var(--ft-ease),
+    color var(--ft-duration) var(--ft-ease),
+    box-shadow var(--ft-duration) var(--ft-ease),
+    transform var(--ft-duration) var(--ft-ease);
+}
+
+.ft-team-cta:hover {
+  border-color: var(--ft-orange-28);
+  color: var(--ft-color-primary);
+  box-shadow: 0 4px 14px -10px var(--ft-orange-45);
+  transform: translateY(-1px);
+}
+
+.ft-team-cta:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+/* -------------------------------------------------------------- özet */
+
+.ft-team-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: var(--ft-space-3);
+}
+
+.ft-team-stat {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ft-space-1);
+  padding: var(--ft-space-4);
+  border: 1px solid var(--ft-border-hairline);
+  border-radius: var(--ft-radius-lg);
+  background: var(--ft-surface-raised);
+  box-shadow: var(--ft-shadow-card);
+}
+
+/* Sahip kartı ince bir turuncu kenarla ayrılır — rozetle aynı dil. */
+.ft-team-stat--owner {
+  border-color: var(--ft-orange-28);
+}
+
+.ft-team-stat__label {
+  color: var(--ft-color-text-muted);
+  font-size: var(--ft-font-size-sm);
+  font-weight: var(--ft-font-weight-medium);
+}
+
+.ft-team-stat__value {
+  font-size: 1.75rem;
+  font-weight: var(--ft-font-weight-bold);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.ft-team-stat__note {
+  color: var(--ft-color-text-muted);
+  font-size: var(--ft-font-size-sm);
+}
+
+/* ------------------------------------------------------------- panel */
+
+.ft-team-panel {
+  border: 1px solid var(--ft-border-hairline);
+  border-radius: var(--ft-radius-xl);
+  background: var(--ft-surface-raised);
+  box-shadow: var(--ft-shadow-card);
+  padding: var(--ft-space-4);
+}
+
+/*
+ * Tabloyu taşıyan panelde yatay dolgu yok: tablo kendi hücre dolgusunu
+ * taşıyor ve kenarına kadar uzanması, dar ekranda kaydırma alanının
+ * panel kenarında bitmesini sağlıyor.
+ */
+.ft-team-panel--table {
+  padding: var(--ft-space-2) 0;
+}
+
+.ft-team-panel--notice {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--ft-space-3);
+}
+
+/* ------------------------------------------------------------- tablo */
+
+.ft-team .ft-table th {
+  padding: var(--ft-space-3) var(--ft-space-4);
+  border-bottom: 1px solid var(--ft-border-hairline);
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.ft-team .ft-table td {
+  padding: var(--ft-space-3) var(--ft-space-4);
+  border-top: 1px solid var(--ft-border-hairline);
+  vertical-align: middle;
+}
+
+.ft-team .ft-table tbody tr {
+  transition: background var(--ft-duration) var(--ft-ease);
+}
+
+.ft-team .ft-table tbody tr:hover {
+  background: var(--ft-orange-06);
+}
+
+/*
+ * E-POSTA `break-word` İLE SARILIR, `anywhere` İLE DEĞİL.
+ * `anywhere` min-content genişliğini tek karaktere indirir ve 375px'te
+ * adresi harf harf alt alta yazardı (müşteri listesinde ölçülmüştü).
+ */
+.ft-team-email {
+  overflow-wrap: break-word;
+  color: var(--ft-color-text-muted);
+}
+
+/* ------------------------------------------------------------- kişi */
+
+/*
+ * Ad bağlantısı satırdaki tek kontroldür ve ALTI ÇİZİLİ DEĞİLDİR:
+ * tablo içinde altı çizili metin, hücre çizgileriyle birlikte satırı
+ * gürültüye boğuyordu.
+ */
+.ft-team-person {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ft-space-3);
+  color: var(--ft-color-text);
+  font-weight: var(--ft-font-weight-medium);
+  text-decoration: none;
+  transition: color var(--ft-duration) var(--ft-ease);
+}
+
+.ft-team-person:hover {
+  color: var(--ft-color-primary);
+}
+
+.ft-team-person__avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid var(--ft-border-hairline);
+  border-radius: 999px;
+  background: var(--ft-surface-sunken);
+  color: var(--ft-color-text-muted);
+  font-size: 0.75rem;
+  font-weight: var(--ft-font-weight-bold);
+  letter-spacing: 0.02em;
+}
+
+/* Sahip satırında baş harfler turuncuya döner — rozetle aynı işaret. */
+.ft-team .ft-table tbody tr[data-role='owner'] .ft-team-person__avatar {
+  border-color: var(--ft-orange-28);
+  background: var(--ft-orange-10);
+  color: var(--ft-color-primary);
+}
+
+.ft-team-person__name {
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+
+/* -------------------------------------------------------------- rol */
+
+.ft-team-role {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.125rem var(--ft-space-2);
+  border: 1px solid var(--ft-border-hairline);
+  border-radius: 999px;
+  color: var(--ft-color-text-muted);
+  font-size: 0.75rem;
+  font-weight: var(--ft-font-weight-medium);
+  white-space: nowrap;
+}
+
+.ft-team-role--owner {
+  border-color: var(--ft-orange-28);
+  background: var(--ft-orange-10);
+  color: var(--ft-color-primary);
+}
+
+/* --------------------------------------------------- boş / yükleme */
+
+.ft-team-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--ft-space-2);
+  padding: var(--ft-space-6) var(--ft-space-4);
+  text-align: center;
+}
+
+.ft-team-empty__title {
+  margin: 0;
+  font-weight: var(--ft-font-weight-medium);
+}
+
+.ft-team-empty__note {
+  margin: 0;
+  color: var(--ft-color-text-muted);
+  font-size: var(--ft-font-size-sm);
+}
+
+/*
+ * İskelet satırları gerçek satır yüksekliğinde: yer tutucu kısa olursa
+ * veri gelince panel uzar ve sayfa zıplar.
+ */
+.ft-team-panel > .ft-skeleton {
+  display: block;
+  width: 100%;
+}
+
+.ft-team-skeleton__head {
+  height: 1.5rem;
+  margin-bottom: var(--ft-space-3);
+}
+
+.ft-team-skeleton__row {
+  height: 3rem;
+  margin-bottom: var(--ft-space-2);
+}
+
+.ft-team-skeleton__row:last-child {
+  margin-bottom: 0;
+}
+
+/* --------------------------------------------------------- sayfalama */
+
+.ft-team-pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ft-space-3);
+  flex-wrap: wrap;
+}
+
+.ft-team-pager__status {
+  color: var(--ft-color-text-muted);
+  font-size: var(--ft-font-size-sm);
+}
+
+/* Paylaşılan düğme, bu ekranda hairline çerçeveli ikincil kontrol. */
+.ft-button.ft-team-action {
+  border-color: var(--ft-border-hairline);
+  background: var(--ft-surface-sunken);
+  color: var(--ft-color-text);
+  text-decoration: none;
+}
+
+.ft-button.ft-team-action:hover:not(:disabled) {
+  border-color: var(--ft-orange-28);
+  background: var(--ft-surface-sunken);
+  color: var(--ft-color-primary);
+}
+
+/* -------------------------------------------------------- dar ekran */
+
+@media (max-width: 40rem) {
+  .ft-team-cta {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .ft-team-pager {
+    justify-content: center;
+  }
+
+  .ft-team-pager__status {
+    order: -1;
+    width: 100%;
+    text-align: center;
+  }
+
+  /*
+   * 375px'TE ÜÇ SÜTUN DA EKRANDA KALIR.
+   *
+   * Otomatik tablo yerleşimi sütun genişliğini içeriğin min-content
+   * ölçüsünden alır; uzun bir e-posta adresi (tek parça, boşluksuz) o
+   * ölçüyü yüzlerce piksele çıkarıp "Rol" sütununu yatay kaydırmanın
+   * arkasına itiyordu — ekranın en önemli işareti görünmez kalıyordu
+   * (gerçek Chromium'da ölçüldü: 145px taşma).
+   *
+   * `fixed` yerleşim + yüzdelik genişlik sütunları başlıklara göre
+   * sabitler; adres hücre içinde sarılır. Sarmalayıcı yerinde kalır:
+   * daha uzun bir adres yine de kaydırılabilir.
+   */
+  .ft-team .ft-table {
+    table-layout: fixed;
+  }
+
+  .ft-team .ft-table th:nth-child(1) { width: 38%; }
+  .ft-team .ft-table th:nth-child(2) { width: 40%; }
+  .ft-team .ft-table th:nth-child(3) { width: 22%; }
+
+  .ft-team .ft-table th,
+  .ft-team .ft-table td {
+    padding: var(--ft-space-3) var(--ft-space-2);
+  }
+
+  .ft-team-email {
+    font-size: 0.75rem;
+  }
+
+  /* Baş harf rozeti dar ekranda yer kaplamasın. */
+  .ft-team-person {
+    gap: var(--ft-space-2);
+  }
+
+  .ft-team-person__avatar {
+    width: 1.75rem;
+    height: 1.75rem;
+    font-size: 0.6875rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ft-team-cta,
+  .ft-team-person,
+  .ft-team .ft-table tbody tr {
+    transition: none;
+  }
+
+  .ft-team-cta:hover {
+    transform: none;
+  }
+}
