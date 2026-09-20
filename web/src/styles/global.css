@@ -5642,3 +5642,491 @@ a {
     transform: none;
   }
 }
+
+/* ==================================================================== */
+/* DAVETLER EKRANI — PREMIUM YÜZEY                                      */
+/*                                                                      */
+/* Bütün seçiciler `.ft-invitations` ile kapsanır; paylaşılan           */
+/* `.ft-table`, `.ft-button`, `.ft-skeleton` kuralları DEĞİŞTİRİLMEZ,   */
+/* yalnızca bu ekranda üzerine yazılır (0,2,0 > 0,1,0). Ekip ekranıyla  */
+/* aynı dil: charcoal yüzey, hairline kenar, yumuşak gölge, sönük       */
+/* turuncu hâle, pill rozetler.                                         */
+/* ==================================================================== */
+
+.ft-invitations {
+  gap: var(--ft-space-5);
+}
+
+/* ------------------------------------------------------------ başlık */
+
+.ft-invitations-hero {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--ft-space-4);
+}
+
+/* Zemine düşen sönük turuncu ışık — renk değil, ambiyans. */
+.ft-invitations-hero::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  top: -150%;
+  left: -6%;
+  width: 32rem;
+  max-width: 85%;
+  height: 14rem;
+  background: radial-gradient(60% 60% at 30% 50%, var(--ft-orange-10) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.ft-invitations-hero__text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ft-space-1);
+  min-width: 0;
+}
+
+.ft-invitations-hero__eyebrow {
+  color: var(--ft-color-primary);
+  font-size: var(--ft-font-size-sm);
+  font-weight: var(--ft-font-weight-medium);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.ft-invitations-hero__title {
+  margin: 0;
+  font-size: clamp(1.6rem, 1.1rem + 1.6vw, 2.25rem);
+  font-weight: var(--ft-font-weight-bold);
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.ft-invitations-hero__lead {
+  margin: 0;
+  max-width: 44ch;
+  color: var(--ft-color-text-muted);
+}
+
+/*
+ * "DAVET GÖNDER" DÜĞME GİBİ GÖRÜNÜR — VE ALTI ÇİZİLİ DEĞİLDİR.
+ * `<a>` olduğu için tarayıcı varsayılanı altını çizerdi; bir eylem
+ * kontrolü düz metin gibi görünmemeli.
+ */
+.ft-invitations-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ft-space-2);
+  min-height: var(--ft-control-height);
+  padding: 0 var(--ft-space-4);
+  border: 1px solid transparent;
+  border-radius: var(--ft-radius-md);
+  background: var(--ft-color-primary);
+  color: var(--ft-color-primary-contrast);
+  font-weight: var(--ft-font-weight-medium);
+  text-decoration: none;
+  white-space: nowrap;
+  transition:
+    background var(--ft-duration) var(--ft-ease),
+    box-shadow var(--ft-duration) var(--ft-ease),
+    transform var(--ft-duration) var(--ft-ease);
+}
+
+.ft-invitations-cta:hover {
+  background: var(--ft-color-primary-hover);
+  color: var(--ft-color-primary-contrast);
+  box-shadow: 0 6px 18px -8px var(--ft-orange-45);
+  transform: translateY(-1px);
+}
+
+.ft-invitations-cta:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+/* -------------------------------------------------------------- özet */
+
+.ft-invitations-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: var(--ft-space-3);
+}
+
+.ft-invitations-stat {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ft-space-1);
+  padding: var(--ft-space-4);
+  border: 1px solid var(--ft-border-hairline);
+  border-radius: var(--ft-radius-lg);
+  background: var(--ft-surface-raised);
+  box-shadow: var(--ft-shadow-card);
+}
+
+/* Bekleyen davet ekranın asıl sorusudur; kartı ince bir turuncu
+   kenarla ayrılır — rozetle aynı işaret. */
+.ft-invitations-stat--pending {
+  border-color: var(--ft-orange-28);
+}
+
+.ft-invitations-stat__label {
+  color: var(--ft-color-text-muted);
+  font-size: var(--ft-font-size-sm);
+  font-weight: var(--ft-font-weight-medium);
+}
+
+.ft-invitations-stat__value {
+  font-size: 1.75rem;
+  font-weight: var(--ft-font-weight-bold);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.ft-invitations-stat__note {
+  color: var(--ft-color-text-muted);
+  font-size: var(--ft-font-size-sm);
+}
+
+/* ------------------------------------------------------------- panel */
+
+.ft-invitations-panel {
+  border: 1px solid var(--ft-border-hairline);
+  border-radius: var(--ft-radius-xl);
+  background: var(--ft-surface-raised);
+  box-shadow: var(--ft-shadow-card);
+  padding: var(--ft-space-4);
+}
+
+/*
+ * Tabloyu taşıyan panelde yatay dolgu yok: tablo kendi hücre dolgusunu
+ * taşıyor ve kenarına kadar uzanması, dar ekranda kaydırma alanının
+ * panel kenarında bitmesini sağlıyor.
+ */
+.ft-invitations-panel--table {
+  padding: var(--ft-space-2) 0;
+}
+
+.ft-invitations-panel--notice {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--ft-space-3);
+}
+
+/* ------------------------------------------------------------- tablo */
+
+.ft-invitations .ft-table th {
+  padding: var(--ft-space-3) var(--ft-space-4);
+  border-bottom: 1px solid var(--ft-border-hairline);
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.ft-invitations .ft-table td {
+  padding: var(--ft-space-3) var(--ft-space-4);
+  border-top: 1px solid var(--ft-border-hairline);
+  vertical-align: middle;
+}
+
+.ft-invitations .ft-table tbody tr {
+  transition: background var(--ft-duration) var(--ft-ease);
+}
+
+.ft-invitations .ft-table tbody tr:hover {
+  background: var(--ft-orange-06);
+}
+
+/* Artık geçerli olmayan davetler sönük okunur; işaret rozettir. */
+.ft-invitations .ft-table tbody tr[data-status='revoked'] td,
+.ft-invitations .ft-table tbody tr[data-status='expired'] td {
+  color: var(--ft-color-text-muted);
+}
+
+/*
+ * MASKELİ ADRES `break-word` İLE SARILIR, `anywhere` İLE DEĞİL.
+ * `anywhere` min-content genişliğini tek karaktere indirir ve dar
+ * ekranda adresi harf harf alt alta yazardı (müşteri listesinde
+ * ölçülmüştü).
+ */
+.ft-invitations-email {
+  overflow-wrap: break-word;
+  font-weight: var(--ft-font-weight-medium);
+}
+
+.ft-invitations-expiry {
+  color: var(--ft-color-text-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.ft-invitations-row-action {
+  text-align: right;
+}
+
+/* ------------------------------------------------------- rol / durum */
+
+.ft-invitations-role,
+.ft-invitations-status {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.125rem var(--ft-space-2);
+  border: 1px solid var(--ft-border-hairline);
+  border-radius: 999px;
+  color: var(--ft-color-text-muted);
+  font-size: 0.75rem;
+  font-weight: var(--ft-font-weight-medium);
+  white-space: nowrap;
+}
+
+.ft-invitations-role--owner {
+  border-color: var(--ft-orange-28);
+  background: var(--ft-orange-10);
+  color: var(--ft-color-primary);
+}
+
+/*
+ * DURUM ROZETİ RENKTEN İBARET DEĞİL: metin her durumda yazılı. Rengi
+ * ayırt edemeyen ya da ekran okuyucu kullanan biri de farkı görür.
+ */
+.ft-invitations-status--pending {
+  border-color: var(--ft-orange-28);
+  background: var(--ft-orange-10);
+  color: var(--ft-color-primary);
+}
+
+.ft-invitations-status--accepted {
+  border-color: var(--ft-border-hairline-strong);
+  color: var(--ft-color-text);
+}
+
+.ft-invitations-status--revoked,
+.ft-invitations-status--expired {
+  border-color: var(--ft-border-hairline);
+  color: var(--ft-color-text-muted);
+}
+
+/* ------------------------------------------------------------- onay */
+
+/*
+ * Onay satırı kendi kaydından ÇİZGİYLE AYRILMAZ: ikisi tek bir kaydın
+ * parçası. `.ft-table td[colspan]` kuralı üst-çizgiyi zaten kaldırıyor;
+ * burada yalnızca panelin yüzeyi tanımlanıyor.
+ */
+.ft-invitations-confirm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ft-space-3);
+  padding: var(--ft-space-4);
+  border: 1px solid var(--ft-orange-28);
+  border-radius: var(--ft-radius-lg);
+  background: var(--ft-surface-sunken);
+}
+
+.ft-invitations-confirm:focus-visible {
+  outline: 2px solid var(--ft-color-focus);
+  outline-offset: 2px;
+}
+
+.ft-invitations-confirm__text {
+  margin: 0;
+}
+
+.ft-invitations-confirm__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--ft-space-3);
+  flex-wrap: wrap;
+}
+
+/* --------------------------------------------------- boş / yükleme */
+
+.ft-invitations-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--ft-space-2);
+  padding: var(--ft-space-6) var(--ft-space-4);
+  text-align: center;
+}
+
+.ft-invitations-empty__title {
+  margin: 0;
+  font-weight: var(--ft-font-weight-medium);
+}
+
+.ft-invitations-empty__note {
+  margin: 0;
+  color: var(--ft-color-text-muted);
+  font-size: var(--ft-font-size-sm);
+}
+
+/*
+ * İskelet satırları gerçek satır yüksekliğinde: yer tutucu kısa olursa
+ * veri gelince panel uzar ve sayfa zıplar.
+ */
+.ft-invitations-panel > .ft-skeleton {
+  display: block;
+  width: 100%;
+}
+
+.ft-invitations-skeleton__head {
+  height: 1.5rem;
+  margin-bottom: var(--ft-space-3);
+}
+
+.ft-invitations-skeleton__row {
+  height: 3rem;
+  margin-bottom: var(--ft-space-2);
+}
+
+.ft-invitations-skeleton__row:last-child {
+  margin-bottom: 0;
+}
+
+/* --------------------------------------------------------- sayfalama */
+
+.ft-invitations-pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ft-space-3);
+  flex-wrap: wrap;
+}
+
+.ft-invitations-pager__status {
+  color: var(--ft-color-text-muted);
+  font-size: var(--ft-font-size-sm);
+}
+
+/* Paylaşılan düğme, bu ekranda hairline çerçeveli ikincil kontrol. */
+.ft-button.ft-invitations-action {
+  border-color: var(--ft-border-hairline);
+  background: var(--ft-surface-sunken);
+  color: var(--ft-color-text);
+  padding: 0 var(--ft-space-4);
+  text-decoration: none;
+}
+
+.ft-button.ft-invitations-action:hover:not(:disabled) {
+  border-color: var(--ft-orange-28);
+  background: var(--ft-surface-sunken);
+  color: var(--ft-color-primary);
+}
+
+/* Yıkıcı eylem kırmızıya DOKUNMADAN ayrılır: satırdaki tek eylem bu,
+   kırmızı bir düğme listeyi bir uyarı tablosuna çevirirdi. */
+.ft-button.ft-invitations-action--danger:hover:not(:disabled) {
+  border-color: var(--ft-color-danger);
+  color: var(--ft-color-danger);
+}
+
+.ft-button.ft-invitations-action--confirm {
+  border-color: transparent;
+  background: var(--ft-color-primary);
+  color: var(--ft-color-primary-contrast);
+}
+
+.ft-button.ft-invitations-action--confirm:hover:not(:disabled) {
+  border-color: transparent;
+  background: var(--ft-color-primary-hover);
+  color: var(--ft-color-primary-contrast);
+}
+
+/* -------------------------------------------------------- dar ekran */
+
+@media (max-width: 40rem) {
+  .ft-invitations-cta {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /*
+   * DAR EKRANDA BEŞ SÜTUN DA EKRANDA KALIR.
+   *
+   * Otomatik tablo yerleşimi sütun genişliğini içeriğin min-content
+   * ölçüsünden alır; maskeli adres ile tarih birlikte "İptal et"
+   * sütununu yatay kaydırmanın arkasına itiyordu. `fixed` yerleşim +
+   * yüzdelik genişlik sütunları başlıklara göre sabitler. Sarmalayıcı
+   * yerinde kalır: daha uzun bir içerik yine de kaydırılabilir.
+   */
+  .ft-invitations .ft-table {
+    table-layout: fixed;
+  }
+
+  .ft-invitations .ft-table th:nth-child(1) { width: 25%; }
+  .ft-invitations .ft-table th:nth-child(2) { width: 13%; }
+  .ft-invitations .ft-table th:nth-child(3) { width: 19%; }
+  .ft-invitations .ft-table th:nth-child(4) { width: 25%; }
+  .ft-invitations .ft-table th:nth-child(5) { width: 18%; }
+
+  .ft-invitations .ft-table th,
+  .ft-invitations .ft-table td {
+    padding: var(--ft-space-3) var(--ft-space-2);
+  }
+
+  .ft-invitations-email,
+  .ft-invitations-expiry {
+    font-size: 0.75rem;
+  }
+
+  /*
+   * TARİH DAR SÜTUNDA SARILIR.
+   *
+   * `white-space: normal` tek başına yetmiyordu: "27.09.2026" boşluksuz
+   * tek bir parça ve satır kutusuna sığmayınca hücreden TAŞIYORDU —
+   * gerçek Chromium'da son rakam kırpılmış görünüyordu. `break-word`
+   * parçayı gerektiğinde bölmesine izin verir.
+   */
+  .ft-invitations-expiry {
+    white-space: normal;
+    overflow-wrap: break-word;
+  }
+
+  .ft-invitations-role,
+  .ft-invitations-status {
+    padding: 0.125rem var(--ft-space-1);
+    font-size: 0.6875rem;
+  }
+
+  .ft-button.ft-invitations-action--danger {
+    padding: 0 var(--ft-space-2);
+    font-size: 0.75rem;
+  }
+
+  /* Onay düğmeleri tam genişlik ve alt alta: yan yana iki dar düğme
+     dokunma hedefi olarak küçük kalıyordu. */
+  .ft-invitations-confirm__actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .ft-invitations-confirm__actions > .ft-button {
+    width: 100%;
+  }
+
+  .ft-invitations-pager {
+    justify-content: center;
+  }
+
+  .ft-invitations-pager__status {
+    order: -1;
+    width: 100%;
+    text-align: center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ft-invitations-cta,
+  .ft-invitations .ft-table tbody tr {
+    transition: none;
+  }
+
+  .ft-invitations-cta:hover {
+    transform: none;
+  }
+}
