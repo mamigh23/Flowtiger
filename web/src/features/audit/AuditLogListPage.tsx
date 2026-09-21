@@ -1,6 +1,6 @@
 import { Fragment, useCallback, useEffect, useState } from 'react';
 import { api, endpoints } from '@/lib/api';
-import { Button, Card, ErrorState, Skeleton } from '@/components/ui';
+import { Button, ErrorState } from '@/components/ui';
 import type { AuditLog, Paginated } from '@/types/api';
 import { auditActionLabel, auditableTypeLabel, formatDateTime } from './auditLabels';
 import { auditErrorMessage } from './auditErrors';
@@ -33,6 +33,29 @@ import { describeChanges, hasVisibleDetails, visibleMetadata } from './auditForm
  * AYRI DETAY ROTASI YOK. Backend'de tekil audit ucu yok; /app/audit/:id
  * gibi bir rota ancak listedeki nesneyi taşıyarak ya da uydurma bir
  * istekle çalışırdı. Ayrıntı satırın içinde açılır.
+ *
+ * ------------------------------------------------------------------
+ * GÖRSEL DİL (UI redesign turu)
+ *
+ * Sınıflar `ft-audit-*` önekiyle BU EKRANA özeldir ve ekip/davet
+ * ekranlarıyla aynı dili paylaşır: hero ışığı, yükseltilmiş kart yüzeyi,
+ * hairline kenar, yumuşak gölge, pill rozetler. Paylaşılan `.ft-table`,
+ * `.ft-details`, `.ft-button`, `.ft-skeleton` kuralları DEĞİŞTİRİLMEZ;
+ * üzerlerine yalnızca bu ekranın kapsamında yazılır.
+ *
+ * VERİ AYNEN GÖSTERİLİR. Hangi alanın görüneceğine hâlâ `auditFormat`
+ * karar veriyor (izin listesi, hassas anahtarlar, JSON dökülmez) ve bu
+ * tur ona DOKUNMADI. Arayüze yeni bir alan eklenmedi: e-posta, token,
+ * user_agent ya da ham metadata hiçbir yerde görünmez.
+ *
+ * ÖZET TEK SAYI TAŞIR: `meta.total` — backend'in saydığı, bu şirketteki
+ * tüm denetim kayıtları. Eylem ya da kişi dağılımı veren bir uç yok;
+ * sayfanın kayıtlarını sayıp "bu hafta 12 silme" demek eksik bir sayıyı
+ * gerçek gibi göstermek olurdu.
+ *
+ * TABLODA BAĞLANTI YOK: nesne sütunu bir kaydın kimliğini söyler ama
+ * ona gitmez — silinmiş bir müşterinin kaydı da burada durur ve oraya
+ * giden bir bağlantı 404'e açılırdı.
  */
 export function AuditLogListPage() {
   const [page, setPage] = useState(1);
@@ -70,46 +93,84 @@ export function AuditLogListPage() {
   }, [load, page]);
 
   return (
-    <div className="ft-page">
-      <header className="ft-page__header">
-        <h1 className="ft-page__title">Denetim</h1>
+    <div className="ft-page ft-audit">
+      {/* ----------------------------------------------------- başlık */}
+      <header className="ft-audit-hero">
+        <div className="ft-audit-hero__text">
+          <span className="ft-audit-hero__eyebrow">Güvenlik</span>
+          <h1 className="ft-audit-hero__title">Denetim</h1>
+          <p className="ft-audit-hero__lead">
+            Bu şirkette kimin, neyi, ne zaman yaptığının değiştirilemez kaydı. En yeni
+            kayıt üstte.
+          </p>
+        </div>
       </header>
 
-      {loading && (
-        <Card>
-          <div data-testid="audit-loading" className="ft-stack">
-            <Skeleton />
-            <Skeleton width="80%" />
-            <Skeleton width="60%" />
-          </div>
-        </Card>
+      {/* ------------------------------------------------------- özet */}
+      {!loading && !error && result && result.data.length > 0 && (
+        <section className="ft-audit-summary" aria-labelledby="ft-audit-summary-title">
+          <h2 className="ft-visually-hidden" id="ft-audit-summary-title">
+            Denetim özeti
+          </h2>
+
+          <article className="ft-audit-stat" data-testid="audit-summary-total">
+            <span className="ft-audit-stat__label">Toplam kayıt</span>
+            <span className="ft-audit-stat__value">{result.meta.total}</span>
+            <span className="ft-audit-stat__note">bu şirketteki tüm kayıtlar</span>
+          </article>
+
+          {/*
+            Kapsam kartı bir SAYI taşımaz, bir SINIR anlatır: giriş/çıkış
+            kayıtları şirkete bağlı olmadığı için bu listede yoktur. Bunu
+            söylemezsek kullanıcı eksik bir kayıt aradığını sanır.
+          */}
+          <article className="ft-audit-stat ft-audit-stat--scope" data-testid="audit-summary-scope">
+            <span className="ft-audit-stat__label">Kapsam</span>
+            <span className="ft-audit-stat__text">Aktif şirket · salt okunur</span>
+            <span className="ft-audit-stat__note">Giriş/çıkış geçmişi bu listede yer almaz.</span>
+          </article>
+        </section>
       )}
 
+      {/* ---------------------------------------------------- yükleme */}
+      {loading && (
+        <div className="ft-audit-panel" data-testid="audit-loading" aria-hidden="true">
+          <span className="ft-skeleton ft-audit-skeleton__head" />
+          <span className="ft-skeleton ft-audit-skeleton__row" />
+          <span className="ft-skeleton ft-audit-skeleton__row" />
+          <span className="ft-skeleton ft-audit-skeleton__row" />
+        </div>
+      )}
+
+      {/* ------------------------------------------------- hata / 403 */}
       {!loading && error !== null && (
-        <Card>
+        <div className="ft-audit-panel ft-audit-panel--notice">
           <ErrorState message={auditErrorMessage(error)} />
-          <Button variant="secondary" onClick={() => void load(page)}>
+          <Button className="ft-audit-action" variant="secondary" onClick={() => void load(page)}>
             Tekrar dene
           </Button>
-        </Card>
+        </div>
       )}
 
+      {/* -------------------------------------------------------- boş */}
       {!loading && !error && result && result.data.length === 0 && (
-        <Card>
-          <div className="ft-empty">
-            <p>Henüz denetim kaydı yok.</p>
-            <p className="ft-muted">
-              Bu şirkette bir kayıt oluşturulduğunda, güncellendiğinde ya da bir üyelik
-              değiştiğinde burada görünür.
-            </p>
-          </div>
-        </Card>
+        <div className="ft-audit-panel ft-audit-empty">
+          <p className="ft-audit-empty__title">Henüz denetim kaydı yok.</p>
+          <p className="ft-audit-empty__note">
+            Bu şirkette bir kayıt oluşturulduğunda, güncellendiğinde ya da bir üyelik
+            değiştiğinde burada görünür.
+          </p>
+        </div>
       )}
 
+      {/* ------------------------------------------------------ liste */}
       {!loading && !error && result && result.data.length > 0 && (
         <>
-          <Card>
-            {/* Dar viewportta yalnızca tablo yatayda kayar; kart sayfayı taşırmaz. */}
+          <div className="ft-audit-panel ft-audit-panel--table">
+            {/*
+              Dar viewportta yalnızca tablo yatayda kayar; panel sayfayı
+              taşırmaz. Sarmalayıcı tablonun DOĞRUDAN ebeveyni olmalı.
+            */}
             <div className="ft-table-scroll">
               <table className="ft-table" aria-label="Denetim kayıtları">
                 <thead>
@@ -132,9 +193,16 @@ export function AuditLogListPage() {
 
                     return (
                       <Fragment key={log.id}>
-                        <tr data-testid={`audit-row-${log.id}`}>
+                        <tr
+                          data-testid={`audit-row-${log.id}`}
+                          className={open ? 'ft-audit-row--open' : undefined}
+                        >
                           {/* Tanınmayan kod uydurulmaz, ham hâliyle gösterilir. */}
-                          <td>{auditActionLabel(log.action)}</td>
+                          <td>
+                            <span className="ft-audit-action-chip">
+                              {auditActionLabel(log.action)}
+                            </span>
+                          </td>
 
                           {/*
                             Aktör ÖZET olarak gelir: yalnızca id ve name.
@@ -145,10 +213,24 @@ export function AuditLogListPage() {
                             `actor` KOŞULLU bir alandır: user_id null olan
                             kayıtta anahtar hiç gelmez. "Sistem" gibi bir
                             metin yazmak doğrulanmamış bir varsayım olurdu.
-                          */}
-                          <td>{log.actor?.name ?? '—'}</td>
 
+                            Baş harfler yalnızca GÖRSEL bir işaret ve
+                            `aria-hidden`: ekran okuyucu adı bir kez okur.
+                          */}
                           <td>
+                            {log.actor ? (
+                              <span className="ft-audit-actor">
+                                <span className="ft-audit-actor__avatar" aria-hidden="true">
+                                  {initials(log.actor.name)}
+                                </span>
+                                <span className="ft-audit-actor__name">{log.actor.name}</span>
+                              </span>
+                            ) : (
+                              '—'
+                            )}
+                          </td>
+
+                          <td className="ft-audit-object">
                             {log.auditable
                               ? `${auditableTypeLabel(log.auditable.type)} #${log.auditable.id}`
                               : '—'}
@@ -160,11 +242,12 @@ export function AuditLogListPage() {
                             işlerinden biridir. user_agent ise yanıtta hiç
                             yoktur.
                           */}
-                          <td>{log.ip_address ?? '—'}</td>
+                          <td className="ft-audit-ip">{log.ip_address ?? '—'}</td>
 
-                          <td>{formatDateTime(log.created_at) ?? '—'}</td>
+                          {/* Ham ISO metni gösterilmez; biçim denetim ekranınınki. */}
+                          <td className="ft-audit-time">{formatDateTime(log.created_at) ?? '—'}</td>
 
-                          <td>
+                          <td className="ft-audit-row-action">
                             {/*
                               Gösterilecek güvenli bir ayrıntı yoksa düğme
                               HİÇ ÇIKMAZ. Boş bir paneli açan düğme,
@@ -172,6 +255,7 @@ export function AuditLogListPage() {
                             */}
                             {hasVisibleDetails(log) && (
                               <Button
+                                className="ft-audit-action ft-audit-toggle"
                                 variant="ghost"
                                 aria-expanded={open}
                                 aria-controls={`audit-detail-${log.id}`}
@@ -184,9 +268,13 @@ export function AuditLogListPage() {
                         </tr>
 
                         {open && (
-                          <tr data-testid={`audit-detail-${log.id}`} id={`audit-detail-${log.id}`}>
+                          <tr
+                            className="ft-audit-detail-row"
+                            data-testid={`audit-detail-${log.id}`}
+                            id={`audit-detail-${log.id}`}
+                          >
                             <td colSpan={6}>
-                              <dl className="ft-details">
+                              <dl className="ft-details ft-audit-detail">
                                 {changes.map((change) => (
                                   <Fragment key={`change-${change.label}`}>
                                     <dt>{change.label}</dt>
@@ -214,11 +302,12 @@ export function AuditLogListPage() {
                 </tbody>
               </table>
             </div>
-          </Card>
+          </div>
 
           {result.meta.last_page > 1 && (
-            <nav className="ft-pager" aria-label="Sayfalama">
+            <nav className="ft-audit-pager" aria-label="Sayfalama">
               <Button
+                className="ft-audit-action"
                 variant="secondary"
                 onClick={() => setPage((current) => current - 1)}
                 disabled={result.meta.current_page <= 1}
@@ -226,11 +315,12 @@ export function AuditLogListPage() {
                 Önceki
               </Button>
 
-              <span className="ft-muted">
+              <span className="ft-audit-pager__status">
                 Sayfa {result.meta.current_page} / {result.meta.last_page}
               </span>
 
               <Button
+                className="ft-audit-action"
                 variant="secondary"
                 onClick={() => setPage((current) => current + 1)}
                 disabled={result.meta.current_page >= result.meta.last_page}
@@ -243,4 +333,15 @@ export function AuditLogListPage() {
       )}
     </div>
   );
+}
+
+/**
+ * Ad baş harfleri — ekip ve müşteri listelerindeki rozetle AYNI kural.
+ * `toLocaleUpperCase('tr-TR')`: "istanbul" → "İS", "IS" değil.
+ */
+function initials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return '?';
+  if (parts.length === 1) return parts[0]!.slice(0, 2).toLocaleUpperCase('tr-TR');
+  return (parts[0]![0]! + parts[parts.length - 1]![0]!).toLocaleUpperCase('tr-TR');
 }

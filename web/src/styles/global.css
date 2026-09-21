@@ -6259,3 +6259,395 @@ a {
     transition: none;
   }
 }
+
+/* ==================================================================== */
+/* DENETİM EKRANI — PREMIUM YÜZEY                                       */
+/*                                                                      */
+/* Bütün seçiciler `.ft-audit` ile kapsanır; paylaşılan `.ft-table`,    */
+/* `.ft-details`, `.ft-button`, `.ft-skeleton` kuralları DEĞİŞTİRİLMEZ, */
+/* yalnızca bu ekranda üzerine yazılır (0,2,0 > 0,1,0). Ekip ve davet   */
+/* ekranlarıyla aynı dil.                                               */
+/* ==================================================================== */
+
+.ft-audit {
+  gap: var(--ft-space-5);
+}
+
+/* ------------------------------------------------------------ başlık */
+
+.ft-audit-hero {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--ft-space-4);
+}
+
+/* Zemine düşen sönük turuncu ışık — renk değil, ambiyans. */
+.ft-audit-hero::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  top: -150%;
+  left: -6%;
+  width: 32rem;
+  max-width: 85%;
+  height: 14rem;
+  background: radial-gradient(60% 60% at 30% 50%, var(--ft-orange-10) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.ft-audit-hero__text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ft-space-1);
+  min-width: 0;
+}
+
+.ft-audit-hero__eyebrow {
+  color: var(--ft-color-primary);
+  font-size: var(--ft-font-size-sm);
+  font-weight: var(--ft-font-weight-medium);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.ft-audit-hero__title {
+  margin: 0;
+  font-size: clamp(1.6rem, 1.1rem + 1.6vw, 2.25rem);
+  font-weight: var(--ft-font-weight-bold);
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.ft-audit-hero__lead {
+  margin: 0;
+  max-width: 52ch;
+  color: var(--ft-color-text-muted);
+}
+
+/* -------------------------------------------------------------- özet */
+
+.ft-audit-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  gap: var(--ft-space-3);
+}
+
+.ft-audit-stat {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ft-space-1);
+  padding: var(--ft-space-4);
+  border: 1px solid var(--ft-border-hairline);
+  border-radius: var(--ft-radius-lg);
+  background: var(--ft-surface-raised);
+  box-shadow: var(--ft-shadow-card);
+}
+
+.ft-audit-stat__label {
+  color: var(--ft-color-text-muted);
+  font-size: var(--ft-font-size-sm);
+  font-weight: var(--ft-font-weight-medium);
+}
+
+.ft-audit-stat__value {
+  font-size: 1.75rem;
+  font-weight: var(--ft-font-weight-bold);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Kapsam kartı sayı değil bir sınır taşır: aynı yükseklikte, daha küçük. */
+.ft-audit-stat__text {
+  font-size: 1.125rem;
+  font-weight: var(--ft-font-weight-bold);
+  line-height: 1.55;
+}
+
+.ft-audit-stat__note {
+  color: var(--ft-color-text-muted);
+  font-size: var(--ft-font-size-sm);
+}
+
+/* ------------------------------------------------------------- panel */
+
+.ft-audit-panel {
+  border: 1px solid var(--ft-border-hairline);
+  border-radius: var(--ft-radius-xl);
+  background: var(--ft-surface-raised);
+  box-shadow: var(--ft-shadow-card);
+  padding: var(--ft-space-4);
+}
+
+/*
+ * Tabloyu taşıyan panelde yatay dolgu yok: tablo kendi hücre dolgusunu
+ * taşıyor ve kenarına kadar uzanması, dar ekranda kaydırma alanının
+ * panel kenarında bitmesini sağlıyor.
+ */
+.ft-audit-panel--table {
+  padding: var(--ft-space-2) 0;
+}
+
+.ft-audit-panel--notice {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--ft-space-3);
+}
+
+/* ------------------------------------------------------------- tablo */
+
+/*
+ * KAYDIRMA KUTUSU BİR İÇERİK BLOĞUDUR — SAYFA TAŞMASIN.
+ *
+ * Son sütunun başlığı ekran okuyucu için görünmez bir etiket
+ * (`.ft-visually-hidden`, `position: absolute`). Sarmalayıcı `static`
+ * kaldığında o etiketin içerik bloğu sarmalayıcı DEĞİL, üstteki bir
+ * ata oluyor; etiket kaydırma kutusunun kırpmasından kaçıp tablonun sağ
+ * ucundaki yerinden SAYFAYI genişletiyordu. 768px'te tablo kutusunda
+ * kayarken sayfa da 19px yatay kayıyordu (gerçek Chromium'da ölçüldü:
+ * etiketin sağ kenarı 787px, görünüm 768px). `relative`, etiketi
+ * kutunun içinde tutar.
+ */
+.ft-audit .ft-table-scroll {
+  position: relative;
+}
+
+.ft-audit .ft-table th {
+  padding: var(--ft-space-3) var(--ft-space-4);
+  border-bottom: 1px solid var(--ft-border-hairline);
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.ft-audit .ft-table td {
+  padding: var(--ft-space-3) var(--ft-space-4);
+  border-top: 1px solid var(--ft-border-hairline);
+  vertical-align: middle;
+}
+
+.ft-audit .ft-table tbody tr {
+  transition: background var(--ft-duration) var(--ft-ease);
+}
+
+.ft-audit .ft-table tbody tr:hover,
+.ft-audit .ft-table tbody tr.ft-audit-row--open {
+  background: var(--ft-orange-06);
+}
+
+/*
+ * Açılan ayrıntı kendi kaydından ÇİZGİYLE AYRILMAZ — ikisi tek bir
+ * kaydın parçası. `.ft-table td[colspan]` kuralı üst çizgiyi zaten
+ * kaldırıyor; satırın zemini açık kaydınkiyle aynı kalır.
+ */
+.ft-audit .ft-table tbody tr.ft-audit-detail-row,
+.ft-audit .ft-table tbody tr.ft-audit-detail-row:hover {
+  background: var(--ft-orange-06);
+}
+
+.ft-audit .ft-table tbody tr.ft-audit-detail-row > td {
+  padding-top: 0;
+}
+
+/* Eylem, satırın asıl bilgisi: pill rozet olarak öne çıkar. */
+.ft-audit-action-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.125rem var(--ft-space-2);
+  border: 1px solid var(--ft-orange-28);
+  border-radius: 999px;
+  background: var(--ft-orange-10);
+  color: var(--ft-color-primary);
+  font-size: 0.75rem;
+  font-weight: var(--ft-font-weight-medium);
+  white-space: nowrap;
+}
+
+.ft-audit-actor {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ft-space-2);
+  white-space: nowrap;
+}
+
+.ft-audit-actor__avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 1.75rem;
+  height: 1.75rem;
+  border: 1px solid var(--ft-border-hairline);
+  border-radius: 999px;
+  background: var(--ft-surface-sunken);
+  color: var(--ft-color-text-muted);
+  font-size: 0.6875rem;
+  font-weight: var(--ft-font-weight-bold);
+  letter-spacing: 0.02em;
+}
+
+.ft-audit-actor__name {
+  font-weight: var(--ft-font-weight-medium);
+}
+
+.ft-audit-object {
+  white-space: nowrap;
+}
+
+/* IP ve zaman sabit genişlikli rakamlarla hizalı okunur. */
+.ft-audit-ip,
+.ft-audit-time {
+  color: var(--ft-color-text-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.ft-audit-ip {
+  font-family: var(--ft-font-mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
+  font-size: 0.8125rem;
+}
+
+.ft-audit-row-action {
+  text-align: right;
+}
+
+/* ---------------------------------------------------------- ayrıntı */
+
+/*
+ * AYRINTI PANELİ: aynı `dl/dt/dd` (içerik `auditFormat`'tan gelir ve
+ * DEĞİŞMEDİ), yalnızca kendi yüzeyi var — sunken zemin, turuncu
+ * hairline. Satırın altında bir "açılır" olduğu bir bakışta okunur.
+ */
+.ft-audit-detail {
+  margin: 0;
+  padding: var(--ft-space-4);
+  border: 1px solid var(--ft-orange-28);
+  border-radius: var(--ft-radius-lg);
+  background: var(--ft-surface-sunken);
+}
+
+.ft-audit-detail dt {
+  color: var(--ft-color-text-muted);
+  font-size: var(--ft-font-size-sm);
+}
+
+.ft-audit-detail dd {
+  margin: 0;
+  overflow-wrap: break-word;
+}
+
+/* --------------------------------------------------- boş / yükleme */
+
+.ft-audit-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--ft-space-2);
+  padding: var(--ft-space-6) var(--ft-space-4);
+  text-align: center;
+}
+
+.ft-audit-empty__title {
+  margin: 0;
+  font-weight: var(--ft-font-weight-medium);
+}
+
+.ft-audit-empty__note {
+  margin: 0;
+  max-width: 48ch;
+  color: var(--ft-color-text-muted);
+  font-size: var(--ft-font-size-sm);
+}
+
+/*
+ * İskelet satırları gerçek satır yüksekliğinde: yer tutucu kısa olursa
+ * veri gelince panel uzar ve sayfa zıplar.
+ */
+.ft-audit-panel > .ft-skeleton {
+  display: block;
+  width: 100%;
+}
+
+.ft-audit-skeleton__head {
+  height: 1.5rem;
+  margin-bottom: var(--ft-space-3);
+}
+
+.ft-audit-skeleton__row {
+  height: 3rem;
+  margin-bottom: var(--ft-space-2);
+}
+
+.ft-audit-skeleton__row:last-child {
+  margin-bottom: 0;
+}
+
+/* --------------------------------------------------------- sayfalama */
+
+.ft-audit-pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ft-space-3);
+  flex-wrap: wrap;
+}
+
+.ft-audit-pager__status {
+  color: var(--ft-color-text-muted);
+  font-size: var(--ft-font-size-sm);
+}
+
+/* Paylaşılan düğme, bu ekranda hairline çerçeveli ikincil kontrol. */
+.ft-button.ft-audit-action {
+  border-color: var(--ft-border-hairline);
+  background: var(--ft-surface-sunken);
+  color: var(--ft-color-text);
+  padding: 0 var(--ft-space-4);
+  text-decoration: none;
+}
+
+.ft-button.ft-audit-action:hover:not(:disabled) {
+  border-color: var(--ft-orange-28);
+  background: var(--ft-surface-sunken);
+  color: var(--ft-color-primary);
+}
+
+/* Açık ayrıntının düğmesi basılı durur — `aria-expanded` görünür olsun. */
+.ft-button.ft-audit-toggle[aria-expanded='true'] {
+  border-color: var(--ft-orange-45);
+  color: var(--ft-color-primary);
+}
+
+/* -------------------------------------------------------- dar ekran */
+
+@media (max-width: 40rem) {
+  /*
+   * Altı sütunlu tablo 375px'e sığmaz ve sütun gizlemek bilgi kaybı
+   * olurdu (IP ya da zaman, denetimin asıl sorularıdır). Tablo YALNIZCA
+   * kendi kaydırma alanında kayar; sayfa taşmaz. Hücre dolgusu daralır.
+   */
+  .ft-audit .ft-table th,
+  .ft-audit .ft-table td {
+    padding: var(--ft-space-3) var(--ft-space-2);
+  }
+
+  .ft-audit-pager {
+    justify-content: center;
+  }
+
+  .ft-audit-pager__status {
+    order: -1;
+    width: 100%;
+    text-align: center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ft-audit .ft-table tbody tr {
+    transition: none;
+  }
+}
