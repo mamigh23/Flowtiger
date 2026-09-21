@@ -250,12 +250,15 @@ describe('AppShell', () => {
       'Finans',
       'Ödemeler',
       'Ekip',
-      'Davetler',
       'Denetim',
       'Profil',
     ]) {
       expect(within(nav).getByRole('link', { name: label })).toBeInTheDocument();
     }
+
+    // Davetler artık Ekip ekranının bir bölümü: kenar çubuğunda ayrı
+    // madde YOK (bkz. TeamHubPage).
+    expect(within(nav).queryByRole('link', { name: 'Davetler' })).not.toBeInTheDocument();
   });
 
   it('bağlantılar doğru rotalara gider', async () => {
@@ -271,7 +274,6 @@ describe('AppShell', () => {
       Finans: '/app/finance',
       Ödemeler: '/app/payments',
       Ekip: '/app/team',
-      Davetler: '/app/invitations',
       Denetim: '/app/audit',
       Profil: '/app/profile',
     };

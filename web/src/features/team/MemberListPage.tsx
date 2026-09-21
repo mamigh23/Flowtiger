@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api, endpoints } from '@/lib/api';
 import { Button, ErrorState } from '@/components/ui';
@@ -7,7 +7,17 @@ import type { Member, Paginated } from '@/types/api';
 import { memberErrorMessage } from './memberErrors';
 
 /**
- * Ekip listesi.
+ * Üyeler — birleşik Ekip ekranının ÜYE BÖLÜMÜ.
+ *
+ * Bu dosya eskiden `/app/team` rotasının kendisiydi ve kendi hero'sunu,
+ * `h1`ini ve şirket geneli "Toplam üye" kartını taşıyordu. Artık bölüm;
+ * başlık, şirket geneli özet ve bölüm seçimi `TeamHubPage`in elinde.
+ * BURADA DEĞİŞEN TEK ŞEY ÇERÇEVE:
+ *
+ *   - veri akışı aynı: `GET /members?page=N`, aynı state, aynı
+ *     hata/boş/yükleme durumları; `per_page` hâlâ gönderilmez;
+ *   - tablo, satır kancaları, üye ayrıntı bağlantısı ve sayfalama aynı;
+ *   - `h1` yerine `h2` — ekranda zaten bir `h1` ("Ekip") var.
  *
  * İSTEMCİDE YETKİ KARARI YOK: kullanıcının rolüne bakıp isteği
  * engellemiyoruz. Ekip uçları owner'a özeldir ama bunu backend söyler —
@@ -19,54 +29,55 @@ import { memberErrorMessage } from './memberErrors';
  *
  * Yeni üye ekleme burada YOK: POST /members owner'ın başkasının
  * parolasını belirlemesini gerektiriyor ve davet akışıyla çakışıyor.
- * Bu faz kapsamı dışında bırakıldı.
- *
- * ------------------------------------------------------------------
- * GÖRSEL DİL (UI redesign turu)
- *
- * Sınıflar `ft-team-*` önekiyle BU EKRANA özeldir ve görev/müşteri
- * listeleriyle aynı dili paylaşır: hero ışığı, yükseltilmiş kart yüzeyi,
- * hairline kenar, yumuşak gölge. Paylaşılan `.ft-table`, `.ft-button`,
- * `.ft-skeleton` kuralları DEĞİŞTİRİLMEZ; üzerlerine yalnızca bu ekranın
- * kapsamında yazılır.
- *
- * VERİ, İSTEK VE ROTA AKIŞI AYNI: aynı uç (`GET /members?page=N`), aynı
- * sayfalama, aynı hata/boş/yükleme durumları, aynı üye ayrıntı
- * bağlantısı. `per_page` hâlâ gönderilmez.
+ * Ekibe katılım davet bölümünden yürür.
  *
  * TABLO TABLO OLARAK KALIR. Satırlar kart gibi görünüyor ama işaretleme
  * hâlâ `<table>`: üç sütun (ad, e-posta, rol) başlıklarıyla birlikte
- * okunuyor ve ekran okuyucu "Rol: Sahip" diyebiliyor. `div`lere
- * çevirseydik görünüm aynı kalır, anlam kaybolurdu.
+ * okunuyor ve ekran okuyucu "Rol: Sahip" diyebiliyor.
  *
- * ÖZET ŞERİDİ İKİ FARKLI KAPSAMI AYIRIR:
- *   "Toplam üye" `meta.total`dır — TÜM kayıtlar, backend'in saydığı.
- *   "Sahip" ve "Üye" YALNIZCA AÇIK SAYFADAKİ kayıtları sayar ve kartın
- *   altındaki not bunu açıkça söyler. Sayfalanmış bir listenin ilk
- *   sayfasını sayıp "şirkette 2 sahip var" demek, eksik bir sayıyı
- *   gerçek gibi göstermek olurdu — rol dağılımını veren bir uç yok.
- *
- * DAVET AKIŞI DEĞİŞMEDİ: davetler kendi ekranında (`/app/invitations`)
- * yönetiliyor. Hero'daki bağlantı yeni bir akış değil, var olana giden
- * ikinci bir kapı — ekip ekranına gelen kullanıcının "yeni birini nasıl
- * eklerim" sorusunun cevabı kenar çubuğunda saklı kalmasın.
+ * ROL DAĞILIMI SAYFA KAPSAMLIDIR: "Sahip rolü" ve "Üye rolü" YALNIZCA
+ * AÇIK SAYFADAKİ kayıtları sayar ve kartın notu bunu açıkça söyler.
+ * Şirket geneli toplam (`meta.total`) üstteki özette durur. Rol
+ * dağılımını veren bir uç yok; ilk sayfayı sayıp "şirkette 2 sahip var"
+ * demek eksik bir sayıyı gerçek gibi göstermek olurdu.
  */
-export function MemberListPage() {
+interface MembersSectionProps {
+  /**
+   * Yüklenen sayfanın `meta.total` değeri — üstteki şirket özeti için.
+   * Sayı ikinci bir istekle DEĞİL, zaten gelen yanıttan okunur; böylece
+   * karttaki sayı ile listedeki kayıtlar asla çelişemez.
+   */
+  onTotal?: (total: number | null) => void;
+}
+
+export function MembersSection({ onTotal }: MembersSectionProps) {
   const [page, setPage] = useState(1);
   const [result, setResult] = useState<Paginated<Member> | null>(null);
   const [error, setError] = useState<unknown>(null);
   const [loading, setLoading] = useState(true);
+
+  /*
+   * Geri çağrı REF'TE TUTULUR, bağımlılıkta değil. `load` bir
+   * `useEffect` bağımlılığı; prop olarak satır içi bir fonksiyon
+   * geçilseydi her render yeni bir kimlik üretir ve liste sonsuz döngüye
+   * girerdi.
+   */
+  const onTotalRef = useRef(onTotal);
+  onTotalRef.current = onTotal;
 
   const load = useCallback(async (requestedPage: number) => {
     setLoading(true);
     setError(null);
 
     try {
-      setResult(await endpoints.members.list(api, { page: requestedPage }));
+      const page = await endpoints.members.list(api, { page: requestedPage });
+      setResult(page);
+      onTotalRef.current?.(page.meta.total);
     } catch (caught) {
       // 401 merkezî olarak ApiClient'ta ele alınır.
       setError(caught);
       setResult(null);
+      onTotalRef.current?.(null);
     } finally {
       setLoading(false);
     }
@@ -88,37 +99,21 @@ export function MemberListPage() {
   const scopeNote = singlePage ? 'tüm üyeler' : 'bu sayfada';
 
   return (
-    <div className="ft-page ft-team">
-      {/* ----------------------------------------------------- başlık */}
-      <header className="ft-team-hero">
-        <div className="ft-team-hero__text">
-          <span className="ft-team-hero__eyebrow">Şirket</span>
-          <h1 className="ft-team-hero__title">Ekip</h1>
-          <p className="ft-team-hero__lead">
-            Şirkete erişimi olan kişiler ve rolleri.
-          </p>
-        </div>
+    <section className="ft-team ft-team-hub__section" aria-labelledby="ft-team-members-title">
+      <div className="ft-team-hub__section-head">
+        <h2 className="ft-team-hub__section-title" id="ft-team-members-title">
+          Üyeler
+        </h2>
+        <p className="ft-team-hub__section-lead">Şirkete erişimi olan kişiler ve rolleri.</p>
+      </div>
 
-        {/* İşaret `aria-hidden`: bağlantının erişilebilir adı
-            "Davetleri yönet" olarak kalmalı. */}
-        <Link className="ft-team-cta" to="/app/invitations">
-          <span aria-hidden="true">✉</span> Davetleri yönet
-        </Link>
-      </header>
-
-      {/* ------------------------------------------------------- özet */}
+      {/*
+        ROL DAĞILIMI SAYFA KAPSAMLIDIR — şirket geneli toplam üstteki
+        özette (`meta.total`). Buradaki iki kart yalnızca açık sayfayı
+        sayar ve notları bunu söyler.
+      */}
       {!loading && !error && result && rows.length > 0 && (
-        <section className="ft-team-summary" aria-labelledby="ft-team-summary-title">
-          <h2 className="ft-visually-hidden" id="ft-team-summary-title">
-            Ekip özeti
-          </h2>
-
-          <article className="ft-team-stat" data-testid="team-summary-total">
-            <span className="ft-team-stat__label">Toplam üye</span>
-            <span className="ft-team-stat__value">{result.meta.total}</span>
-            <span className="ft-team-stat__note">tüm kayıtlar</span>
-          </article>
-
+        <div className="ft-team-summary" data-testid="team-role-breakdown">
           <article className="ft-team-stat ft-team-stat--owner" data-testid="team-summary-owners">
             <span className="ft-team-stat__label">Sahip rolü</span>
             <span className="ft-team-stat__value">{ownerCount}</span>
@@ -134,7 +129,7 @@ export function MemberListPage() {
               {rows.length} kayıttan · {scopeNote}
             </span>
           </article>
-        </section>
+        </div>
       )}
 
       {/* ---------------------------------------------------- yükleme */}
@@ -245,7 +240,7 @@ export function MemberListPage() {
           )}
         </>
       )}
-    </div>
+    </section>
   );
 }
 

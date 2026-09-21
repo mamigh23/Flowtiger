@@ -6130,3 +6130,132 @@ a {
     transform: none;
   }
 }
+
+/* ==================================================================== */
+/* EKİP HUB — ÜYELER + DAVETLER TEK EKRANDA                             */
+/*                                                                      */
+/* Hero, özet kartları, tablolar, rozetler ve paneller mevcut          */
+/* `.ft-team-*` / `.ft-invitations-*` kurallarından AYNEN gelir; bu     */
+/* blok yalnızca iki ekranı birleştiren parçaları ekler: bölüm seçici   */
+/* ve bölüm başlığı. Hiçbir kural silinmedi.                           */
+/*                                                                      */
+/* KAPSAM AYRIMI KORUNUR: kök `.ft-team-hub`tır, `.ft-team` DEĞİL.      */
+/* Kök `.ft-team` olsaydı, üye tablosu için yazılmış dar ekran sütun   */
+/* genişlikleri (`.ft-team .ft-table th:nth-child(n)`) davet tablosuna  */
+/* da uygulanırdı. `.ft-team` yalnızca üye bölümünü, `.ft-invitations`  */
+/* yalnızca davet bölümünü sarar.                                       */
+/* ==================================================================== */
+
+.ft-team-hub {
+  gap: var(--ft-space-5);
+}
+
+/* ---------------------------------------------------------- bölümler */
+
+/*
+ * BÖLÜM SEÇİMİ SEKME GİBİ GÖRÜNÜR AMA BAĞLANTIDIR: her bölümün kendi
+ * adresi var, yani paylaşılabilir ve geri tuşuyla gezilebilir. Finans
+ * ekranındaki seçiciyle aynı ölçü ve aynı yüzey.
+ */
+.ft-team-hub__segments {
+  display: flex;
+  gap: var(--ft-space-1);
+  padding: var(--ft-space-1);
+  border: 1px solid var(--ft-border-hairline);
+  border-radius: var(--ft-radius-lg);
+  background: var(--ft-surface-sunken);
+  overflow-x: auto;
+}
+
+.ft-team-hub__segment {
+  flex: 1 1 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.25rem;
+  padding: 0 var(--ft-space-4);
+  border: 1px solid transparent;
+  border-radius: var(--ft-radius-md);
+  color: var(--ft-color-text-muted);
+  font-weight: var(--ft-font-weight-medium);
+  text-decoration: none;
+  white-space: nowrap;
+  transition:
+    background var(--ft-duration) var(--ft-ease),
+    color var(--ft-duration) var(--ft-ease);
+}
+
+.ft-team-hub__segment:hover {
+  color: var(--ft-color-text);
+}
+
+.ft-team-hub__segment--active {
+  border-color: var(--ft-border-hairline);
+  background: var(--ft-surface-raised);
+  color: var(--ft-color-text);
+  box-shadow: var(--ft-shadow-card);
+}
+
+/* ------------------------------------------------------------- bölüm */
+
+.ft-team-hub__section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ft-space-4);
+}
+
+.ft-team-hub__section-head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ft-space-1);
+}
+
+.ft-team-hub__section-title {
+  margin: 0;
+  font-size: var(--ft-font-size-lg);
+  font-weight: var(--ft-font-weight-bold);
+  letter-spacing: -0.01em;
+}
+
+.ft-team-hub__section-lead {
+  margin: 0;
+  color: var(--ft-color-text-muted);
+  font-size: var(--ft-font-size-sm);
+}
+
+/*
+ * 375px'TE KARTLAR İKİŞER YAN YANA.
+ *
+ * Hub'da iki özet satırı var (şirket geneli + bölümün sayfa dağılımı);
+ * mevcut `minmax(11rem, 1fr)` ızgarası dar ekranda her kartı tek sütuna
+ * düşürüyor ve liste, dört kartlık bir yığının altında kalıyordu
+ * (gerçek Chromium'da ölçüldü). Kural `.ft-team-hub` ile kapsanır:
+ * paylaşılan ızgara kuralları değişmez.
+ */
+@media (max-width: 40rem) {
+  .ft-team-hub .ft-team-summary,
+  .ft-team-hub .ft-invitations-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .ft-team-hub .ft-team-stat,
+  .ft-team-hub .ft-invitations-stat {
+    padding: var(--ft-space-3);
+  }
+
+  .ft-team-hub .ft-team-stat__value,
+  .ft-team-hub .ft-invitations-stat__value {
+    font-size: 1.5rem;
+  }
+
+  .ft-team-hub .ft-team-stat__note,
+  .ft-team-hub .ft-invitations-stat__note {
+    font-size: 0.75rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ft-team-hub__segment {
+    transition: none;
+  }
+}

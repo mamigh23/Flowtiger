@@ -32,6 +32,12 @@ import { FlowTigerMark } from '@/features/brand/FlowTigerMark';
  * "Finans" ve "Ödemeler" iki ayrı üst madde olarak duruyor; gruplama
  * ayrı bir UI fazının işi.
  *
+ * "EKİP" TEK MADDE: üyeler ve davetler artık tek bir Ekip ekranının iki
+ * bölümü (bkz. TeamHubPage). Eski "Davetler" maddesi kaldırıldı; hedef
+ * `/app/team`. Madde, davetler bölümündeyken de (`/app/team/invitations`)
+ * etkin görünür — NavLink varsayılan olarak ön ek eşleştirir. Eski
+ * `/app/invitations` adresi rotada yönlendirme olarak yaşıyor.
+ *
  * HİÇBİR MADDE ROLE GÖRE GİZLENMEZ. Bazı uçlar owner-only ama bu karar
  * backend'e aittir (playbook §3.1). Rolüne bakıp bağlantıyı gizlemek,
  * yetki kararını istemcide yeniden uygulamak olurdu; üye tıklar, istek
@@ -50,7 +56,6 @@ const NAV_ITEMS = [
   { to: '/app/finance', label: 'Finans', icon: '₺' },
   { to: '/app/payments', label: 'Ödemeler', icon: '⇄' },
   { to: '/app/team', label: 'Ekip', icon: '◎' },
-  { to: '/app/invitations', label: 'Davetler', icon: '✉' },
   { to: '/app/audit', label: 'Denetim', icon: '❑' },
   { to: '/app/profile', label: 'Profil', icon: '⌂' },
 ] as const;

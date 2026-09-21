@@ -12,10 +12,9 @@ import { CustomerListPage } from '@/features/customers/CustomerListPage';
 import { CustomerCreatePage } from '@/features/customers/CustomerCreatePage';
 import { CustomerDetailPage } from '@/features/customers/CustomerDetailPage';
 import { CustomerEditPage } from '@/features/customers/CustomerEditPage';
-import { MemberListPage } from '@/features/team/MemberListPage';
+import { TeamHubPage } from '@/features/team/TeamHubPage';
 import { MemberDetailPage } from '@/features/team/MemberDetailPage';
 import { MemberEditPage } from '@/features/team/MemberEditPage';
-import { InvitationListPage } from '@/features/invitations/InvitationListPage';
 import { InviteMemberPage } from '@/features/invitations/InviteMemberPage';
 import { AcceptInvitationPage } from '@/features/invitations/AcceptInvitationPage';
 import { AuditLogListPage } from '@/features/audit/AuditLogListPage';
@@ -125,24 +124,44 @@ export function App() {
               <Route path="customers/:id/edit" element={<CustomerEditPage />} />
 
               {/*
-                Ekip ekranları (AŞAMA 3).
+                Ekip (AŞAMA 3 + 4) — üyeler VE davetler, TEK EKRANDA.
+
+                `TeamHubPage` başlığı, şirket geneli özeti ve bölüm
+                seçimini taşır; açık bölüm URL'den gelir:
+                  /app/team              → üyeler
+                  /app/team/invitations  → davetler
+                Mimari Finans ekranıyla (FinanceHubPage) aynı.
+
+                `team/invitations` ile `team/:id` ÇAKIŞMAZ: React Router
+                rotaları bildirim sırasına değil ÖZGÜLLÜĞE göre sıralar ve
+                sabit segment dinamik olanı yener. Üye ayrıntı ve
+                düzenleme rotaları değişmedi.
 
                 Yeni üye ekleme YOK: POST /members owner'ın başkasının
                 parolasını belirlemesini gerektiriyor ve davet akışıyla
-                çakışıyor; bu faz kapsamı dışında.
+                çakışıyor; ekibe katılım davetle yürür.
               */}
-              <Route path="team" element={<MemberListPage />} />
+              <Route path="team" element={<TeamHubPage segment="members" />} />
+              <Route path="team/invitations" element={<TeamHubPage segment="invitations" />} />
               <Route path="team/:id" element={<MemberDetailPage />} />
               <Route path="team/:id/edit" element={<MemberEditPage />} />
 
               {/*
                 Davet ekranları (AŞAMA 4) — owner tarafı (gönder/listele/iptal).
 
+                LİSTE ROTASI ARTIK YÖNLENDİRİR. Davet listesi birleşik Ekip
+                ekranının bir bölümü oldu; `/app/invitations` KALDI ve
+                oraya yönlendiriyor. Rotayı silmek, davet gönderme
+                formunun "Vazgeç" bağlantısını ve başarı sonrası dönüşünü,
+                yer imlerini ve dışarıdan gelen her linki kırardı.
+                `replace`: geri tuşu kullanıcıyı yönlendirme sayfasına
+                geri sokmasın.
+
                 Kabul tarafı (/invitations/accept) BURADA DEĞİL: kimlik
                 doğrulaması olmayan, kabuğun ve owner yetkisinin dışında
-                ayrı bir rota (yukarıda, /login'in yanında).
+                ayrı bir rota (yukarıda, /login'in yanında) — DEĞİŞMEDİ.
               */}
-              <Route path="invitations" element={<InvitationListPage />} />
+              <Route path="invitations" element={<Navigate to="/app/team/invitations" replace />} />
               <Route path="invitations/new" element={<InviteMemberPage />} />
 
               {/*

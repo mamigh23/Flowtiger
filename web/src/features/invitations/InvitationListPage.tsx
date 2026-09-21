@@ -1,5 +1,4 @@
 import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { api, endpoints } from '@/lib/api';
 import { Button, ConfirmPanel, ErrorState } from '@/components/ui';
 import { roleLabel } from '@/lib/company/roleLabel';
@@ -8,7 +7,19 @@ import type { Invitation, Paginated } from '@/types/api';
 import { invitationErrorMessage, invitationStatusLabel } from './invitationErrors';
 
 /**
- * Davet listesi ve iptal.
+ * Davetler — birleşik Ekip ekranının DAVET BÖLÜMÜ.
+ *
+ * Bu dosya eskiden `/app/invitations` rotasının kendisiydi. Artık bölüm;
+ * başlık, şirket geneli özet, "Davet gönder" eylemi ve bölüm seçimi
+ * `TeamHubPage`in elinde ve eski rota oraya yönlendiriliyor (bkz.
+ * App.tsx) — mevcut bağlantılar kırılmadı. BURADA DEĞİŞEN TEK ŞEY
+ * ÇERÇEVE:
+ *
+ *   - veri akışı aynı: `GET /invitations?page=N`, aynı state, aynı
+ *     hata/boş/yükleme durumları; `per_page` hâlâ gönderilmez;
+ *   - iptal akışı, `ConfirmPanel` (odak yönetimi, Escape, odak dönüşü),
+ *     410 ayrıştırması ve hata metinleri aynı;
+ *   - `h1` yerine `h2` — ekranda zaten bir `h1` ("Ekip") var.
  *
  * İSTEMCİDE YETKİ KARARI YOK: kullanıcının rolüne bakıp isteği
  * engellemiyoruz. Uçlar owner'a özeldir ama bunu backend söyler.
@@ -23,37 +34,26 @@ import { invitationErrorMessage, invitationStatusLabel } from './invitationError
  *
  * Arama/sıralama/durum filtresi YOK: uçta böyle bir parametre yok.
  *
- * ------------------------------------------------------------------
- * GÖRSEL DİL (UI redesign turu)
- *
- * Sınıflar `ft-invitations-*` önekiyle BU EKRANA özeldir ve ekip
- * listesiyle aynı dili paylaşır: hero ışığı, yükseltilmiş kart yüzeyi,
- * hairline kenar, yumuşak gölge, pill rozetler. Paylaşılan `.ft-table`,
- * `.ft-button`, `.ft-skeleton` kuralları DEĞİŞTİRİLMEZ; üzerlerine
- * yalnızca bu ekranın kapsamında yazılır.
- *
- * VERİ, İSTEK, İPTAL VE ODAK AKIŞI AYNI: aynı uç (`GET /invitations`),
- * aynı sayfalama, aynı `ConfirmPanel` (odak yönetimi, Escape ve odak
- * dönüşü değişmedi), aynı 410 ayrıştırması, aynı hata metinleri.
- *
- * ONAY SATIRI YİNE TETİKLEYİCİ SATIRIN HEMEN ARDINDA: ikinci bir `<tr>`
+ * ONAY SATIRI TETİKLEYİCİ SATIRIN HEMEN ARDINDA: ikinci bir `<tr>`
  * olarak eklenir. Panel tablodan önce render edilseydi ileri Tab akışı
- * tetikleyici düğmeden onay düğmelerine hiç ulaşmazdı — DOM'da geriden
- * gelirdi.
+ * tetikleyici düğmeden onay düğmelerine hiç ulaşmazdı.
  *
- * ÖZET ŞERİDİ İKİ FARKLI KAPSAMI AYIRIR: "Toplam davet" `meta.total`dır
- * (backend'in saydığı TÜM kayıtlar); durum sayıları YALNIZCA AÇIK
- * SAYFADAKİ kayıtları sayar ve kartın notu bunu açıkça söyler. Durum
- * dağılımını veren bir uç yok; sayfalanmış listenin ilk sayfasını sayıp
- * "3 davet bekliyor" demek eksik bir sayıyı gerçek gibi göstermek olurdu.
+ * DURUM DAĞILIMI SAYFA KAPSAMLIDIR: "Bekleyen" ve "Kabul edilen" YALNIZCA
+ * AÇIK SAYFAYI sayar ve kartın notu bunu söyler; şirket geneli toplam
+ * (`meta.total`) üstteki özette durur.
  *
- * GEÇERLİLİK ARTIK BİÇİMLENDİRİLİR. Alan yanıttaki ISO metnini olduğu
- * gibi basıyordu ve ekranda "2026-08-24T09:00:00+00:00" görünüyordu.
- * `formatDateTime` denetim ekranıyla AYNI fonksiyondur (Intl kullanmaz:
- * Node'un ICU derlemesi ortama göre değişir ve tr-TR'siz bir derlemede
- * sessizce en-US biçimine düşer).
+ * GEÇERLİLİK BİÇİMLENDİRİLİR: ham ISO metni yerine denetim ekranıyla
+ * AYNI `formatDateTime` (Intl kullanmaz).
  */
-export function InvitationListPage() {
+interface InvitationsSectionProps {
+  /**
+   * Yüklenen sayfanın `meta.total` değeri — üstteki şirket özeti için.
+   * Sayı ikinci bir istekle DEĞİL, zaten gelen yanıttan okunur.
+   */
+  onTotal?: (total: number | null) => void;
+}
+
+export function InvitationsSection({ onTotal }: InvitationsSectionProps) {
   const [page, setPage] = useState(1);
   const [result, setResult] = useState<Paginated<Invitation> | null>(null);
   const [error, setError] = useState<unknown>(null);
@@ -67,6 +67,10 @@ export function InvitationListPage() {
   /** Onay paneli kapanınca odağın döneceği düğme. */
   const revokeTriggerRef = useRef<HTMLElement | null>(null);
 
+  /* Geri çağrı ref'te: `load` bir efekt bağımlılığı (bkz. üye bölümü). */
+  const onTotalRef = useRef(onTotal);
+  onTotalRef.current = onTotal;
+
   const load = useCallback(async (requestedPage: number) => {
     setLoading(true);
     setError(null);
@@ -78,11 +82,14 @@ export function InvitationListPage() {
     setRevokeError(null);
 
     try {
-      setResult(await endpoints.invitations.list(api, { page: requestedPage }));
+      const page = await endpoints.invitations.list(api, { page: requestedPage });
+      setResult(page);
+      onTotalRef.current?.(page.meta.total);
     } catch (caught) {
       // 401 merkezî olarak ApiClient'ta ele alınır.
       setError(caught);
       setResult(null);
+      onTotalRef.current?.(null);
     } finally {
       setLoading(false);
     }
@@ -122,23 +129,16 @@ export function InvitationListPage() {
   const scopeNote = singlePage ? 'tüm davetler' : 'bu sayfada';
 
   return (
-    <div className="ft-page ft-invitations">
-      {/* ----------------------------------------------------- başlık */}
-      <header className="ft-invitations-hero">
-        <div className="ft-invitations-hero__text">
-          <span className="ft-invitations-hero__eyebrow">Ekip</span>
-          <h1 className="ft-invitations-hero__title">Davetler</h1>
-          <p className="ft-invitations-hero__lead">
-            Gönderilen davetler ve durumları.
-          </p>
-        </div>
-
-        {/* İşaret `aria-hidden`: bağlantının erişilebilir adı
-            "Davet gönder" olarak kalmalı. */}
-        <Link className="ft-invitations-cta" to="/app/invitations/new">
-          <span aria-hidden="true">+</span> Davet gönder
-        </Link>
-      </header>
+    <section
+      className="ft-invitations ft-team-hub__section"
+      aria-labelledby="ft-team-invitations-title"
+    >
+      <div className="ft-team-hub__section-head">
+        <h2 className="ft-team-hub__section-title" id="ft-team-invitations-title">
+          Davetler
+        </h2>
+        <p className="ft-team-hub__section-lead">Gönderilen davetler ve durumları.</p>
+      </div>
 
       {/*
         İptal hatası listenin ÜSTÜNDE ve kendi yüzeyinde durur: bir
@@ -151,22 +151,13 @@ export function InvitationListPage() {
         </div>
       )}
 
-      {/* ------------------------------------------------------- özet */}
+      {/*
+        DURUM DAĞILIMI SAYFA KAPSAMLIDIR — şirket geneli toplam üstteki
+        özette (`meta.total`). Buradaki iki kart yalnızca açık sayfayı
+        sayar ve notları bunu söyler.
+      */}
       {!loading && !error && result && rows.length > 0 && (
-        <section
-          className="ft-invitations-summary"
-          aria-labelledby="ft-invitations-summary-title"
-        >
-          <h2 className="ft-visually-hidden" id="ft-invitations-summary-title">
-            Davet özeti
-          </h2>
-
-          <article className="ft-invitations-stat" data-testid="invitations-summary-total">
-            <span className="ft-invitations-stat__label">Toplam davet</span>
-            <span className="ft-invitations-stat__value">{result.meta.total}</span>
-            <span className="ft-invitations-stat__note">tüm kayıtlar</span>
-          </article>
-
+        <div className="ft-invitations-summary" data-testid="invitations-status-breakdown">
           <article
             className="ft-invitations-stat ft-invitations-stat--pending"
             data-testid="invitations-summary-pending"
@@ -185,7 +176,7 @@ export function InvitationListPage() {
               {rows.length} kayıttan · {scopeNote}
             </span>
           </article>
-        </section>
+        </div>
       )}
 
       {/* ---------------------------------------------------- yükleme */}
@@ -368,6 +359,6 @@ export function InvitationListPage() {
           )}
         </>
       )}
-    </div>
+    </section>
   );
 }
