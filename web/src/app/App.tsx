@@ -5,6 +5,8 @@ import { ProtectedRoute, PublicOnlyRoute, RequireActiveCompany } from '@/routes/
 import { ErrorBoundary } from '@/app/ErrorBoundary';
 import { LoginPage } from '@/features/auth/LoginPage';
 import { RegisterPage } from '@/features/auth/RegisterPage';
+import { ForgotPasswordPage } from '@/features/auth/ForgotPasswordPage';
+import { ResetPasswordPage } from '@/features/auth/ResetPasswordPage';
 import { CompanySelectPage } from '@/features/companies/CompanySelectPage';
 import { AppShell } from '@/features/shell/AppShell';
 import { DashboardPage } from '@/features/dashboard/DashboardPage';
@@ -36,6 +38,8 @@ import { ProfilePage } from '@/features/profile/ProfilePage';
  *
  *   /login                → herkese açık (girişliyse /app'e gider)
  *   /invitations/accept   → herkese açık, kimlik durumundan BAĞIMSIZ
+ *   /password/forgot      → herkese açık (girişliyse /app'e gider)
+ *   /password/reset/:token → herkese açık, kimlik durumundan BAĞIMSIZ
  *   /app/company-select   → kimlik gerekir, aktif şirket GEREKMEZ
  *   /app/*                → kimlik + aktif şirket gerekir
  *
@@ -89,6 +93,27 @@ export function App() {
             />
 
             <Route path="/invitations/accept" element={<AcceptInvitationPage />} />
+
+            {/*
+              Parola sıfırlama. Yollar BACKEND'İN bağlantı şablonuyla
+              aynıdır: config('flowtiger.password_reset.url') =
+              "<taban>/password/reset/{token}?email={email}".
+
+              "Unuttum" ekranı /login ile aynı korumayı taşır. Sıfırlama
+              ekranı ise PublicOnlyRoute'un DIŞINDADIR: bağlantıya aynı
+              tarayıcıda girişliyken tıklayan kullanıcı /app'e atılsaydı
+              parolasını hiç sıfırlayamazdı. Backend uçları da public.
+            */}
+            <Route
+              path="/password/forgot"
+              element={
+                <PublicOnlyRoute>
+                  <ForgotPasswordPage />
+                </PublicOnlyRoute>
+              }
+            />
+
+            <Route path="/password/reset/:token" element={<ResetPasswordPage />} />
 
             <Route
               path="/app/company-select"

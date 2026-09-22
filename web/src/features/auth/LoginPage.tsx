@@ -22,7 +22,9 @@ export function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [email, setEmail] = useState('');
+  // Parola sıfırlama ekranından dönüldüyse e-posta router state'iyle gelir
+  // (yalnızca kolaylık; hiçbir yere kalıcı yazılmaz).
+  const [email, setEmail] = useState(() => stateEmail(location.state));
   const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
@@ -49,6 +51,11 @@ export function LoginPage() {
    * yönlendirme hangi yolun kazandığına göre değişirdi.
    */
   const redirectTo = safeRedirect(location.state);
+
+  // Parola az önce sıfırlandı mı? Metin burada sabittir; router state'inden
+  // gelen hiçbir serbest metin ekrana basılmaz.
+  const passwordReset =
+    (location.state as { passwordReset?: unknown } | null)?.passwordReset === true;
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -109,7 +116,13 @@ export function LoginPage() {
             Bir giriş denemesi hata verdiğinde gizlenir: aynı anda iki
             mesaj göstermek hangisinin güncel olduğunu belirsizleştirir.
           */}
-          {sessionExpired && !formError && (
+          {passwordReset && !formError && (
+            <p className="ft-notice" role="status" data-testid="password-reset-done">
+              Parolanız güncellendi ve tüm oturumlar kapatıldı. Yeni parolanızla giriş yapın.
+            </p>
+          )}
+
+          {sessionExpired && !passwordReset && !formError && (
             <p className="ft-notice" role="status" data-testid="session-expired">
               Oturumunuz sona erdi. Lütfen tekrar giriş yapın.
             </p>
@@ -139,6 +152,21 @@ export function LoginPage() {
             required
           />
 
+          {/*
+            Parola sıfırlama girişi. Yazılmış bir e-posta varsa "unuttum"
+            ekranına taşınır; o ekran da yalnızca bir kolaylık olarak
+            alanı doldurur.
+          */}
+          <div className="ft-auth__aside">
+            <Link
+              className="ft-auth__link"
+              to="/password/forgot"
+              state={email.trim() ? { email: email.trim() } : undefined}
+            >
+              Parolamı unuttum
+            </Link>
+          </div>
+
           <Button type="submit" loading={submitting}>
             Giriş yap
           </Button>
@@ -150,4 +178,10 @@ export function LoginPage() {
       </Card>
     </div>
   );
+}
+
+/** Router state'indeki e-posta; yalnızca string kabul edilir. */
+function stateEmail(state: unknown): string {
+  const email = (state as { email?: unknown } | null)?.email;
+  return typeof email === 'string' ? email : '';
 }

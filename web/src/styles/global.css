@@ -7105,3 +7105,81 @@ a {
   flex-direction: column;
   gap: var(--ft-space-2);
 }
+
+/* =================================================== password recovery */
+
+/*
+ * PAROLA SIFIRLAMA — giriş/kayıt ile AYNI `.ft-auth` kartı ve aynı alan,
+ * düğme, hata ve bilgi (`.ft-notice`) stilleri. Buradaki kurallar yalnızca
+ * bu akışa özgü küçük parçalardır.
+ */
+
+/* Auth ekranlarının alt satırlarındaki bağlantılar altı çizili değildir. */
+.ft-auth .ft-muted a {
+  font-weight: var(--ft-font-weight-medium);
+  text-decoration: none;
+}
+
+.ft-auth .ft-muted a:hover {
+  color: var(--ft-color-primary-hover);
+}
+
+/* Giriş ekranı: "Parolamı unuttum" parola alanının hemen altında, sağda. */
+.ft-auth__aside {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: calc(var(--ft-space-2) * -1);
+}
+
+.ft-auth__link {
+  color: var(--ft-color-primary);
+  font-size: var(--ft-font-size-sm);
+  font-weight: var(--ft-font-weight-medium);
+  text-decoration: none;
+}
+
+.ft-auth__link:hover {
+  color: var(--ft-color-primary-hover);
+}
+
+.ft-recovery .ft-auth__card {
+  max-width: 26rem;
+}
+
+.ft-recovery a {
+  text-decoration: none;
+}
+
+.ft-recovery__eyebrow {
+  color: var(--ft-color-primary);
+  font-size: 0.75rem;
+  font-weight: var(--ft-font-weight-medium);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.ft-recovery__link {
+  color: var(--ft-color-primary);
+  font-weight: var(--ft-font-weight-medium);
+}
+
+.ft-recovery__link:hover {
+  color: var(--ft-color-primary-hover);
+}
+
+.ft-recovery__next,
+.ft-recovery__lead,
+.ft-recovery__footer {
+  margin: 0;
+  font-size: var(--ft-font-size-sm);
+}
+
+.ft-recovery__footer {
+  text-align: center;
+}
+
+.ft-recovery__actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ft-space-2);
+}
