@@ -41,6 +41,73 @@ describe('App yönlendirme', () => {
     expect(await screen.findByRole('button', { name: 'Giriş yap' })).toBeInTheDocument();
   });
 
+  /**
+   * REGRESYON — DERİN BAĞLANTI GİRİŞTEN SONRA GERİ GELİR.
+   *
+   * `/app/payments`e giden misafir giriş ekranına yönlendirilir ve giriş
+   * sonrası ORAYA dönmelidir, `/app`e değil.
+   *
+   * Kural kodda zaten VARDI ama çalışmıyordu: `PublicOnlyRoute` sabit
+   * `/app`e gidiyor ve `LoginPage`in `navigate(from)` çağrısını yarışta
+   * yeniyordu — kullanıcı hangi sayfaya gitmek istediyse istesin panele
+   * düşüyordu (gerçek tarayıcıda doğrulandı). Artık iki yol da hedefi
+   * AYNI fonksiyondan alıyor.
+   */
+  it('giriş sonrası kullanıcıyı gitmek istediği korumalı sayfaya götürür', async () => {
+    vi.stubGlobal(
+      'fetch',
+      mockApi({
+        ...activeCompanyRoutes,
+        '/auth/login': () =>
+          jsonResponse(200, { data: { token: 'yeni-token', user: fixtures.user() } }),
+        '/payments': () => jsonResponse(200, fixtures.paginated([], 0)),
+      }),
+    );
+
+    const user = userEvent.setup();
+
+    // Token YOK: korumalı sayfa önce giriş ekranına yönlendirir.
+    renderApp('/app/payments');
+
+    await screen.findByRole('button', { name: 'Giriş yap' });
+
+    await user.type(screen.getByLabelText('E-posta'), 'ada@flowtiger.test');
+    await user.type(screen.getByLabelText('Parola'), 'gizli-parola');
+    await user.click(screen.getByRole('button', { name: 'Giriş yap' }));
+
+    // Panel değil, ÖDEMELER ekranı açılmalı.
+    expect(await screen.findByRole('heading', { name: 'Ödemeler' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Bugünün Odağı' })).not.toBeInTheDocument();
+  });
+
+  /**
+   * YUKARIDAKİ TESTİN KİLİTLEYEMEDİĞİ YARIŞI BU TEST KİLİTLER.
+   *
+   * Gerçek tarayıcıda hatayı üreten şey `PublicOnlyRoute`un sabit `/app`
+   * hedefiydi; jsdom'da güncellemeler farklı sırada boşaldığı için o
+   * yarış yeniden üretilemiyor ve yukarıdaki akış testi düzeltme
+   * OLMADAN da geçiyor (denendi). Burada yarışa hiç girilmiyor:
+   * kullanıcı zaten girişli olarak `/login`e geliyor, yönlendirme
+   * kararını yalnızca `PublicOnlyRoute` veriyor ve hedefi doğrudan
+   * ölçülüyor.
+   */
+  it('girişli kullanıcı /login e geldiğinde de hedefi korur', async () => {
+    vi.stubGlobal(
+      'fetch',
+      mockApi({
+        ...activeCompanyRoutes,
+        '/payments': () => jsonResponse(200, fixtures.paginated([], 0)),
+      }),
+    );
+
+    renderApp('/login', {
+      token: 'gecerli-token',
+      state: { from: '/app/payments' },
+    });
+
+    expect(await screen.findByRole('heading', { name: 'Ödemeler' })).toBeInTheDocument();
+  });
+
   it('kök yolu uygulamaya yönlendirir', async () => {
     vi.stubGlobal('fetch', mockApi(activeCompanyRoutes));
 

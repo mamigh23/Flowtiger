@@ -331,4 +331,95 @@ describe('TaskEditPage', () => {
     expect(alert).toHaveTextContent('Görev bulunamadı.');
     expect(alert.textContent).not.toMatch(/yetki/i);
   });
+
+  // ------------------------------------- seçenek listesi yüklenemediğinde
+
+  /** Üye rolündeki kullanıcı `/members`ten 403 alır — beklenen bir sonuç. */
+  const memberSeesForbiddenMembers = {
+    ...session,
+    '/customers': () => jsonResponse(200, fixtures.paginated(customers, 2)),
+    '/members': () => jsonResponse(403, { message: 'This action is unauthorized.' }),
+    '/tasks/300': () => jsonResponse(200, { data: task }),
+  };
+
+  /**
+   * REGRESYON — ATANMIŞ GÖREV "ATANMAMIŞ" GİBİ GÖRÜNÜYORDU.
+   *
+   * Ekip listesi gelmediğinde açılır menüde yalnızca "Kimseye atanmadı"
+   * kalıyordu; görev Grace Hopper'a atanmış olsa bile form onu boş
+   * gösteriyordu. Gönderilen gövde DOĞRUYDU (değer state'te duruyor), ama
+   * ekran kaydın gerçek hâlini yanlış anlatıyordu.
+   */
+  it('ekip listesi yüklenemediğinde mevcut atamayı yine de gösterir', async () => {
+    vi.stubGlobal('fetch', mockApi(memberSeesForbiddenMembers));
+
+    renderApp('/app/tasks/300/edit', { token: 'gecerli-token' });
+
+    const assignee = await screen.findByLabelText('Atanan kişi');
+
+    await waitFor(() => expect(assignee).toHaveValue('22'));
+    expect(screen.getByRole('option', { name: 'Grace Hopper' })).toBeInTheDocument();
+  });
+
+  /**
+   * REGRESYON — 403 ALAN HATASI DEĞİL.
+   *
+   * Üye görev oluşturmaya/düzenlemeye YETKİLİDİR; ekip listesini
+   * görememesi bir arıza değil, beklenen bir sonuçtur. Eskiden alanın
+   * altına kırmızı "This action is unauthorized." basılıyordu — hem
+   * İngilizce hem de yanlış bir suçlama.
+   */
+  it('ekip listesi 403 dönünce alanı hatalı göstermez', async () => {
+    vi.stubGlobal('fetch', mockApi(memberSeesForbiddenMembers));
+
+    renderApp('/app/tasks/300/edit', { token: 'gecerli-token' });
+
+    const assignee = await screen.findByLabelText('Atanan kişi');
+
+    await waitFor(() => expect(assignee).toHaveValue('22'));
+
+    // Hata değil, ipucu.
+    expect(assignee).not.toHaveAttribute('aria-invalid');
+    expect(screen.queryByText('This action is unauthorized.')).not.toBeInTheDocument();
+    expect(screen.getByText(/yalnızca şirket sahibine açık/i)).toBeInTheDocument();
+
+    // İpucu ekran okuyucuya da bağlı.
+    const describedBy = assignee.getAttribute('aria-describedby');
+    expect(describedBy).not.toBeNull();
+    expect(document.getElementById(describedBy!)?.textContent).toMatch(/şirket sahibine/i);
+  });
+
+  /**
+   * REGRESYON — GÖRÜNMEYEN SEÇENEK GÖVDEDEN DÜŞMEZ.
+   *
+   * Üye yalnızca başlığı düzeltse bile atama korunmalı: PUT gövdesi
+   * görevin TAM hâlini taşır ve eksik gönderilen alan boşaltılır.
+   */
+  it('ekip listesi yokken de mevcut atamayı gövdede korur', async () => {
+    const fetchMock = mockApi({
+      ...memberSeesForbiddenMembers,
+      '/tasks/300': (init) =>
+        (init as RequestInit | undefined)?.method === 'PUT'
+          ? jsonResponse(200, { data: task })
+          : jsonResponse(200, { data: task }),
+    });
+
+    vi.stubGlobal('fetch', fetchMock);
+    const user = userEvent.setup();
+
+    renderApp('/app/tasks/300/edit', { token: 'gecerli-token' });
+
+    const title = await screen.findByLabelText('Başlık');
+    await waitFor(() => expect(screen.getByLabelText('Atanan kişi')).toHaveValue('22'));
+
+    await user.clear(title);
+    await user.type(title, 'Yalnızca başlık değişti');
+    await user.click(screen.getByRole('button', { name: 'Kaydet' }));
+
+    await waitFor(() => expect(putBody(fetchMock)).toBeDefined());
+    expect(putBody(fetchMock)).toMatchObject({
+      title: 'Yalnızca başlık değişti',
+      assigned_to: 22,
+    });
+  });
 });

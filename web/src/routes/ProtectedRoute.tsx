@@ -32,19 +32,55 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
-/** Giriş yapmış kullanıcıyı /login'de tutmaz. */
+/**
+ * Giriş yapmış kullanıcıyı /login'de tutmaz.
+ *
+ * HEDEF `/app` DEĞİL, KULLANICININ GİTMEK İSTEDİĞİ YER.
+ *
+ * REGRESYON — DERİN BAĞLANTI KAYBOLUYORDU. `/app/payments`e giden
+ * misafir buraya `state.from` ile yönlendiriliyor, `LoginPage` de o
+ * değeri okuyup giriş sonrası oraya gitmeye çalışıyordu. Ama giriş
+ * başarılı olduğu anda iki güncelleme yarışıyor: LoginPage'in
+ * `navigate(from)` çağrısı ile bu bileşenin yeniden render'ı. React
+ * durum güncellemesini önce boşalttığında burası ÖNCE çalışıyor,
+ * sabit `/app`e gidiyor ve LoginPage o sırada zaten sökülmüş oluyor —
+ * `navigate` sessizce hiçbir şey yapmıyordu. Gerçek tarayıcıda
+ * doğrulandı: `/app/payments` → giriş → `/app`.
+ *
+ * Çözüm yarışı kaldırmak değil, İKİ YOLUN DA AYNI YERE ÇIKMASI:
+ * hangisi kazanırsa kazansın hedef aynı.
+ */
 export function PublicOnlyRoute({ children }: { children: ReactNode }) {
   const { status } = useAuth();
+  const location = useLocation();
 
   if (status === 'loading') {
     return <LoadingScreen />;
   }
 
   if (status === 'authenticated') {
-    return <Navigate to="/app" replace />;
+    return <Navigate to={safeRedirect(location.state)} replace />;
   }
 
   return <>{children}</>;
+}
+
+/**
+ * Yönlendirme hedefi yalnızca UYGULAMA İÇİ bir yol olabilir.
+ *
+ * Değer router state'inden gelir ve oraya yalnızca `ProtectedRoute`
+ * yazar (`location.pathname`), yani bugün dışarıdan beslenemez. Kontrol
+ * yine de burada: `//baska-site` ya da `https://...` biçiminde bir değer
+ * bir gün buraya sızarsa açık yönlendirme (open redirect) olurdu ve bunu
+ * fark etmek zordur. Tek satırlık kontrol, o sınıf hatayı baştan kapatır.
+ */
+export function safeRedirect(state: unknown): string {
+  const from = (state as { from?: unknown } | null)?.from;
+
+  if (typeof from !== 'string') return '/app';
+  if (!from.startsWith('/') || from.startsWith('//')) return '/app';
+
+  return from;
 }
 
 /**

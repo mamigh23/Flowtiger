@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth/AuthContext';
+import { safeRedirect } from '@/routes/ProtectedRoute';
 import { ApiError, toUserMessage } from '@/lib/api';
 import { Button, Card, ErrorState, Input, PasswordInput, useFocusFirstInvalidFieldOnError } from '@/components/ui';
 import { FlowTigerMark } from '@/features/brand/FlowTigerMark';
@@ -17,7 +18,7 @@ import { FlowTigerMark } from '@/features/brand/FlowTigerMark';
  *   5xx → nötr mesaj; sunucu ayrıntısı kullanıcıya gösterilmez
  */
 export function LoginPage() {
-  const { login } = useAuth();
+  const { login, sessionExpired } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -39,7 +40,15 @@ export function LoginPage() {
    */
   const inFlight = useRef(false);
 
-  const redirectTo = (location.state as { from?: string } | null)?.from ?? '/app';
+  /*
+   * Hedef `PublicOnlyRoute` ile AYNI fonksiyondan gelir.
+   *
+   * İki yer de giriş sonrası nereye gidileceğine karar veriyor (hangisinin
+   * kazanacağı React'in güncellemeleri ne zaman boşalttığına bağlı). Kural
+   * iki yerde ayrı yazılsaydı bir gün yalnızca biri güncellenir ve
+   * yönlendirme hangi yolun kazandığına göre değişirdi.
+   */
+  const redirectTo = safeRedirect(location.state);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -84,6 +93,27 @@ export function LoginPage() {
             <h1 className="ft-auth__title">FlowTiger</h1>
             <p className="ft-muted">Devam etmek için giriş yapın.</p>
           </header>
+
+          {/*
+            OTURUM KENDİLİĞİNDEN DÜŞTÜYSE SEBEBİNİ SÖYLE.
+
+            401 alan kullanıcı, çalıştığı ekranın ortasından giriş formuna
+            atılıyor ve neden atıldığını HİÇBİR YERDE görmüyordu (gerçek
+            tarayıcıda doğrulandı). Mesajın kendisi zaten vardı
+            (ApiClient'ın 401 metni) ama hiçbir yere ulaşmıyordu.
+
+            `ErrorState` DEĞİL: bu bir arıza değil, beklenen bir son.
+            Kırmızı kutu kullanıcıya bir şeyin bozulduğunu düşündürürdü.
+            `role="status"` — ekran okuyucu formu bölmeden duyurur.
+
+            Bir giriş denemesi hata verdiğinde gizlenir: aynı anda iki
+            mesaj göstermek hangisinin güncel olduğunu belirsizleştirir.
+          */}
+          {sessionExpired && !formError && (
+            <p className="ft-notice" role="status" data-testid="session-expired">
+              Oturumunuz sona erdi. Lütfen tekrar giriş yapın.
+            </p>
+          )}
 
           {formError && <ErrorState message={formError} />}
 

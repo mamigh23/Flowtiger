@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { api, endpoints } from '@/lib/api';
 import { tokenStorage } from './tokenStorage';
@@ -17,6 +17,15 @@ export type AuthStatus = 'loading' | 'authenticated' | 'unauthenticated';
 interface AuthContextValue {
   status: AuthStatus;
   user: User | null;
+  /**
+   * Oturum KULLANICI İSTEMEDEN düştü mü?
+   *
+   * `logout()` ile çıkışta false, 401 ile düşüşte true. Giriş ekranı bu
+   * ikisini aynı şekilde göstermemeli: "çıkış yaptım" diyen kullanıcı
+   * açıklama beklemez, ekranın ortasından giriş formuna atılan kullanıcı
+   * bekler.
+   */
+  sessionExpired: boolean;
   login(email: string, password: string): Promise<void>;
   /**
    * Self-servis kayıt (P0-03) — backend tek istekte hesap + ilk şirket +
@@ -37,6 +46,17 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<AuthStatus>('loading');
   const [user, setUser] = useState<User | null>(null);
+  const [sessionExpired, setSessionExpired] = useState(false);
+
+  /**
+   * Çıkış KULLANICININ İSTEĞİYLE mi oluyor?
+   *
+   * `tokenStorage.clear()` senkron olarak abonelere haber verdiği için
+   * bu bayrak, aboneliğin içinde hâlâ doğru değeri taşır. State
+   * kullanılamazdı: değer aynı karede okunmalı, bir sonraki render'da
+   * değil.
+   */
+  const deliberateLogout = useRef(false);
 
   /**
    * Token düştüğünde oturum da düşer.
@@ -45,12 +65,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
    * o değişikliği dinlemek, oturum sonlandırmayı TEK noktaya indirir.
    * Aksi halde her çağrı yerinde "401 mi geldi?" kontrolü yapmak
    * gerekirdi ve biri mutlaka unutulurdu (§12).
+   *
+   * AYNI OLAY İKİ FARKLI ŞEY ANLATIR: kullanıcı çıkış yaptıysa bu
+   * beklenen bir son, 401 geldiyse oturumun kendiliğinden düşmesidir.
+   * Ayrımı burada yapmak, giriş ekranının sebebini bilmesini sağlar —
+   * aksi halde kullanıcı hiçbir açıklama görmeden forma atılıyordu
+   * (gerçek tarayıcıda doğrulandı).
    */
   useEffect(() => {
     return tokenStorage.subscribe((token) => {
-      if (token === null) {
-        setUser(null);
-        setStatus('unauthenticated');
+      if (token !== null) return;
+
+      setUser(null);
+      setStatus('unauthenticated');
+
+      if (!deliberateLogout.current) {
+        setSessionExpired(true);
       }
     });
   }, []);
@@ -92,6 +122,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     tokenStorage.set(result.token);
     setUser(result.user);
     setStatus('authenticated');
+    // Yeni oturum açıldı: eski oturumun düşme uyarısı artık geçmişte kaldı.
+    setSessionExpired(false);
   }, []);
 
   const register = useCallback(
@@ -102,11 +134,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       tokenStorage.set(result.token);
       setUser(result.user);
       setStatus('authenticated');
+      setSessionExpired(false);
     },
     [],
   );
 
   const logout = useCallback(async () => {
+    // Bayrak İSTEKTEN ÖNCE kalkar: logout ucunun kendisi 401 dönerse
+    // (token sunucuda çoktan geçersizse) bu yine de kullanıcının istediği
+    // bir çıkıştır ve "oturumunuz sona erdi" uyarısı gösterilmemelidir.
+    deliberateLogout.current = true;
+
     try {
       await endpoints.auth.logout(api);
     } catch {
@@ -114,6 +152,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // "çıkış yaptım" dediyse istemcide token kalmamalı.
     } finally {
       tokenStorage.clear();
+      deliberateLogout.current = false;
     }
   }, []);
 
@@ -123,8 +162,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo<AuthContextValue>(
-    () => ({ status, user, login, register, logout, refreshUser }),
-    [status, user, login, register, logout, refreshUser],
+    () => ({ status, user, sessionExpired, login, register, logout, refreshUser }),
+    [status, user, sessionExpired, login, register, logout, refreshUser],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

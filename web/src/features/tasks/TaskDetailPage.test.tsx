@@ -477,6 +477,66 @@ describe('TaskDetailPage', () => {
     await waitFor(() => expect(tokenStorage.get()).toBeNull());
   });
 
+  // ------------------------------------------------------------ 403 dili
+
+  /**
+   * REGRESYON — ÜYEYE İNGİLİZCE HATA GÖSTERİLİYORDU.
+   *
+   * `Role::deletesTasks()` OWNER-ONLY'dir (P0-04); üye "Sil" dediğinde
+   * backend 403 döner. Laravel bu reddi kendi VARSAYILAN İngilizce
+   * metniyle gönderiyor ("This action is unauthorized.") ve arayüz onu
+   * olduğu gibi basıyordu — Türkçe bir üründe, gerçek tarayıcıda
+   * ölçüldü.
+   *
+   * Ayrım `code` ile yapılır, metinle değil: politika reddi kod taşımaz.
+   */
+  it('kodsuz 403 metnini Türkçeye çevirir', async () => {
+    vi.stubGlobal(
+      'fetch',
+      mockApi({
+        ...session,
+        '/tasks/300': (init) =>
+          (init as RequestInit | undefined)?.method === 'DELETE'
+            ? jsonResponse(403, { message: 'This action is unauthorized.' })
+            : jsonResponse(200, { data: openTask }),
+      }),
+    );
+
+    const user = userEvent.setup();
+
+    renderApp('/app/tasks/300', { token: 'gecerli-token' });
+
+    await user.click(await screen.findByRole('button', { name: 'Sil' }));
+    await user.click(screen.getByRole('button', { name: 'Evet, sil' }));
+
+    const alert = await screen.findByRole('alert');
+
+    expect(alert).toHaveTextContent('Bu işlem için yetkiniz yok.');
+    expect(alert.textContent).not.toMatch(/unauthorized/i);
+  });
+
+  /**
+   * Kod TAŞIYAN 403 backend'in bilerek yazdığı mesajdır ve korunur —
+   * şirket bağlamı düştüğünde kullanıcının okuması gereken şey odur.
+   */
+  it('kodlu 403 mesajını backend metniyle gösterir', async () => {
+    vi.stubGlobal(
+      'fetch',
+      mockApi({
+        ...session,
+        '/tasks/300': () =>
+          jsonResponse(403, {
+            message: 'Aktif şirket bulunamadı ya da doğrulanamadı. Erişim reddedildi.',
+            code: 'company_context_unavailable',
+          }),
+      }),
+    );
+
+    renderApp('/app/tasks/300', { token: 'gecerli-token' });
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Erişim reddedildi.');
+  });
+
   it('listeye dönüş bağlantısı verir', async () => {
     vi.stubGlobal(
       'fetch',

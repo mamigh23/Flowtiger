@@ -127,6 +127,17 @@ export function PasswordInput({ label, error, id, ...rest }: InputProps) {
 type SelectProps = SelectHTMLAttributes<HTMLSelectElement> & {
   label: string;
   error?: string;
+  /**
+   * HATA OLMAYAN açıklama.
+   *
+   * "Bu alan şu an kullanılamıyor" her zaman bir arıza değildir: ekip
+   * listesi yalnızca şirket sahibine açıktır ve üye rolündeki kullanıcı
+   * onu göremez. Bunu `error` ile anlatmak alanı kırmızıya boyar,
+   * `aria-invalid` yapar ve kullanıcıya YANLIŞ BİR ŞEY YAPTIĞINI söyler.
+   * İpucu ayrı bir kanaldır: sakin, ama ekran okuyucuya `aria-describedby`
+   * ile yine bağlı.
+   */
+  hint?: string;
 };
 
 /**
@@ -140,10 +151,14 @@ type SelectProps = SelectHTMLAttributes<HTMLSelectElement> & {
  * ÜRETMEZ — hangi seçeneklerin olduğu ekranın bilgisidir, ortak dilin
  * değil.
  */
-export function Select({ label, error, id, children, ...rest }: SelectProps) {
+export function Select({ label, error, hint, id, children, ...rest }: SelectProps) {
   const generatedId = useId();
   const selectId = id ?? generatedId;
   const errorId = `${selectId}-error`;
+  const hintId = `${selectId}-hint`;
+
+  // İkisi aynı anda bulunabilir; ekran okuyucu ikisini de okur.
+  const describedBy = [error ? errorId : null, hint ? hintId : null].filter(Boolean).join(' ');
 
   return (
     <div className="ft-field">
@@ -155,13 +170,18 @@ export function Select({ label, error, id, children, ...rest }: SelectProps) {
         id={selectId}
         className="ft-select"
         aria-invalid={error ? 'true' : undefined}
-        aria-describedby={error ? errorId : undefined}
+        aria-describedby={describedBy === '' ? undefined : describedBy}
       >
         {children}
       </select>
       {error && (
         <span className="ft-field__error" id={errorId} role="alert">
           {error}
+        </span>
+      )}
+      {hint && (
+        <span className="ft-field__hint" id={hintId}>
+          {hint}
         </span>
       )}
     </div>

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link } from 'react-router-dom';
-import { api, endpoints } from '@/lib/api';
+import { ApiError, api, endpoints } from '@/lib/api';
 import { Button, Card, ErrorState, Input, Select, Textarea, useFocusFirstInvalidFieldOnError } from '@/components/ui';
 import type { Customer, Member, TaskInput } from '@/types/api';
 import { fieldErrorOf, taskErrorMessage } from './taskErrors';
@@ -34,6 +34,21 @@ export interface TaskFormInitialValues {
   scheduledTime: string;
   customerId: string;
   assignedTo: string;
+  /**
+   * Seçili kaydın GÖRÜNEN ADI — seçenek listesi yüklenemediğinde kullanılır.
+   *
+   * REGRESYON: üye rolündeki kullanıcı `/members`ten 403 alıyor ve
+   * seçenek listesi boş kalıyordu. Görev birine ATANMIŞ olsa bile açılır
+   * menü "Kimseye atanmadı" görünüyordu — yani form, kaydın gerçek
+   * hâlini YANLIŞ gösteriyordu. (Gönderilen gövde doğruydu: değer
+   * state'te duruyor, DOM'da değil. Yani veri kaybı yoktu, ama kullanıcı
+   * ekranda olmayan bir şey görüyordu.)
+   *
+   * Ad zaten elimizde: görev yanıtı `assigned_to.name` / `customer.name`
+   * taşıyor. Liste gelmediğinde o ad tek seçenek olarak gösterilir.
+   */
+  customerLabel?: string;
+  assignedToLabel?: string;
 }
 
 interface TaskFormProps {
@@ -136,6 +151,36 @@ export function TaskForm({
     }
   }
 
+  /*
+   * 403 BİR ARIZA DEĞİL.
+   *
+   * `/members` yalnızca şirket sahibine açıktır; üye rolündeki kullanıcı
+   * 403 alır ve bu BEKLENEN bir sonuçtur. Eskiden bu yanıt alanın altına
+   * kırmızı bir hata olarak basılıyordu ("This action is unauthorized.")
+   * — üye, görev oluşturmaya YETKİLİ olduğu bir formda yetkisizmiş gibi
+   * uyarılıyordu.
+   *
+   * BU BİR YETKİ KAPISI DEĞİLDİR: istemci kimin ne yapabileceğine karar
+   * vermiyor. Yalnızca sunucunun listeyi vermediğini yansıtıyor; gönderim
+   * yine yapılır ve kararı yine backend verir (playbook §3.1).
+   */
+  const isForbidden = (caught: unknown): boolean =>
+    caught instanceof ApiError && caught.isForbidden;
+
+  const customersForbidden = isForbidden(customersError);
+  const membersForbidden = isForbidden(membersError);
+
+  /**
+   * Seçenek listesi gelmediğinde seçili kaydı YİNE DE göster.
+   *
+   * Aksi hâlde form, atanmış bir görevi atanmamış gibi gösterir.
+   */
+  const missingOption = (
+    id: string,
+    label: string | undefined,
+    options: { id: number }[],
+  ): boolean => id !== '' && label !== undefined && !options.some((o) => String(o.id) === id);
+
   const titleError = fieldErrorOf(error, 'title');
   const noteError = fieldErrorOf(error, 'note');
   const dateError = fieldErrorOf(error, 'scheduled_date');
@@ -202,10 +247,17 @@ export function TaskForm({
             value={customerId}
             onChange={(event) => setCustomerId(event.target.value)}
             error={
-              customerError ?? (customersError ? taskErrorMessage(customersError) : undefined)
+              customerError ??
+              (customersError && !customersForbidden
+                ? taskErrorMessage(customersError)
+                : undefined)
             }
+            hint={customersForbidden ? 'Müşteri listesini görme yetkiniz yok.' : undefined}
           >
             <option value="">Müşteri seçilmedi</option>
+            {missingOption(customerId, initialValues.customerLabel, customers) && (
+              <option value={customerId}>{initialValues.customerLabel}</option>
+            )}
             {customers.map((customer) => (
               <option key={customer.id} value={String(customer.id)}>
                 {customer.name}
@@ -217,9 +269,21 @@ export function TaskForm({
             label="Atanan kişi"
             value={assignedTo}
             onChange={(event) => setAssignedTo(event.target.value)}
-            error={assigneeError ?? (membersError ? taskErrorMessage(membersError) : undefined)}
+            error={
+              assigneeError ??
+              (membersError && !membersForbidden ? taskErrorMessage(membersError) : undefined)
+            }
+            hint={
+              membersForbidden
+                ? 'Ekip listesi yalnızca şirket sahibine açık; mevcut atama korunur.'
+                : undefined
+            }
+            data-testid="task-assignee-select"
           >
             <option value="">Kimseye atanmadı</option>
+            {missingOption(assignedTo, initialValues.assignedToLabel, members) && (
+              <option value={assignedTo}>{initialValues.assignedToLabel}</option>
+            )}
             {members.map((member) => (
               <option key={member.id} value={String(member.id)}>
                 {member.name}

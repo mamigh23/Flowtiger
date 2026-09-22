@@ -277,4 +277,115 @@ describe('LoginPage', () => {
 
     deferred.resolve?.(jsonResponse(401, { message: 'Kimlik bilgileri hatalı.' }));
   });
+
+  // ---------------------------------------- oturumun kendiliğinden düşmesi
+
+  const sessionRoutes = {
+    '/companies': () =>
+      jsonResponse(200, { data: [fixtures.company()], meta: { active_company_id: 7 } }),
+    '/tasks/today': () => jsonResponse(200, fixtures.paginated([], 0)),
+    '/audit-logs': () => jsonResponse(200, fixtures.paginated([], 0)),
+  };
+
+  /**
+   * REGRESYON — 401 SESSİZ DEĞİL.
+   *
+   * Oturumu düşen kullanıcı, çalıştığı ekranın ortasından giriş formuna
+   * atılıyor ve NEDEN atıldığını hiçbir yerde göremiyordu (gerçek
+   * tarayıcıda doğrulandı: ekranda "oturum" geçen tek kelime yoktu).
+   * Mesajın kendisi kodda zaten vardı ama hiçbir yere ulaşmıyordu.
+   */
+  it('oturum kendiliğinden düştüğünde sebebini söyler', async () => {
+    vi.stubGlobal(
+      'fetch',
+      mockApi({
+        // Açılışta kimlik sorgusu 401 döner: token sunucuda geçersiz.
+        '/me': () => jsonResponse(401, { message: 'Unauthenticated.' }),
+      }),
+    );
+
+    renderApp('/app', { token: 'artik-gecersiz-token' });
+
+    expect(await screen.findByTestId('session-expired')).toHaveTextContent(
+      'Oturumunuz sona erdi.',
+    );
+    expect(screen.getByRole('button', { name: 'Giriş yap' })).toBeInTheDocument();
+  });
+
+  /**
+   * REGRESYON — "ÇIKIŞ YAPTIM" BİR ARIZA DEĞİL.
+   *
+   * Kullanıcının kendi isteğiyle çıkışında aynı uyarıyı göstermek,
+   * yaptığı şeyi bir sorun gibi sunmak olurdu.
+   */
+  it('kullanıcı kendi çıkış yaptığında oturum uyarısı göstermez', async () => {
+    vi.stubGlobal(
+      'fetch',
+      mockApi({
+        '/me': () => jsonResponse(200, { data: fixtures.user() }),
+        '/auth/logout': () => jsonResponse(204, null),
+        ...sessionRoutes,
+      }),
+    );
+
+    const user = userEvent.setup();
+
+    renderApp('/app', { token: 'gecerli-token' });
+
+    await user.click(await screen.findByRole('button', { name: 'Hesap menüsü' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Çıkış yap' }));
+
+    expect(await screen.findByRole('button', { name: 'Giriş yap' })).toBeInTheDocument();
+    expect(screen.queryByTestId('session-expired')).not.toBeInTheDocument();
+  });
+
+  /**
+   * Çıkış ucunun KENDİSİ 401 dönebilir (token sunucuda çoktan silinmişse).
+   * Bu yine kullanıcının istediği bir çıkıştır; uyarı gösterilmemeli.
+   * Bayrağın istekten ÖNCE kaldırılmasının sebebi tam olarak budur.
+   */
+  it('çıkış isteği 401 dönse bile oturum uyarısı göstermez', async () => {
+    vi.stubGlobal(
+      'fetch',
+      mockApi({
+        '/me': () => jsonResponse(200, { data: fixtures.user() }),
+        '/auth/logout': () => jsonResponse(401, { message: 'Unauthenticated.' }),
+        ...sessionRoutes,
+      }),
+    );
+
+    const user = userEvent.setup();
+
+    renderApp('/app', { token: 'gecerli-token' });
+
+    await user.click(await screen.findByRole('button', { name: 'Hesap menüsü' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Çıkış yap' }));
+
+    expect(await screen.findByRole('button', { name: 'Giriş yap' })).toBeInTheDocument();
+    expect(screen.queryByTestId('session-expired')).not.toBeInTheDocument();
+  });
+
+  /** Yeni oturum açılınca eski uyarı ekranda kalmaz. */
+  it('başarılı girişten sonra oturum uyarısını taşımaz', async () => {
+    vi.stubGlobal(
+      'fetch',
+      mockApi({
+        '/me': () => jsonResponse(401, { message: 'Unauthenticated.' }),
+        '/auth/login': () =>
+          jsonResponse(200, { data: { token: 'yeni-token', user: fixtures.user() } }),
+        ...sessionRoutes,
+      }),
+    );
+
+    const user = userEvent.setup();
+
+    renderApp('/app', { token: 'artik-gecersiz-token' });
+
+    await screen.findByTestId('session-expired');
+    await fillCredentials(user);
+    await user.click(screen.getByRole('button', { name: 'Giriş yap' }));
+
+    expect(await screen.findByRole('heading', { name: 'Bugünün Odağı' })).toBeInTheDocument();
+    expect(screen.queryByTestId('session-expired')).not.toBeInTheDocument();
+  });
 });

@@ -277,14 +277,28 @@ export function bodyOf(init: RequestInit | undefined): unknown {
   return typeof body === 'string' ? JSON.parse(body) : undefined;
 }
 
-/** Uygulamayı belirli bir yolda ve isteğe bağlı token ile açar. */
-export function renderApp(initialPath: string, options: { token?: string } = {}): ReturnType<typeof render> {
+/**
+ * Uygulamayı belirli bir yolda, isteğe bağlı token ve router state'i ile açar.
+ *
+ * `state`: React Router'ın konum state'i. Gerçek uygulamada oraya
+ * `ProtectedRoute` yazıyor ("giriş sonrası buraya dön"); testte de aynı
+ * şekilde kurulabilmesi gerekiyor, aksi halde giriş sonrası yönlendirme
+ * kuralı sınanamaz.
+ */
+export function renderApp(
+  initialPath: string,
+  options: { token?: string; state?: unknown } = {},
+): ReturnType<typeof render> {
   if (options.token) tokenStorage.set(options.token);
 
-  return renderElement(<App />, initialPath);
+  return renderElement(<App />, initialPath, options.state);
 }
 
-export function renderElement(element: ReactElement, initialPath = '/'): ReturnType<typeof render> {
+export function renderElement(
+  element: ReactElement,
+  initialPath = '/',
+  state?: unknown,
+): ReturnType<typeof render> {
   return render(
     /*
       Router bayrakları ÜRETİMLE AYNI SABİTTEN gelir (main.tsx da onu
@@ -293,7 +307,10 @@ export function renderElement(element: ReactElement, initialPath = '/'): ReturnT
       sınamaya başlardı — o andan sonra yeşil bir suite, çalışan bir
       uygulamanın kanıtı olmaktan çıkar.
     */
-    <MemoryRouter initialEntries={[initialPath]} future={ROUTER_FUTURE}>
+    <MemoryRouter
+      initialEntries={[state === undefined ? initialPath : { pathname: initialPath, state }]}
+      future={ROUTER_FUTURE}
+    >
       {element}
     </MemoryRouter>,
   );

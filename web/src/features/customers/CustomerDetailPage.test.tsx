@@ -308,4 +308,104 @@ describe('CustomerDetailPage', () => {
     await waitFor(() => expect(screen.queryByTestId('delete-confirm')).not.toBeInTheDocument());
     expect(deleteButton).toHaveFocus();
   });
+
+  // ------------------------------------------------------------ tarihler
+
+  /**
+   * REGRESYON — HAM ISO METNİ KULLANICIYA GÖSTERİLMEZ.
+   *
+   * Bu iki alan yanıttaki değeri olduğu gibi basıyordu; ekranda
+   * "2026-08-10T08:00:00+00:00" görünüyordu (gerçek tarayıcıda ölçüldü).
+   * Görev ayrıntısı aynı bilgiyi "10.08.2026 08:00" olarak gösteriyor —
+   * aynı üründe aynı alan iki farklı biçimde okunmamalı.
+   */
+  it('tarihleri ham ISO metni olarak değil, biçimlendirilmiş gösterir', async () => {
+    vi.stubGlobal(
+      'fetch',
+      mockApi({
+        ...session,
+        '/customers/501': () =>
+          jsonResponse(200, {
+            data: fixtures.customer({
+              id: 501,
+              customer_no: 12,
+              name: 'Zeynep Kaya',
+              created_at: '2026-08-10T08:00:00+00:00',
+              updated_at: '2026-08-12T14:30:00+00:00',
+            }),
+          }),
+      }),
+    );
+
+    renderApp('/app/customers/501', { token: 'gecerli-token' });
+
+    const created = await screen.findByTestId('customer-created-at');
+
+    expect(created.textContent).not.toMatch(/T\d{2}:\d{2}|\+00:00/);
+    expect(created).toHaveTextContent('10.08.2026');
+    expect(screen.getByTestId('customer-updated-at')).toHaveTextContent('12.08.2026');
+  });
+
+  // ------------------------------------------------------------ 403 dili
+
+  /**
+   * REGRESYON — ÜYEYE İNGİLİZCE HATA GÖSTERİLİYORDU.
+   *
+   * `Role::deletesCustomers()` OWNER-ONLY'dir; üye "Sil" dediğinde
+   * backend 403 döner ve Laravel bunu kendi VARSAYILAN İngilizce
+   * metniyle gönderir ("This action is unauthorized."). Arayüz onu
+   * olduğu gibi basıyordu — Türkçe bir üründe, gerçek tarayıcıda
+   * ölçüldü.
+   *
+   * Ayrım `code` ile yapılır, metinle değil: politika reddi kod taşımaz.
+   */
+  it('kodsuz 403 metnini Türkçeye çevirir', async () => {
+    vi.stubGlobal(
+      'fetch',
+      mockApi({
+        ...session,
+        '/customers/501': (init) =>
+          (init as RequestInit | undefined)?.method === 'DELETE'
+            ? jsonResponse(403, { message: 'This action is unauthorized.' })
+            : jsonResponse(200, { data: customer }),
+      }),
+    );
+
+    const user = userEvent.setup();
+    renderApp('/app/customers/501', { token: 'gecerli-token' });
+
+    await screen.findByRole('heading', { name: 'Zeynep Kaya' });
+    await user.click(screen.getByRole('button', { name: 'Sil' }));
+    await user.click(await screen.findByRole('button', { name: 'Evet, sil' }));
+
+    const alert = await screen.findByRole('alert');
+
+    expect(alert).toHaveTextContent('Bu işlem için yetkiniz yok.');
+    expect(alert.textContent).not.toMatch(/unauthorized/i);
+  });
+
+  /**
+   * Kod TAŞIYAN 403 backend'in bilerek yazdığı mesajdır ve korunur —
+   * şirket bağlamı düştüğünde kullanıcının okuması gereken şey odur.
+   */
+  it('kodlu 403 mesajını backend metniyle gösterir', async () => {
+    vi.stubGlobal(
+      'fetch',
+      mockApi({
+        ...session,
+        '/customers/501': () =>
+          jsonResponse(403, {
+            message: 'Aktif şirket bulunamadı ya da doğrulanamadı. Erişim reddedildi.',
+            code: 'company_context_unavailable',
+          }),
+      }),
+    );
+
+    renderApp('/app/customers/501', { token: 'gecerli-token' });
+
+    const alert = await screen.findByRole('alert');
+
+    expect(alert).toHaveTextContent('Erişim reddedildi.');
+    expect(alert.textContent).not.toMatch(/yetkiniz yok/i);
+  });
 });

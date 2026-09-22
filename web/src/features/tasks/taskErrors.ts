@@ -8,12 +8,32 @@ import { ApiError, NetworkError } from '@/lib/api';
  * bulunmaz. "Yetkiniz yok" demek, backend'in bilerek sakladığı "bu id'de
  * bir kayıt var" bilgisini geri sızdırırdı.
  *
- * 403 BURADA ROL KISITI DEĞİLDİR — ve bu, finans/denetim ekranlarından
- * AYRILDIĞIMIZ nokta. TaskPolicy owner-only değil: owner da member da
- * görevleri görür ve yönetir. Buradaki 403 yalnızca "aktif şirket yok ya
- * da üyelik iptal edilmiş" demektir. "Bu bölüm yalnızca şirket
- * sahiplerine açıktır" metnini buraya kopyalamak, kullanıcıya yanlış bir
- * zihinsel model verirdi (customerErrors.ts ile aynı gerekçe).
+ * 403 TÜRKÇEYE ÇEVRİLİR — ESKİDEN ÇEVRİLMİYORDU.
+ *
+ * Burada eskiden "backend'in kendi metni kullanılır" yazıyordu ve
+ * gerekçesi şuydu: TaskPolicy owner-only değil, dolayısıyla 403 yalnızca
+ * "aktif şirket yok" demektir. İKİSİ DE ARTIK DOĞRU DEĞİL:
+ *
+ *   1. `Role::deletesTasks()` OWNER-ONLY (P0-04 sertleştirmesi). Yani
+ *      görev SİLME 403'ü gerçek bir rol kısıtıdır.
+ *   2. Backend bu 403'ü Laravel'in varsayılan İNGİLİZCE metniyle
+ *      gönderiyor: "This action is unauthorized." Gerçek tarayıcıda
+ *      ölçüldü — üye "Sil" dediğinde ekranda bu metni görüyordu.
+ *
+ * AYRIM `code` İLE YAPILIR, METİNLE DEĞİL.
+ *
+ * Ölçüldü: politika reddi `code` TAŞIMAZ (Laravel'in kendi
+ * AccessDeniedHttpException'ı), şirket bağlamı hatası ise taşır
+ * (`company_context_unavailable`) ve Türkçe, anlamlı bir mesajla gelir.
+ *
+ *   code VAR  → backend bilerek yazılmış bir mesaj gönderiyor; kullanılır
+ *   code YOK  → çerçevenin İngilizce varsayılanı; Türkçeye çevrilir
+ *
+ * Metin eşleştirmesi YAPILMAZ ("This action..." aramak gibi): mesaj
+ * metni bir sözleşme değildir, `code` sözleşmedir (bkz. errors.ts).
+ *
+ * 422 hâlâ backend'in metnidir: TaskException mesajları Türkçe yazılmış
+ * ve kullanıcıya gösterilmek üzere tasarlanmıştır.
  *
  * 422 iş kuralıdır ve backend'in metni kullanılır: TaskException'ın
  * mesajları kullanıcıya gösterilmek üzere yazılmıştır. Makine-okunur
@@ -26,6 +46,7 @@ import { ApiError, NetworkError } from '@/lib/api';
  */
 
 export const TASK_NOT_FOUND = 'Görev bulunamadı.';
+export const TASK_FORBIDDEN = 'Bu işlem için yetkiniz yok.';
 export const TASK_UNEXPECTED = 'Beklenmedik bir hata oluştu. Lütfen tekrar deneyin.';
 
 /** Backend kodları — olduğu gibi taşınır. */
@@ -37,7 +58,10 @@ export function taskErrorMessage(error: unknown): string {
     if (error.isNotFound) return TASK_NOT_FOUND;
     if (error.isServerError) return TASK_UNEXPECTED;
 
-    // 403 ve 422: backend'in kendi metni. Rol diline çevrilmez.
+    // 403: kodsuzsa çerçevenin İngilizce varsayılanıdır, çevrilir.
+    if (error.isForbidden && error.code === undefined) return TASK_FORBIDDEN;
+
+    // 422: backend'in kendi (Türkçe) iş kuralı metni.
     return error.message;
   }
 
