@@ -6651,3 +6651,325 @@ a {
     transition: none;
   }
 }
+
+/* ==================================================================== */
+/* PROFİL EKRANI — PREMIUM YÜZEY                                        */
+/*                                                                      */
+/* Kartların içindeki alanlar, etiketler, düğmeler ve hata kutuları     */
+/* mevcut `.ft-form-page` kurallarından AYNEN gelir (ızgara o kapsam    */
+/* sınıfını da taşır). Bu blok yalnızca hero, kimlik kartı, yerleşim    */
+/* ızgarası ve kartın profil ekranına özgü ayarlarını ekler. Bütün      */
+/* seçiciler `.ft-profile` ile kapsanır; hiçbir kural silinmedi.       */
+/* ==================================================================== */
+
+.ft-profile {
+  gap: var(--ft-space-5);
+}
+
+/* ------------------------------------------------------------ başlık */
+
+.ft-profile-hero {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ft-space-1);
+}
+
+/* Zemine düşen sönük turuncu ışık — renk değil, ambiyans. */
+.ft-profile-hero::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  top: -150%;
+  left: -6%;
+  width: 32rem;
+  max-width: 85%;
+  height: 14rem;
+  background: radial-gradient(60% 60% at 30% 50%, var(--ft-orange-10) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.ft-profile-hero__text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ft-space-1);
+  min-width: 0;
+}
+
+.ft-profile-hero__eyebrow {
+  color: var(--ft-color-primary);
+  font-size: var(--ft-font-size-sm);
+  font-weight: var(--ft-font-weight-medium);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.ft-profile-hero__title {
+  margin: 0;
+  font-size: clamp(1.6rem, 1.1rem + 1.6vw, 2.25rem);
+  font-weight: var(--ft-font-weight-bold);
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.ft-profile-hero__lead {
+  margin: 0;
+  max-width: 48ch;
+  color: var(--ft-color-text-muted);
+}
+
+/* ------------------------------------------------------- kimlik kartı */
+
+.ft-profile-identity {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--ft-space-4) var(--ft-space-5);
+  padding: var(--ft-space-5);
+  border: 1px solid var(--ft-border-hairline);
+  border-radius: var(--ft-radius-xl);
+  background: var(--ft-surface-raised);
+  box-shadow: var(--ft-shadow-card);
+}
+
+.ft-profile-identity__avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 3.5rem;
+  height: 3.5rem;
+  border: 1px solid var(--ft-orange-28);
+  border-radius: 999px;
+  background: var(--ft-orange-10);
+  color: var(--ft-color-primary);
+  font-size: 1.125rem;
+  font-weight: var(--ft-font-weight-bold);
+  letter-spacing: 0.02em;
+}
+
+.ft-profile-identity__main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  flex: 1 1 14rem;
+  min-width: 0;
+}
+
+.ft-profile-identity__name {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: var(--ft-font-weight-bold);
+  letter-spacing: -0.01em;
+  overflow-wrap: break-word;
+}
+
+/*
+ * E-posta `break-word` İLE SARILIR, `anywhere` İLE DEĞİL: `anywhere`
+ * min-content genişliğini tek karaktere indirir ve dar ekranda adresi
+ * harf harf alt alta yazardı.
+ */
+.ft-profile-identity__email {
+  margin: 0;
+  color: var(--ft-color-text-muted);
+  overflow-wrap: break-word;
+}
+
+.ft-profile-identity__facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ft-space-3) var(--ft-space-5);
+  margin: 0;
+}
+
+.ft-profile-identity__fact {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  min-width: 0;
+}
+
+.ft-profile-identity__fact dt {
+  color: var(--ft-color-text-muted);
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.ft-profile-identity__fact dd {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--ft-space-2);
+  margin: 0;
+  font-weight: var(--ft-font-weight-medium);
+}
+
+.ft-profile-identity__company {
+  overflow-wrap: break-word;
+}
+
+.ft-profile-identity__date {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Rol rozeti ekip ekranındakiyle aynı dil. */
+.ft-profile-role {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.125rem var(--ft-space-2);
+  border: 1px solid var(--ft-border-hairline);
+  border-radius: 999px;
+  color: var(--ft-color-text-muted);
+  font-size: 0.75rem;
+  font-weight: var(--ft-font-weight-medium);
+  white-space: nowrap;
+}
+
+.ft-profile-role--owner {
+  border-color: var(--ft-orange-28);
+  background: var(--ft-orange-10);
+  color: var(--ft-color-primary);
+}
+
+/* ------------------------------------------------------------ ızgara */
+
+/*
+ * GENİŞ EKRANDA İKİ SÜTUN: solda hesap bilgileri ve e-posta doğrulama,
+ * sağda parola. Üç kartın en uzunu parola; onu tek başına bir sütuna
+ * koymak iki sütunu dengeli tutuyor. Dar ekranda tek sütun, sıra aynı.
+ */
+.ft-profile-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--ft-space-4);
+  align-items: start;
+}
+
+@media (min-width: 64rem) {
+  .ft-profile-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-areas:
+      'account password'
+      'verify password';
+  }
+
+  .ft-profile-slot--account { grid-area: account; }
+  .ft-profile-slot--verify { grid-area: verify; }
+  .ft-profile-slot--password { grid-area: password; }
+}
+
+.ft-profile-slot {
+  min-width: 0;
+}
+
+/*
+ * Form kartı ızgara hücresini doldurur: `.ft-form-page .ft-card`
+ * tek başına duran bir form için 42rem'lik bir üst sınır koyuyor; burada
+ * genişliği ızgara belirliyor. Aynı özgüllük, sonra yazıldığı için
+ * kazanır.
+ */
+.ft-profile .ft-card {
+  max-width: none;
+  height: 100%;
+}
+
+.ft-profile .ft-card > .ft-section__title {
+  margin: 0 0 var(--ft-space-4);
+  font-size: var(--ft-font-size-lg);
+  font-weight: var(--ft-font-weight-bold);
+  letter-spacing: -0.01em;
+}
+
+/* Kart içi bilgi/başarı satırları kartın ritmine uysun. */
+.ft-profile .ft-card > p {
+  margin: 0 0 var(--ft-space-3);
+}
+
+.ft-profile .ft-card > .ft-error {
+  margin-bottom: var(--ft-space-4);
+}
+
+/*
+ * PAROLA ALANINDA "GÖSTER" DÜĞMESİ METNİN ÜSTÜNE BİNMEZ. Düğme alanın
+ * içinde sağda duruyor; sağ dolgu açılmazsa uzun bir parola düğmenin
+ * altına kayardı.
+ */
+.ft-profile .ft-input-group .ft-input {
+  padding-right: 5rem;
+}
+
+.ft-profile .ft-input-group__action {
+  right: var(--ft-space-2);
+  border-radius: var(--ft-radius-sm);
+  text-decoration: none;
+}
+
+.ft-profile .ft-input-group__action:hover {
+  color: var(--ft-color-primary);
+}
+
+/* --------------------------------------------------- yükleme / hata */
+
+.ft-profile-panel {
+  display: flex;
+  align-items: center;
+  gap: var(--ft-space-4);
+  padding: var(--ft-space-5);
+  border: 1px solid var(--ft-border-hairline);
+  border-radius: var(--ft-radius-xl);
+  background: var(--ft-surface-raised);
+  box-shadow: var(--ft-shadow-card);
+}
+
+.ft-profile-panel--notice {
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.ft-profile-skeleton__avatar {
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 999px;
+  flex: 0 0 auto;
+}
+
+.ft-profile-skeleton__lines {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ft-space-2);
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.ft-profile-skeleton__name {
+  display: block;
+  width: min(14rem, 70%);
+  height: 1.5rem;
+}
+
+.ft-profile-skeleton__meta {
+  display: block;
+  width: min(20rem, 90%);
+  height: 1rem;
+}
+
+/* -------------------------------------------------------- dar ekran */
+
+@media (max-width: 40rem) {
+  .ft-profile-identity {
+    padding: var(--ft-space-4);
+  }
+
+  .ft-profile-identity__avatar {
+    width: 3rem;
+    height: 3rem;
+    font-size: 1rem;
+  }
+
+  .ft-profile-identity__facts {
+    width: 100%;
+    padding-top: var(--ft-space-3);
+    border-top: 1px solid var(--ft-border-hairline);
+  }
+}
