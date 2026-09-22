@@ -6973,3 +6973,135 @@ a {
     border-top: 1px solid var(--ft-border-hairline);
   }
 }
+
+/* ===================================================== invite accept */
+
+/*
+ * DAVET KABUL EKRANI — giriş/kayıt ekranlarıyla AYNI `.ft-auth` kartı.
+ * Buradaki kurallar yalnızca bu ekrana özgü parçaları (bağlam etiketi,
+ * giriş yapılan hesap kutusu, sonraki adım satırı, son durum eylemleri)
+ * biçimlendirir; alan, düğme ve hata stilleri ortak kurallardan gelir.
+ */
+.ft-invite-accept .ft-auth__card {
+  max-width: 26rem;
+}
+
+.ft-invite-accept__eyebrow {
+  color: var(--ft-color-primary);
+  font-size: 0.75rem;
+  font-weight: var(--ft-font-weight-medium);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* Hiçbir bağlantı altı çizili değil (tarayıcı varsayılanı sıfırlanır). */
+.ft-invite-accept a {
+  text-decoration: none;
+}
+
+.ft-invite-accept__link {
+  color: var(--ft-color-primary);
+  font-weight: var(--ft-font-weight-medium);
+}
+
+.ft-invite-accept__link:hover {
+  color: var(--ft-color-primary-hover);
+}
+
+.ft-invite-accept__account {
+  display: flex;
+  align-items: center;
+  gap: var(--ft-space-3);
+  min-width: 0;
+  padding: var(--ft-space-3);
+  border: 1px solid var(--ft-border-hairline);
+  border-radius: var(--ft-radius-md);
+  background: var(--ft-surface-sunken);
+}
+
+.ft-invite-accept__avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 1px solid var(--ft-orange-28);
+  border-radius: 999px;
+  background: var(--ft-orange-10);
+  color: var(--ft-color-primary);
+  font-size: 0.875rem;
+  font-weight: var(--ft-font-weight-bold);
+}
+
+.ft-invite-accept__account-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.ft-invite-accept__account-label {
+  color: var(--ft-color-text-muted);
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.ft-invite-accept__account-name {
+  font-weight: var(--ft-font-weight-medium);
+  overflow-wrap: anywhere;
+}
+
+.ft-invite-accept__account-email {
+  color: var(--ft-color-text-muted);
+  font-size: var(--ft-font-size-sm);
+  overflow-wrap: anywhere;
+}
+
+.ft-invite-accept__next,
+.ft-invite-accept__hint,
+.ft-invite-accept__footer,
+.ft-invite-accept__lead {
+  margin: 0;
+  font-size: var(--ft-font-size-sm);
+}
+
+.ft-invite-accept__footer {
+  text-align: center;
+}
+
+.ft-invite-accept__facts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ft-space-2);
+  margin: 0;
+  padding: var(--ft-space-3);
+  border: 1px solid var(--ft-border-hairline);
+  border-radius: var(--ft-radius-md);
+  background: var(--ft-surface-sunken);
+}
+
+.ft-invite-accept__fact {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--ft-space-3);
+  min-width: 0;
+}
+
+.ft-invite-accept__fact dt {
+  color: var(--ft-color-text-muted);
+  font-size: var(--ft-font-size-sm);
+}
+
+.ft-invite-accept__fact dd {
+  margin: 0;
+  font-weight: var(--ft-font-weight-medium);
+  overflow-wrap: anywhere;
+  text-align: right;
+}
+
+.ft-invite-accept__actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ft-space-2);
+}
