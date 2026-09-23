@@ -260,7 +260,9 @@ class Session {
     required this.id,
     required this.name,
     required this.current,
+    this.abilities,
     this.lastUsedAt,
+    this.expiresAt,
     this.createdAt,
   });
 
@@ -268,14 +270,46 @@ class Session {
         id: json['id'] as int,
         name: json['name'] as String,
         current: json['current'] as bool? ?? false,
+        abilities: (json['abilities'] as List<dynamic>?)?.map((dynamic value) => value.toString()).toList(),
         lastUsedAt: json['last_used_at'] as String?,
+        expiresAt: json['expires_at'] as String?,
         createdAt: json['created_at'] as String?,
       );
 
   final int id;
   final String name;
   final bool current;
+  final List<String>? abilities;
   final String? lastUsedAt;
+  final String? expiresAt;
+  final String? createdAt;
+}
+
+/// Kullanıcının kendi kimlik ve oturum güvenliği hareketi.
+///
+/// Backend yalnızca güvenli, beyaz listedeki alanları döndürür. Metadata
+/// ham olarak taşınsa bile güvenlik ekranı bunu GÖSTERMEZ.
+class SecurityEvent {
+  const SecurityEvent({
+    required this.id,
+    required this.action,
+    this.ipAddress,
+    this.metadata,
+    this.createdAt,
+  });
+
+  factory SecurityEvent.fromJson(Map<String, dynamic> json) => SecurityEvent(
+        id: json['id'] as int,
+        action: json['action'] as String,
+        ipAddress: json['ip_address'] as String?,
+        metadata: json['metadata'] as Map<String, dynamic>?,
+        createdAt: json['created_at'] as String?,
+      );
+
+  final int id;
+  final String action;
+  final String? ipAddress;
+  final Map<String, dynamic>? metadata;
   final String? createdAt;
 }
 

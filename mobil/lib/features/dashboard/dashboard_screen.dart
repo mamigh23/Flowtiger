@@ -12,6 +12,7 @@ import '../auth/auth_controller.dart';
 import '../companies/company_controller.dart';
 import '../profile/password_change_screen.dart';
 import '../profile/profile_edit_screen.dart';
+import '../profile/security_screen.dart';
 import 'dashboard_controller.dart';
 
 /// Panel.
@@ -202,6 +203,17 @@ class ProfileSection extends ConsumerWidget {
                 onTap: () => unawaited(
                   Navigator.of(context).push<void>(
                     MaterialPageRoute<void>(builder: (_) => const PasswordChangeScreen()),
+                  ),
+                ),
+              ),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.security_outlined),
+                title: const Text('Güvenlik ve oturumlar'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => unawaited(
+                  Navigator.of(context).push<void>(
+                    MaterialPageRoute<void>(builder: (_) => const SecurityScreen()),
                   ),
                 ),
               ),
