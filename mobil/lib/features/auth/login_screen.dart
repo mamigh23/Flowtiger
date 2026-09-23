@@ -5,6 +5,7 @@ import '../../core/network/api_exception.dart';
 import '../../core/theme/app_theme.dart';
 import '../../widgets/ui.dart';
 import 'auth_controller.dart';
+import 'forgot_password_screen.dart';
 
 /// Giriş ekranı.
 ///
@@ -134,7 +135,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       ),
                       onSubmitted: (_) => _submitting ? null : _submit(),
                     ),
-                    const SizedBox(height: FtTokens.space5),
+                    const SizedBox(height: FtTokens.space3),
+                    TextButton(
+                      onPressed: _submitting
+                          ? null
+                          : () => Navigator.of(context).push<void>(
+                                MaterialPageRoute<void>(
+                                  builder: (_) => ForgotPasswordScreen(
+                                    initialEmail: _email.text.trim(),
+                                  ),
+                                ),
+                              ),
+                      child: const Text('Parolamı unuttum'),
+                    ),
+                    const SizedBox(height: FtTokens.space2),
                     FilledButton(
                       onPressed: _submitting ? null : _submit,
                       child: _submitting
