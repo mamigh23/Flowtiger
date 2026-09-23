@@ -76,9 +76,9 @@ describe('SecurityPage', () => {
     renderApp('/app/profile/security', { token: 'gecerli-token' });
 
     expect(await screen.findByText('Chrome · Windows')).toBeInTheDocument();
-    expect(screen.getByText('Safari · iPhone')).toBeInTheDocument();
-    expect(screen.getByText('Giriş yapıldı')).toBeInTheDocument();
-    expect(screen.getByText('203.0.113.10')).toBeInTheDocument();
+    expect(await screen.findByText('Safari · iPhone')).toBeInTheDocument();
+    expect(await screen.findByText('Giriş yapıldı')).toBeInTheDocument();
+    expect(await screen.findByText('203.0.113.10')).toBeInTheDocument();
   });
 
   it('başka bir oturumu kapatır ve listeyi yeniler', async () => {
@@ -94,10 +94,12 @@ describe('SecurityPage', () => {
           closeCount += 1;
           return jsonResponse(204, null);
         },
-        '/profile/sessions': () =>
-          jsonResponse(200, {
-            data: closeCount ? [sessions[0]] : sessions,
-          }),
+        '/profile/sessions': (init) =>
+          init?.method === 'GET'
+            ? jsonResponse(200, {
+                data: closeCount ? [sessions[0]] : sessions,
+              })
+            : jsonResponse(405, null),
       }),
     );
 
@@ -123,10 +125,12 @@ describe('SecurityPage', () => {
           revokeOthersCount += 1;
           return jsonResponse(204, null);
         },
-        '/profile/sessions': () =>
-          jsonResponse(200, {
-            data: revokeOthersCount ? [sessions[0]] : sessions,
-          }),
+        '/profile/sessions': (init) =>
+          init?.method === 'GET'
+            ? jsonResponse(200, {
+                data: revokeOthersCount ? [sessions[0]] : sessions,
+              })
+            : jsonResponse(405, null),
       }),
     );
 
