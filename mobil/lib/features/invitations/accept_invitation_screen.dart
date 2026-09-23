@@ -232,6 +232,13 @@ class _AcceptInvitationScreenState
                           )
                         : const Text('Daveti kabul et'),
                   ),
+                  const SizedBox(height: FtTokens.space2),
+                  TextButton(
+                    onPressed: _submitting
+                        ? null
+                        : () => Navigator.of(context).pop(),
+                    child: const Text('Girişe dön'),
+                  ),
                   if (authenticated) ...[
                     const SizedBox(height: FtTokens.space2),
                     TextButton(
