@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api, endpoints, toUserMessage } from '@/lib/api';
-import { Badge, Button, Card, ErrorState } from '@/components/ui';
+import { Badge, Button, ErrorState } from '@/components/ui';
 import { auditActionLabel, formatDateTime } from '@/features/audit/auditLabels';
 import type { SecurityEvent, Session } from '@/types/api';
 
