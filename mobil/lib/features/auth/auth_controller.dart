@@ -71,6 +71,36 @@ class AuthController extends StateNotifier<AuthState> {
     state = AuthState(status: AuthStatus.authenticated, user: result.user);
   }
 
+  Future<String> requestPasswordReset({required String email}) async {
+    final Map<String, dynamic> payload = await _api.post<Map<String, dynamic>>(
+      'auth/password/forgot',
+      body: <String, String>{'email': email},
+      authenticated: false,
+    );
+
+    return payload['message'] as String? ?? 'Parola sıfırlama bağlantısı istendi.';
+  }
+
+  Future<String> resetPassword({
+    required String email,
+    required String token,
+    required String password,
+    required String passwordConfirmation,
+  }) async {
+    final Map<String, dynamic> payload = await _api.post<Map<String, dynamic>>(
+      'auth/password/reset',
+      body: <String, String>{
+        'email': email,
+        'token': token,
+        'password': password,
+        'password_confirmation': passwordConfirmation,
+      },
+      authenticated: false,
+    );
+
+    return payload['message'] as String? ?? 'Parola güncellendi.';
+  }
+
   /// Backend herhangi bir istekte 401 döndü.
   ///
   /// Token ApiClient tarafından zaten silindi; burada yalnızca oturum
