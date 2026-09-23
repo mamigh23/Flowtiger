@@ -4,6 +4,27 @@ import userEvent from '@testing-library/user-event';
 import { jsonResponse, mockApi, renderApp } from '@/test/harness';
 
 describe('SecurityPage', () => {
+  const sessions = [
+    {
+      id: 11,
+      name: 'Chrome · Windows',
+      current: true,
+      abilities: null,
+      last_used_at: '2026-09-23T18:00:00Z',
+      expires_at: null,
+      created_at: '2026-09-23T10:00:00Z',
+    },
+    {
+      id: 12,
+      name: 'Safari · iPhone',
+      current: false,
+      abilities: null,
+      last_used_at: '2026-09-22T12:00:00Z',
+      expires_at: null,
+      created_at: '2026-09-20T12:00:00Z',
+    },
+  ];
+
   const session = {
     '/me': () =>
       jsonResponse(200, {
@@ -23,26 +44,7 @@ describe('SecurityPage', () => {
       }),
     '/profile/sessions': () =>
       jsonResponse(200, {
-        data: [
-          {
-            id: 11,
-            name: 'Chrome · Windows',
-            current: true,
-            abilities: null,
-            last_used_at: '2026-09-23T18:00:00Z',
-            expires_at: null,
-            created_at: '2026-09-23T10:00:00Z',
-          },
-          {
-            id: 12,
-            name: 'Safari · iPhone',
-            current: false,
-            abilities: null,
-            last_used_at: '2026-09-22T12:00:00Z',
-            expires_at: null,
-            created_at: '2026-09-20T12:00:00Z',
-          },
-        ],
+        data: sessions,
       }),
     '/profile/security-events': () =>
       jsonResponse(200, {
@@ -58,7 +60,11 @@ describe('SecurityPage', () => {
         links: { first: null, last: null, prev: null, next: null },
         meta: {
           current_page: 1,
+          from: 1,
           last_page: 1,
+          path: '/api/profile/security-events',
+          per_page: 20,
+          to: 1,
           total: 1,
         },
       }),
@@ -90,41 +96,8 @@ describe('SecurityPage', () => {
         },
         '/profile/sessions': () =>
           jsonResponse(200, {
-            data: closeCount
-              ? [
-                  {
-                    id: 11,
-                    name: 'Chrome · Windows',
-                    current: true,
-                    abilities: null,
-                    last_used_at: '2026-09-23T18:00:00Z',
-                    expires_at: null,
-                    created_at: '2026-09-23T10:00:00Z',
-                  },
-                ]
-              : [
-                  {
-                    id: 11,
-                    name: 'Chrome · Windows',
-                    current: true,
-                    abilities: null,
-                    last_used_at: '2026-09-23T18:00:00Z',
-                    expires_at: null,
-                    created_at: '2026-09-23T10:00:00Z',
-                  },
-                  {
-                    id: 12,
-                    name: 'Safari · iPhone',
-                    current: false,
-                    abilities: null,
-                    last_used_at: '2026-09-22T12:00:00Z',
-                    expires_at: null,
-                    created_at: '2026-09-20T12:00:00Z',
-                  },
-                ],
+            data: closeCount ? [sessions[0]] : sessions,
           }),
-          }),
-        },
       }),
     );
 
@@ -152,17 +125,7 @@ describe('SecurityPage', () => {
         },
         '/profile/sessions': () =>
           jsonResponse(200, {
-            data: [
-              {
-                id: 11,
-                name: 'Chrome · Windows',
-                current: true,
-                abilities: null,
-                last_used_at: '2026-09-23T18:00:00Z',
-                expires_at: null,
-                created_at: '2026-09-23T10:00:00Z',
-              },
-            ],
+            data: [sessions[0]],
           }),
       }),
     );
