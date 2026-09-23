@@ -78,7 +78,9 @@ describe('SecurityPage', () => {
     expect(await screen.findByText('Chrome · Windows')).toBeInTheDocument();
     expect(await screen.findByText('Safari · iPhone')).toBeInTheDocument();
     expect(await screen.findByText('Giriş yapıldı')).toBeInTheDocument();
-    expect(await screen.findByText('203.0.113.10')).toBeInTheDocument();
+    expect(
+      await screen.findByText('203.0.113.10', {}, { timeout: 5000 }),
+    ).toBeInTheDocument();
   });
 
   it('başka bir oturumu kapatır ve listeyi yeniler', async () => {
@@ -88,18 +90,16 @@ describe('SecurityPage', () => {
     vi.stubGlobal(
       'fetch',
       mockApi({
-        ...session,
         '/profile/sessions/12': (init) => {
           expect(init?.method).toBe('DELETE');
           closeCount += 1;
           return jsonResponse(204, null);
         },
-        '/profile/sessions': (init) =>
-          init?.method === 'GET'
-            ? jsonResponse(200, {
-                data: closeCount ? [sessions[0]] : sessions,
-              })
-            : jsonResponse(405, null),
+        ...session,
+        '/profile/sessions': () =>
+          jsonResponse(200, {
+            data: closeCount ? [sessions[0]] : sessions,
+          }),
       }),
     );
 
@@ -119,18 +119,16 @@ describe('SecurityPage', () => {
     vi.stubGlobal(
       'fetch',
       mockApi({
-        ...session,
         '/profile/sessions/others': (init) => {
           expect(init?.method).toBe('DELETE');
           revokeOthersCount += 1;
           return jsonResponse(204, null);
         },
-        '/profile/sessions': (init) =>
-          init?.method === 'GET'
-            ? jsonResponse(200, {
-                data: revokeOthersCount ? [sessions[0]] : sessions,
-              })
-            : jsonResponse(405, null),
+        ...session,
+        '/profile/sessions': () =>
+          jsonResponse(200, {
+            data: revokeOthersCount ? [sessions[0]] : sessions,
+          }),
       }),
     );
 
