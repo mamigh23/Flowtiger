@@ -75,13 +75,15 @@ describe('SecurityPage', () => {
 
     renderApp('/app/profile/security', { token: 'gecerli-token' });
 
-    expect(await screen.findByText('Chrome · Windows')).toBeInTheDocument();
-    expect(await screen.findByText('Safari · iPhone')).toBeInTheDocument();
-    expect(await screen.findByText('Giriş yapıldı')).toBeInTheDocument();
+    // İki bağımsız API isteği paralel yüklenir; önce güvenlik olayının
+    // geldiğini bekleyip aynı render ağacındaki diğer satırları doğrula.
     expect(
-      await screen.findByText('203.0.113.10', {}, { timeout: 5000 }),
+      await screen.findByText('Giriş yapıldı', {}, { timeout: 10000 }),
     ).toBeInTheDocument();
-  });
+    expect(screen.getByText('Chrome · Windows')).toBeInTheDocument();
+    expect(screen.getByText('Safari · iPhone')).toBeInTheDocument();
+    expect(screen.getByText('203.0.113.10')).toBeInTheDocument();
+  }, 10000);
 
   it('başka bir oturumu kapatır ve listeyi yeniler', async () => {
     const user = userEvent.setup();
