@@ -120,6 +120,34 @@ class InvitationRepository {
   }
 
   Future<void> revoke(int id) => _api.delete('invitations/$id');
+
+  /// Public kabul ucu.
+  ///
+  /// Misafir dalı name+password gönderir; girişli dal yalnızca token
+  /// gönderir. Kimlik kararı backend'e aittir, istemci yalnızca mevcut
+  /// oturum durumuna göre doğru gövdeyi kurar.
+  Future<Invitation> accept({
+    required String token,
+    String? name,
+    String? password,
+    bool authenticated = false,
+  }) async {
+    final Map<String, dynamic> body = <String, dynamic>{
+      'token': token,
+      if (!authenticated) ...<String, String>{
+        'name': name ?? '',
+        'password': password ?? '',
+      },
+    };
+
+    final Map<String, dynamic> payload = await _api.post<Map<String, dynamic>>(
+      'invitations/accept',
+      body: body,
+      authenticated: authenticated,
+    );
+
+    return Invitation.fromJson(payload);
+  }
 }
 
 final Provider<InvitationRepository> invitationRepositoryProvider =
