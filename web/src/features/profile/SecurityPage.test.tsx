@@ -125,7 +125,7 @@ describe('SecurityPage', () => {
         },
         '/profile/sessions': () =>
           jsonResponse(200, {
-            data: [sessions[0]],
+            data: revokeOthersCount ? [sessions[0]] : sessions,
           }),
       }),
     );
