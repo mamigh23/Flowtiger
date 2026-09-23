@@ -122,7 +122,7 @@ describe('SecurityPage', () => {
                     created_at: '2026-09-20T12:00:00Z',
                   },
                 ],
-            data: [],
+          }),
           }),
         },
       }),
