@@ -32,6 +32,7 @@ import { TaskCreatePage } from '@/features/tasks/TaskCreatePage';
 import { TaskDetailPage } from '@/features/tasks/TaskDetailPage';
 import { TaskEditPage } from '@/features/tasks/TaskEditPage';
 import { ProfilePage } from '@/features/profile/ProfilePage';
+import { SecurityPage } from '@/features/profile/SecurityPage';
 
 /**
  * Rota haritası.
@@ -289,6 +290,7 @@ export function App() {
                 owner-only değil ve hiçbirinde rol kontrolü yok.
               */}
               <Route path="profile" element={<ProfilePage />} />
+              <Route path="profile/security" element={<SecurityPage />} />
             </Route>
 
             <Route path="/" element={<Navigate to="/app" replace />} />

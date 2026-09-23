@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { api, endpoints, toUserMessage } from '@/lib/api';
 import { ErrorState } from '@/components/ui';
 import { formatDateTime } from '@/features/audit/auditLabels';
@@ -144,6 +145,16 @@ export function ProfilePage() {
             <div className="ft-profile-slot ft-profile-slot--password">
               <PasswordCard />
             </div>
+          </div>
+
+          <div className="ft-profile-security-link">
+            <div>
+              <h2>Güvenlik</h2>
+              <p>Aktif oturumları ve güvenlik hareketlerini görüntüleyin.</p>
+            </div>
+            <Link className="ft-button ft-button--secondary" to="/app/profile/security">
+              Güvenlik ve oturumlar
+            </Link>
           </div>
         </>
       )}
