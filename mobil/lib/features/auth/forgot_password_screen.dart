@@ -83,6 +83,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                     sent
                         ? (_successMessage ?? '')
                         : 'Hesabınızın e-posta adresini girin; sıfırlama bağlantısı isteyelim.',
+                    key: sent ? const Key('forgot-success') : null,
                   ),
                   if (_formError != null) ...[
                     const SizedBox(height: FtTokens.space4),
