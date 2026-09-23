@@ -6,6 +6,7 @@ import '../../core/theme/app_theme.dart';
 import '../../widgets/ui.dart';
 import 'auth_controller.dart';
 import 'forgot_password_screen.dart';
+import '../invitations/accept_invitation_screen.dart';
 
 /// Giriş ekranı.
 ///
@@ -147,6 +148,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                 ),
                               ),
                       child: const Text('Parolamı unuttum'),
+                    ),
+                    TextButton(
+                      onPressed: _submitting
+                          ? null
+                          : () => Navigator.of(context).push<void>(
+                                MaterialPageRoute<void>(
+                                  builder: (_) => const AcceptInvitationScreen(),
+                                ),
+                              ),
+                      child: const Text('Davet kodum var'),
                     ),
                     const SizedBox(height: FtTokens.space2),
                     FilledButton(
