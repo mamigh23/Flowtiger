@@ -8,6 +8,7 @@ import { RegisterPage } from '@/features/auth/RegisterPage';
 import { ForgotPasswordPage } from '@/features/auth/ForgotPasswordPage';
 import { ResetPasswordPage } from '@/features/auth/ResetPasswordPage';
 import { CompanySelectPage } from '@/features/companies/CompanySelectPage';
+import { IncomingInvitationsPage } from '@/features/invitations/IncomingInvitationsPage';
 import { AppShell } from '@/features/shell/AppShell';
 import { DashboardPage } from '@/features/dashboard/DashboardPage';
 import { CustomerListPage } from '@/features/customers/CustomerListPage';
@@ -120,6 +121,24 @@ export function App() {
               element={
                 <ProtectedRoute>
                   <CompanySelectPage />
+                </ProtectedRoute>
+              }
+            />
+
+            {/*
+              GELEN DAVETLER — kabuğun DIŞINDA, `RequireActiveCompany` YOK.
+
+              Rotanın company-select ile AYNI korumayı taşıması bilinçlidir:
+              davetli henüz hiçbir şirkete üye olmadığı için aktif şirket
+              seçemez; seçemeyeceği için de bu ekranı göremezse akış hiç
+              çalışmaz. Kabuk altında olsaydı `RequireActiveCompany` onu
+              company-select'e geri atardı.
+            */}
+            <Route
+              path="/app/invitations/incoming"
+              element={
+                <ProtectedRoute>
+                  <IncomingInvitationsPage />
                 </ProtectedRoute>
               }
             />

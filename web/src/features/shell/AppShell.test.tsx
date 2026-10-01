@@ -248,7 +248,7 @@ describe('AppShell', () => {
       'Panel',
       'Müşteriler',
       'Finans',
-      'Ödemeler',
+
       'Ekip',
       'Denetim',
       'Profil',
@@ -272,7 +272,7 @@ describe('AppShell', () => {
       Panel: '/app',
       Müşteriler: '/app/customers',
       Finans: '/app/finance',
-      Ödemeler: '/app/payments',
+
       Ekip: '/app/team',
       Denetim: '/app/audit',
       Profil: '/app/profile',
@@ -301,24 +301,15 @@ describe('AppShell', () => {
     expect(await screen.findByRole('heading', { name: 'Finans' })).toBeInTheDocument();
   });
 
-  it('ödemeler bağlantısı ödeme ekranını açar', async () => {
-    vi.stubGlobal(
-      'fetch',
-      mockApi({
-        ...routes,
-        '/payments': () => jsonResponse(200, fixtures.paginated([], 0)),
-      }),
-    );
-
-    const user = userEvent.setup();
-    renderApp('/app', { token: 'gecerli-token' });
-
+  it('ödemeler kenar çubuğunda tekrarlanmaz, eski bağlantı çalışır', async () => {
+    vi.stubGlobal('fetch', mockApi({ ...routes,
+      '/payments': () => jsonResponse(200, fixtures.paginated([], 0)),
+    }));
+    renderApp('/app/payments', { token: 'gecerli-token' });
     const nav = await screen.findByRole('navigation', { name: 'Ana gezinme' });
-    await user.click(within(nav).getByRole('link', { name: 'Ödemeler' }));
-
+    expect(within(nav).queryByRole('link', { name: 'Ödemeler' })).not.toBeInTheDocument();
     expect(await screen.findByRole('heading', { name: 'Ödemeler' })).toBeInTheDocument();
   });
-
   /**
    * REGRESYON — GEZİNME SONRASI ODAK KENAR ÇUBUĞUNDA KALMAZ.
    *
@@ -411,6 +402,28 @@ describe('AppShell', () => {
     expect(within(menu).getByText('ada@flowtiger.test')).toBeInTheDocument();
   });
 
+  /**
+   * GELEN DAVETLER — hesap menüsünden erişilir.
+   *
+   * Davet bir HESAP olayıdır, şirket işlemi değil; hedefi de tenant
+   * ekranlarından farklı bir dünyadadır (aktif şirket istemez).
+   */
+  it('hesap menüsü gelen davetler bağlantısını sunar', async () => {
+    vi.stubGlobal('fetch', mockApi(routes));
+
+    const user = userEvent.setup();
+    renderApp('/app', { token: 'gecerli-token' });
+
+    await user.click(await screen.findByRole('button', { name: 'Hesap menüsü' }));
+
+    const menu = await screen.findByRole('menu');
+
+    expect(within(menu).getByRole('menuitem', { name: 'Gelen davetler' })).toHaveAttribute(
+      'href',
+      '/app/invitations/incoming',
+    );
+  });
+
   it('hesap menüsünden çıkış yapılabilir', async () => {
     vi.stubGlobal(
       'fetch',
@@ -475,5 +488,146 @@ describe('AppShell', () => {
     await user.click(within(nav).getByRole('link', { name: 'Müşteriler' }));
 
     await waitFor(() => expect(toggle).toHaveAttribute('aria-expanded', 'false'));
+  });
+
+  // ---------------------------------------------------- şirket değiştirme
+
+  const twoCompanyRoutes = {
+    ...routes,
+    '/companies': () =>
+      jsonResponse(200, {
+        data: [
+          fixtures.company({ id: 7, name: 'Kaplan Yazılım', role: 'owner' }),
+          fixtures.company({ id: 9, name: 'Bengal Danışmanlık', role: 'member' }),
+        ],
+        meta: { active_company_id: 7 },
+      }),
+  };
+
+  /**
+   * ÇOK ŞİRKETLİ KULLANICI İÇİN GEÇİŞ KONTROLÜ.
+   *
+   * Kontrol klavyeyle erişilebilir bir BAĞLANTIDIR ve seçim ekranını
+   * geçiş kipinde açar. Aktif şirketi burada sessizce değiştirmez.
+   */
+  it('birden fazla şirket varken "Şirket değiştir" bağlantısı sunar', async () => {
+    vi.stubGlobal('fetch', mockApi(twoCompanyRoutes));
+
+    renderApp('/app', { token: 'gecerli-token' });
+
+    const link = await screen.findByRole('link', { name: 'Şirket değiştir' });
+    expect(link).toHaveAttribute('href', '/app/company-select?switch=1');
+  });
+
+  /**
+   * TEK ŞİRKETLİ KULLANICIYA GEÇİŞ KONTROLÜ GÖSTERİLMEZ.
+   *
+   * Gidilecek başka şirket yokken kullanıcıyı bir seçim ekranına
+   * göndermek, işe yaramayan bir adım olurdu.
+   */
+  it('tek şirket varken geçiş kontrolü göstermez', async () => {
+    vi.stubGlobal('fetch', mockApi(routes));
+
+    renderApp('/app', { token: 'gecerli-token' });
+
+    await screen.findByText('Kaplan Yazılım');
+    expect(screen.queryByRole('link', { name: 'Şirket değiştir' })).not.toBeInTheDocument();
+  });
+
+  /**
+   * GEÇİŞ SONRASI ÖNCEKİ ŞİRKETİN VERİSİ EKRANDA KALMAZ.
+   *
+   * Bir müşteri listesi ekranındayken şirket değiştirilirse, yeni aktif
+   * şirketin verisi yüklenene kadar ESKİ şirketin satırları görünmemeli.
+   * `Outlet` aktif şirketle anahtarlandığı için alt ağaç sökülür ve yeni
+   * şirketin isteği sıfırdan yapılır.
+   */
+  it('şirket değişince önceki şirketin verisi ekranda kalmaz', async () => {
+    const kaplanCustomer = fixtures.customer({ id: 501, name: 'Kaplan Müşterisi' });
+    const bengalCustomer = fixtures.customer({ id: 601, name: 'Bengal Müşterisi' });
+
+    let activeCompanyId = 7;
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+
+        if (url.endsWith('/me')) {
+          return jsonResponse(200, { data: fixtures.user({ active_company_id: 7 }) });
+        }
+
+        if (url.endsWith('/companies/9/select')) {
+          activeCompanyId = 9;
+          return jsonResponse(200, {
+            data: fixtures.company({ id: 9, name: 'Bengal Danışmanlık', role: 'member' }),
+          });
+        }
+
+        if (url.includes('/companies')) {
+          return jsonResponse(200, {
+            data: [
+              fixtures.company({ id: 7, name: 'Kaplan Yazılım', role: 'owner' }),
+              fixtures.company({ id: 9, name: 'Bengal Danışmanlık', role: 'member' }),
+            ],
+            meta: { active_company_id: activeCompanyId },
+          });
+        }
+
+        // Müşteri listesi AKTİF şirkete göre farklı veri döndürür: eski
+        // verinin yeni bağlamda görünüp görünmediğini ayırt edebilmek için.
+        if (url.includes('/customers')) {
+          return jsonResponse(
+            200,
+            fixtures.paginated(
+              [activeCompanyId === 7 ? kaplanCustomer : bengalCustomer],
+              1,
+            ),
+          );
+        }
+
+        return jsonResponse(404, { message: 'Taklit edilmemiş uç' });
+      }),
+    );
+
+    const user = userEvent.setup();
+    renderApp('/app/customers', { token: 'gecerli-token' });
+
+    expect(await screen.findByText('Kaplan Müşterisi')).toBeInTheDocument();
+
+    // Şirket değiştir → Bengal'i seç.
+    await user.click(screen.getByRole('link', { name: 'Şirket değiştir' }));
+    await screen.findByRole('heading', { name: 'Şirket değiştir' });
+
+    const bengalCard = screen.getByText('Bengal Danışmanlık').closest('li')!;
+    await user.click(within(bengalCard).getByRole('button', { name: 'Seç' }));
+
+    // Panel açılır (şirket seçimi panele yönlendirir).
+    expect(await screen.findByRole('heading', { name: 'Bugünün Odağı' })).toBeInTheDocument();
+
+    // Müşteriler ekranına dönüldüğünde YENİ şirketin verisi gelir.
+    const nav = screen.getByRole('navigation', { name: 'Ana gezinme' });
+    await user.click(within(nav).getByRole('link', { name: 'Müşteriler' }));
+
+    expect(await screen.findByText('Bengal Müşterisi')).toBeInTheDocument();
+    expect(screen.queryByText('Kaplan Müşterisi')).not.toBeInTheDocument();
+  });
+
+  /**
+   * ÇOK ŞİRKETLİ KENAR ÇUBUĞU GEZİNMESİ BOZULMAZ.
+   *
+   * Regresyon: geçiş kontrolü eklenirken bağlantıların etiketleri ve
+   * hedefleri aynen korunur.
+   */
+  it('geçiş kontrolü varken de tüm gezinme bağlantıları durur', async () => {
+    vi.stubGlobal('fetch', mockApi(twoCompanyRoutes));
+
+    renderApp('/app', { token: 'gecerli-token' });
+
+    const nav = await screen.findByRole('navigation', { name: 'Ana gezinme' });
+
+    for (const label of ['Panel', 'Müşteriler', 'Finans', 'Ekip', 'Denetim', 'Profil']) {
+      expect(within(nav).getByRole('link', { name: label })).toBeInTheDocument();
+    }
   });
 });

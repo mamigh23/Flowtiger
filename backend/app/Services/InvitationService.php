@@ -54,6 +54,104 @@ class InvitationService
     }
 
     /**
+     * Oturumdaki kullanıcıya GELEN davetler (uygulama içi ekran).
+     *
+     * NEDEN AYRI SORGU: `invitationsFor()` bir ŞİRKETİN gönderdiği
+     * davetleri okur. Burada soru tamamen farklıdır — "bu KİŞİYE ne
+     * gönderilmiş?". İkisini tek metotta birleştirmek, iki farklı yetki
+     * sorusunu aynı imzaya sıkıştırırdı.
+     *
+     * EŞLEŞME KULLANICININ E-POSTASIYLA ve NORMALİZE edilerek yapılır
+     * (§26): adres karşılaştırmasının tek noktası `normaliseEmail`. Aynı
+     * adresin farklı büyük/küçük harfle iki kez saklanması, davetin
+     * sahibine görünmemesine yol açardı.
+     *
+     * YALNIZCA BEKLEYEN VE SÜRESİ DOLMAMIŞ davetler döner. Durum
+     * SAKLANMAZ, zaman damgalarından hesaplanır (bkz. InvitationStatus);
+     * bu yüzden filtre de damgalar üzerinden yazılır ve `status()`
+     * mantığının birebir aynısıdır:
+     *   kabul edilmiş → accepted_at dolu
+     *   iptal edilmiş → revoked_at dolu
+     *   süresi dolmuş → expires_at geçmiş
+     * Kalanlar Pending'dir.
+     *
+     * Kullanıcı parametresi User tipindedir: çağıran onu DAİMA
+     * $request->user()'dan alır, istek gövdesinden asla (§12).
+     */
+    public function incomingFor(User $user): Builder
+    {
+        return Invitation::query()
+            ->where('email', self::normaliseEmail($user->email))
+            ->whereNull('accepted_at')
+            ->whereNull('revoked_at')
+            ->where('expires_at', '>', now());
+    }
+
+    /**
+     * Kullanıcının KENDİ davetini kimliğiyle bulur — DURUM FİLTRESİ
+     * OLMADAN (kabul yolu).
+     *
+     * NEDEN `incomingFor()` KULLANILMAZ: o metot LİSTE sözleşmesidir ve
+     * yalnızca bekleyen/süresi dolmamış davetleri döndürür. Kabulde ise
+     * kullanıcının kendi süresi dolmuş / iptal edilmiş / kabul edilmiş
+     * daveti için doğru yanıt 404 DEĞİL, mevcut domain davranışı olan
+     * 410 + durumu söyleyen koddur (bkz. InvitationStatus). İkisini aynı
+     * sorguya bağlamak, kullanıcıya "böyle bir davetin yok" demek
+     * olurdu — oysa vardır ve neden kabul edilemediği söylenmelidir.
+     *
+     * SINIR YALNIZCA SAHİPLİKTİR: kısıt hem `id` hem normalize edilmiş
+     * e-posta üzerinedir. Daveti önce id ile çekip sonra e-postayı
+     * karşılaştırmak iki adımlı bir kontrol olurdu; burada sınır
+     * sorgunun kendisindedir.
+     *
+     * BAŞKASININ DAVETİ İLE HİÇ OLMAYAN DAVET AYNI 404'Ü VERİR — ve bunu
+     * route model binding'e BIRAKMAK YETMEZ. Binding, var olmayan bir
+     * id'de Laravel'in kendi `ModelNotFoundException`'ını üretir; o
+     * yanıtın gövdesi bu sınıfın `invitation_not_found` gövdesinden
+     * FARKLIDIR, yani iki durum yanıt şeklinden ayırt edilebilir hâle
+     * gelirdi. Bu yüzden route ham bir id taşır ve tek yol burasıdır
+     * (bkz. InvitationController::acceptForUser).
+     *
+     * SIZINTI YOK: başkasının daveti, hangi durumda olursa olsun
+     * (bekleyen, süresi dolmuş, iptal edilmiş) 404'tür. 410 yalnızca
+     * KENDİ daveti için döner — orada açıklanacak bir sır yoktur.
+     *
+     * @throws InvitationException
+     */
+    public function findIncomingOrFail(User $user, int $invitationId): Invitation
+    {
+        $invitation = Invitation::query()
+            ->whereKey($invitationId)
+            ->where('email', self::normaliseEmail($user->email))
+            ->first();
+
+        if ($invitation === null) {
+            throw InvitationException::notFound();
+        }
+
+        if ($invitation->company === null) {
+            // company_id CASCADE olduğu için normalde ulaşılamaz; yine de
+            // `finaliseAccept`'e null şirket geçmemelidir.
+            throw InvitationException::notFound();
+        }
+
+        /*
+          DURUM KONTROLÜ — token yolundakiyle AYNI metot, AYNI hata.
+
+          `accept()` de tam olarak bunu yapar (§15, adım 2); kabul
+          çekirdeği iki yolda ortak olduğu için "kullanılabilir mi"
+          sorusunun cevabı da tek kaynaktan gelmelidir.
+        */
+        $status = $invitation->status();
+
+        if (! $status->isUsable()) {
+            throw InvitationException::notUsable($status);
+        }
+
+        return $invitation;
+    }
+
+    /**
      * Şirkete ait daveti getirir; ait değilse 404.
      *
      * TENANT SINIRI BURADA ÇİZİLİR. {invitation} route model binding'i
@@ -200,6 +298,73 @@ class InvitationService
 
         $user = $this->resolveAcceptingUser($invitation, $authenticated);
 
+        return $this->finaliseAccept($invitation, $company, $user, $name, $password);
+    }
+
+    /**
+     * Daveti, OTURUMDAKİ KULLANICI adına kabul eder (uygulama içi yol).
+     *
+     * TOKEN YOKTUR: anahtar, kullanıcının kendi e-postasıdır. Davet
+     * `findIncomingOrFail` ile yalnızca o adrese ait olanlar arasından
+     * seçilir, dolayısıyla "başkasının davetini kabul etme" diye bir
+     * ihtimal sorgu düzeyinde kapanır (403 değil, 404).
+     *
+     * DURUM KONTROLÜ ORADADIR, BURADA DEĞİL: `findIncomingOrFail`
+     * davetin KULLANILABİLİR olduğunu da doğrular ve değilse mevcut
+     * `notUsable()` hatasını (410) fırlatır — token yolundaki ile AYNI
+     * davranış. Bu yüzden burada yalnızca ortak çekirdek çağrılır; durum
+     * sorusu tek bir yerde, `status()->isUsable()` ile sorulur.
+     *
+     * Bu yol YENİ HESAP AÇMAZ: `$user` daima doludur, misafir dalı
+     * yoktur. Hesabı olmayan biri zaten giriş yapamaz.
+     *
+     * AKTİF ŞİRKET DEĞİŞTİRİLMEZ. Üyeliğin eklenmesi ile "hangi şirkette
+     * çalışıyorum" sorusu ayrı kararlardır; ikincisi kullanıcıya aittir ve
+     * mevcut `POST /companies/{id}/select` akışıyla verilir.
+     *
+     * @throws InvitationException
+     */
+    public function acceptIncoming(User $user, int $invitationId): Invitation
+    {
+        $invitation = $this->findIncomingOrFail($user, $invitationId);
+
+        // `findIncomingOrFail` şirketin varlığını doğruladı.
+        return $this->finaliseAccept(
+            $invitation,
+            $invitation->company,
+            $user,
+            name: null,
+            password: null,
+        );
+    }
+
+    /**
+     * Kabulün ORTAK ÇEKİRDEĞİ — token yolunun 4-5. adımları.
+     *
+     * İki giriş yolu (e-posta bağlantısındaki token, uygulama içi
+     * kimlik) burada birleşir: üyelik, `accepted_at` ve audit TEK
+     * transaction'dadır ve eşzamanlı kabul çevirisi ikisinde de aynıdır.
+     * Ayrı yazılsalardı biri bir gün "son owner" ya da rol kuralını
+     * atlardı; üyelik yazımının tek kapısı `MembershipService` olarak
+     * kalır.
+     *
+     * SIRA KORUNUR (§15): çağıran, buraya gelmeden önce davetin
+     * kullanılabilirliğini ve şirketini doğrulamıştır. Burada yalnızca
+     * "zaten üye mi" kontrolü ve transaction vardır.
+     *
+     * `$company` çağırandan gelir ve null olamaz: token yolunda
+     * varlığı orada doğrulanır, uygulama içi yolda davet o sorgudan
+     * `company` ile birlikte gelir.
+     *
+     * @throws InvitationException
+     */
+    private function finaliseAccept(
+        Invitation $invitation,
+        Company $company,
+        ?User $user,
+        ?string $name,
+        #[\SensitiveParameter] ?string $password,
+    ): Invitation {
         if ($user !== null && $user->isMemberOf($company)) {
             // Davet TÜKETİLMEZ: kabul edip rolü güncellemek, Faz 4'teki
             // rol değiştirme yetkisini davet üzerinden atlatmak olurdu.

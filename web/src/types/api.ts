@@ -80,6 +80,31 @@ export interface Invitation {
   created_at: string | null;
 }
 
+/**
+ * Kullanıcıya GELEN davet (IncomingInvitationResource).
+ *
+ * `Invitation`dan AYRI bir tip ve bu bilinçli: iki uç aynı modeli okur
+ * ama farklı sorulara cevap verir.
+ *
+ *   Invitation          → owner "şirketime kimi davet ettim"
+ *                         (e-posta MASKELİ gelir)
+ *   IncomingInvitation  → kullanıcı "beni nereye davet ettiler"
+ *                         (şirket adı görünür)
+ *
+ * `email` BURADA YOKTUR ve olmayacak: davet zaten oturumdaki kullanıcının
+ * kendi adresine aittir, geri yansıtmak yeni bilgi taşımaz.
+ * `token`/`token_hash` de yoktur — bu yollar token görmez (§4, §8).
+ */
+export interface IncomingInvitation {
+  id: number;
+  /** ÖZET: yalnızca id + name; davet eden kişi bilgisi bilinçli olarak yok. */
+  company: { id: number | null; name: string | null };
+  role: Role;
+  status: InvitationStatus;
+  expires_at: string | null;
+  created_at: string | null;
+}
+
 export interface AuditLog {
   id: number;
   action: string;

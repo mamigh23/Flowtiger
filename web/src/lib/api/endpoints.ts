@@ -9,6 +9,7 @@ import type {
   CustomerBillingInput,
   FinanceEntry,
   FinanceEntryInput,
+  IncomingInvitation,
   Invitation,
   LoginResult,
   Member,
@@ -182,6 +183,26 @@ export const invitations = {
     input: { token: string; name?: string; password?: string },
     authenticated = false,
   ) => api.post<Invitation>('invitations/accept', input, { authenticated }),
+
+  /**
+   * OTURUMDAKİ KULLANICIYA gelen davetler — tenant DIŞI.
+   *
+   * `list`ten farkı yalnızca filtre değil, YETKİ SORUSUDUR: `list` aktif
+   * şirketin gönderdiklerini okur (owner), burada ise kişinin kendi
+   * adresine gelenler okunur ve aktif şirket GEREKMEZ.
+   */
+  incoming: (api: ApiClient, params?: { page?: number; per_page?: number }) =>
+    api.getPaginated<Paginated<IncomingInvitation>>('invitations/incoming', { query: params }),
+
+  /**
+   * Daveti, oturumdaki kullanıcı adına kabul eder (uygulama içi yol).
+   *
+   * GÖVDE GÖNDERİLMEZ: token yoktur ve olmamalıdır — kimlik ile sahiplik
+   * sunucuda, oturumdan çözülür. Bir gövde alanı eklemek, yetki kararını
+   * istemciye taşımaya açık bir kapı bırakırdı.
+   */
+  acceptIncoming: (api: ApiClient, invitationId: number) =>
+    api.post<IncomingInvitation>(`invitations/${invitationId}/accept`),
 };
 
 // ---------------------------------------------------------- audit logs

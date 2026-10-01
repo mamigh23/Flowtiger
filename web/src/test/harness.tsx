@@ -1,5 +1,6 @@
-import { render } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { act, render } from '@testing-library/react';
+import { MemoryRouter, useNavigate } from 'react-router-dom';
+import type { NavigateFunction } from 'react-router-dom';
 import type { ReactElement } from 'react';
 import { App } from '@/app/App';
 import { ROUTER_FUTURE } from '@/app/routerFuture';
@@ -246,8 +247,16 @@ export const fixtures = {
  *
  * İki parametre de İSTEĞE BAĞLIDIR: onları kullanmayan mevcut kayıtlar
  * (`() => jsonResponse(...)`) olduğu gibi çalışmaya devam eder.
+ *
+ * `Promise<Response>` de DÖNDÜRÜLEBİLİR: bir isteği testin kontrolünde
+ * ASKIDA BIRAKMAK (sıralama/yarış senaryoları) ancak yanıtı testin
+ * çözmesiyle kurulur. Gevşetme değil, sözleşmenin tamamlanmasıdır —
+ * `fetch` taklidi zaten async olduğu için dönüş değeri beklenir.
  */
-export type RouteResponder = (init?: RequestInit, url?: string) => Response;
+export type RouteResponder = (
+  init?: RequestInit,
+  url?: string,
+) => Response | Promise<Response>;
 
 /**
  * Yol → yanıt eşlemesi ile fetch taklidi.
@@ -292,6 +301,62 @@ export function renderApp(
   if (options.token) tokenStorage.set(options.token);
 
   return renderElement(<App />, initialPath, options.state);
+}
+
+/**
+ * GEZİNME GEÇMİŞİ TESTİN ELİNDE OLAN render.
+ *
+ * `renderApp` tek girdili bir bellek geçmişi kurar — geri gidilecek bir
+ * yer yoktur. "Tarayıcı geri tuşu" gibi SIRALAMASI ÖNEMLİ akışlar orada
+ * kurulamaz. Bu yardımcı `initialEntries`i testin vermesine izin verir
+ * ve `goBack()` ile aynı yığında POP yapar — tarayıcı geri tuşunun
+ * router'daki karşılığı.
+ *
+ * `initialEntries`in SON girdisi görünen konumdur (MemoryRouter
+ * varsayılanı). Yani `['/app/customers', '/app/company-select?switch=1']`
+ * seçim ekranında başlar ve geri, müşteriler ekranına döner.
+ *
+ * NEDEN `createMemoryRouter` + `RouterProvider` DEĞİL: veri router'ı her
+ * gezinmede `fetch` için bir `Request` kurar ve jsdom'un `AbortSignal`i
+ * ile undici'nin beklediği örnek çakışır (`Expected signal to be an
+ * instance of AbortSignal`). Tarayıcı geri tuşu router'da yalnızca bir
+ * POP'tur; klasik `MemoryRouter` bunu aynı şekilde yapar ve uygulamanın
+ * testlerdeki router semantiğini (üretimle aynı bayraklar) korur.
+ *
+ * `navigate`, Router'ın İÇİNDEKİ bir köprü bileşeniyle yakalanır: dönen
+ * değer DOM'a hiçbir şey eklemez, kullanıcı arayüzünde görünmez.
+ */
+export function renderAppWithHistory(
+  initialEntries: readonly string[],
+  options: { token?: string } = {},
+): ReturnType<typeof render> & { goBack: () => void } {
+  if (options.token) tokenStorage.set(options.token);
+
+  let navigate: NavigateFunction | null = null;
+
+  function NavigationBridge() {
+    navigate = useNavigate();
+    return null;
+  }
+
+  const view = render(
+    <MemoryRouter initialEntries={[...initialEntries]} future={ROUTER_FUTURE}>
+      <NavigationBridge />
+      <App />
+    </MemoryRouter>,
+  );
+
+  return {
+    ...view,
+    // `navigate(-1)` senkron değildir (v7_startTransition açık); act
+    // içinde çağrılır ki gezinmenin tetiklediği render'lar testin
+    // dışına taşmasın.
+    goBack: () => {
+      act(() => {
+        void navigate?.(-1);
+      });
+    },
+  };
 }
 
 export function renderElement(

@@ -171,6 +171,32 @@ Route::middleware('auth:sanctum')->name('api.v1.')->group(function (): void {
     Route::get('profile/security-events', [SecurityEventController::class, 'index'])
         ->name('profile.security-events.index');
 
+    /*
+    | GELEN DAVETLER — kişinin KENDİSİNE gönderilenler (uygulama içi).
+    |
+    | TENANT DIŞI ve company.context YOK. Aktif şirketi olmayan — hatta
+    | hiçbir şirkete üye olmayan — kullanıcı da kendi davetlerini görmeli
+    | ve kabul edebilmelidir; bu ekranın varlık sebebi tam olarak budur
+    | (bkz. InvitationController::incoming).
+    |
+    | SIRALAMA: 'incoming' rotası {invitation} rotasından ÖNCE gelmeli,
+    | aksi hâlde /invitations/incoming isteği id'si "incoming" olan bir
+    | davet araması olarak yorumlanırdı (routes/tasks/today ile aynı
+    | desen). whereNumber() ikinci ve yapısal savunmadır: sıra bir gün
+    | bozulsa bile 'incoming' asla bir id olarak çözülemez.
+    |
+    | Bu iki uç, AYNI dosyadaki owner uçlarıyla (aşağıda, tenant
+    | grubunda) karıştırılmamalıdır: orası "şirketime kimi davet ettim",
+    | burası "beni nereye davet ettiler". İki farklı yetki sorusu, iki
+    | farklı uç.
+    */
+    Route::get('invitations/incoming', [InvitationController::class, 'incoming'])
+        ->name('invitations.incoming');
+
+    Route::post('invitations/{invitation}/accept', [InvitationController::class, 'acceptForUser'])
+        ->whereNumber('invitation')
+        ->name('invitations.accept-for-user');
+
     // company.context YOK: kullanıcı şirket seçmeden önce de listeyi
     // görebilmeli ve seçim yapabilmelidir.
     Route::get('companies', [CompanyController::class, 'index'])

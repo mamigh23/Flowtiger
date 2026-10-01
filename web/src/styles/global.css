@@ -666,7 +666,7 @@ a {
 .ft-topbar__company {
   display: flex;
   align-items: center;
-  gap: var(--ft-space-2);
+  gap: var(--ft-space-3);
   flex: 1;
   min-width: 0;
 }
@@ -747,6 +747,51 @@ a {
 
 .ft-menu__item:hover {
   background: var(--ft-color-bg);
+}
+
+/*
+ * ŞİRKET DEĞİŞTİRME BAĞLANTISI.
+ *
+ * Çok şirketli kullanıcı için üst barda durur. Şirket adı ve rol
+ * görünürlüğü korunur: çok kiracılı bir üründe hangi şirkette
+ * olunduğunu gizlemek, yanlış şirkete kayıt girmenin en kısa yoludur.
+ * Bir bağlantıdır (düğme değil) — bir yere götürür; odak halkası
+ * global `:focus-visible` kuralından gelir.
+ */
+.ft-topbar__switch {
+  padding: var(--ft-space-1) var(--ft-space-3);
+  border: 1px solid var(--ft-color-border);
+  border-radius: var(--ft-radius-md);
+  background: transparent;
+  color: var(--ft-color-text-muted);
+  font: inherit;
+  font-size: var(--ft-font-size-sm);
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.ft-topbar__switch:hover {
+  border-color: var(--ft-color-primary);
+  color: var(--ft-color-primary);
+}
+
+/*
+ * KİRACI BAĞLAMI DOĞRULANAMADI.
+ *
+ * İçeriğin yerine geçen bir blok: yalnızca açıklama ve "Yeniden
+ * doğrula" yolu. Kenar çubuğu ve hesap menüsü erişilebilir kalır,
+ * böylece kullanıcı çıkış yapabilir.
+ */
+.ft-shell__verify {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--ft-space-3);
+  max-width: 36rem;
+  padding: var(--ft-space-5);
+  border: 1px solid var(--ft-color-border);
+  border-radius: var(--ft-radius-md);
+  background: var(--ft-color-surface);
 }
 
 /*
@@ -7182,4 +7227,20 @@ a {
   display: flex;
   flex-direction: column;
   gap: var(--ft-space-2);
+}
+
+/* Ekip: tek başlık, iki ana bölüm ve davet yönü. */
+.ft-team-hub--simple { gap: 24px; }
+.ft-team-hub--simple .ft-team-hero { margin-bottom: 0; align-items: center; }
+.ft-team-hub--simple .ft-team-hub__segments { margin-bottom: 0; }
+.ft-invitation-views { display: flex; gap: 8px; flex-wrap: wrap; border-bottom: 1px solid #2a3038; padding-bottom: 12px; }
+.ft-invitation-views a { padding: 9px 16px; border-radius: 8px; color: #98a6ba; text-decoration: none; font-weight: 600; }
+.ft-invitation-views a[aria-current="page"] { background: rgba(255,128,0,.12); color: #ff970f; }
+.ft-invitation-views a:hover { background: rgba(255,255,255,.05); }
+.ft-invitation-views a:focus-visible { outline: 2px solid #ff970f; outline-offset: 3px; }
+.ft-incoming--embedded .ft-page__header { margin-bottom: 16px; }
+.ft-incoming--embedded ul { list-style: none; padding: 0; }
+@media (max-width: 600px) {
+  .ft-team-hub--simple .ft-team-hero { align-items: flex-start; gap: 16px; flex-direction: column; }
+  .ft-invitation-views a { flex: 1; text-align: center; padding: 10px 12px; }
 }

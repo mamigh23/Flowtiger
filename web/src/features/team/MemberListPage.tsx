@@ -42,6 +42,7 @@ import { memberErrorMessage } from './memberErrors';
  * demek eksik bir sayıyı gerçek gibi göstermek olurdu.
  */
 interface MembersSectionProps {
+  compact?: boolean;
   /**
    * Yüklenen sayfanın `meta.total` değeri — üstteki şirket özeti için.
    * Sayı ikinci bir istekle DEĞİL, zaten gelen yanıttan okunur; böylece
@@ -50,7 +51,7 @@ interface MembersSectionProps {
   onTotal?: (total: number | null) => void;
 }
 
-export function MembersSection({ onTotal }: MembersSectionProps) {
+export function MembersSection({ onTotal, compact = false }: MembersSectionProps) {
   const [page, setPage] = useState(1);
   const [result, setResult] = useState<Paginated<Member> | null>(null);
   const [error, setError] = useState<unknown>(null);
@@ -112,7 +113,7 @@ export function MembersSection({ onTotal }: MembersSectionProps) {
         özette (`meta.total`). Buradaki iki kart yalnızca açık sayfayı
         sayar ve notları bunu söyler.
       */}
-      {!loading && !error && result && rows.length > 0 && (
+      {!compact && !loading && !error && result && rows.length > 0 && (
         <div className="ft-team-summary" data-testid="team-role-breakdown">
           <article className="ft-team-stat ft-team-stat--owner" data-testid="team-summary-owners">
             <span className="ft-team-stat__label">Sahip rolü</span>

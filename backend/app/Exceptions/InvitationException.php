@@ -102,4 +102,29 @@ class InvitationException extends RuntimeException
             'invitation_already_member',
         );
     }
+
+    /**
+     * Kullanıcının e-postası doğrulanmamış (uygulama içi gelen davetler).
+     *
+     * YALNIZCA uygulama içi uçlarda kullanılır. Davet e-postasındaki
+     * bağlantıyla gelen akışta bu kapı YOKTUR ve olmamalıdır: davetle yeni
+     * hesap açan kişinin `email_verified_at` değeri henüz null'dır, orada
+     * bu kural uygulansaydı davet sistemi hiç çalışmazdı.
+     *
+     * Gerekçe (uygulama içi yol): listede şirket adı, rol ve süre görünür
+     * ve kabul tek tıkla yapılır. Bu, adresin gerçekten o kişiye ait
+     * olduğunun kanıtlanmasını gerektirir — aksi hâlde yanlış yazılmış bir
+     * adres, sahibi olmayan birinin hesabına daveti düşürürdü.
+     *
+     * Bu yanıt HİÇBİR davet bilgisi taşımaz (bkz. controller): davet
+     * verisi doğrulama kontrolünden ÖNCE hiç okunmaz.
+     */
+    public static function emailVerificationRequired(): self
+    {
+        return new self(
+            'Gelen davetlerinizi görmek için önce e-posta adresinizi doğrulamanız gerekiyor.',
+            403,
+            'email_verification_required',
+        );
+    }
 }

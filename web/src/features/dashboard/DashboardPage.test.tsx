@@ -436,7 +436,26 @@ describe('DashboardPage', () => {
 
     renderAtHour(9);
 
-    const strip = await screen.findByTestId('dashboard-stats');
+    /*
+      KONTROL EDİLEN KARTLARIN YÜKLENMESİ BEKLENİR — kapsayıcı yetmez.
+
+      `dashboard-stats` şeridi YÜKLEME hâlindeki kartlarla da render
+      edilir (yer tutucu `data-testid="stat-finance-loading"`). Yalnızca
+      kapsayıcıyı beklemek, finans/ödeme istekleri henüz dönmemişken
+      aşağıdaki `getByTestId('stat-finance')` sorgularını çalıştırıyor
+      ve test ZAMANA bağlı olarak düşüyordu: kartların GELDİĞİ durumu
+      değil, isteğin o ana kadar dönüp dönmediğini ölçüyordu.
+
+      `findBy*` ile yüklenmiş kart beklenir: senkron `getBy*` yerine
+      gerçek bitiş noktasını bekler. Aşağıdaki olumlu/olumsuz iddiaların
+      HEPSİ aynen korunur — yalnızca ölçüm anı doğru yere taşınır.
+      (Sabit bekleme yok; `findBy*` kendi yoklamasını yapar.)
+    */
+    await screen.findByTestId('stat-finance');
+    await screen.findByTestId('stat-payments');
+
+    // Kartlar YÜKLENDİKTEN sonra şeridin tamamı denetlenir.
+    const strip = screen.getByTestId('dashboard-stats');
 
     expect(strip.textContent).not.toMatch(/₺|TL|TRY/);
     expect(strip.textContent).not.toMatch(/%/);

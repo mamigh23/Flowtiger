@@ -46,6 +46,7 @@ import { invitationErrorMessage, invitationStatusLabel } from './invitationError
  * AYNI `formatDateTime` (Intl kullanmaz).
  */
 interface InvitationsSectionProps {
+  compact?: boolean;
   /**
    * Yüklenen sayfanın `meta.total` değeri — üstteki şirket özeti için.
    * Sayı ikinci bir istekle DEĞİL, zaten gelen yanıttan okunur.
@@ -53,7 +54,7 @@ interface InvitationsSectionProps {
   onTotal?: (total: number | null) => void;
 }
 
-export function InvitationsSection({ onTotal }: InvitationsSectionProps) {
+export function InvitationsSection({ onTotal, compact = false }: InvitationsSectionProps) {
   const [page, setPage] = useState(1);
   const [result, setResult] = useState<Paginated<Invitation> | null>(null);
   const [error, setError] = useState<unknown>(null);
@@ -135,9 +136,9 @@ export function InvitationsSection({ onTotal }: InvitationsSectionProps) {
     >
       <div className="ft-team-hub__section-head">
         <h2 className="ft-team-hub__section-title" id="ft-team-invitations-title">
-          Davetler
+          {compact ? 'Gönderilen davetler' : 'Davetler'}
         </h2>
-        <p className="ft-team-hub__section-lead">Gönderilen davetler ve durumları.</p>
+        <p className="ft-team-hub__section-lead">Aktif şirketinizin gönderdiği davetler ve durumları.</p>
       </div>
 
       {/*
@@ -156,7 +157,7 @@ export function InvitationsSection({ onTotal }: InvitationsSectionProps) {
         özette (`meta.total`). Buradaki iki kart yalnızca açık sayfayı
         sayar ve notları bunu söyler.
       */}
-      {!loading && !error && result && rows.length > 0 && (
+      {!compact && !loading && !error && result && rows.length > 0 && (
         <div className="ft-invitations-summary" data-testid="invitations-status-breakdown">
           <article
             className="ft-invitations-stat ft-invitations-stat--pending"
