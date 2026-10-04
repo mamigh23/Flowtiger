@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { screen, waitFor, waitForElementToBeRemoved } from '@testing-library/react';
+import { screen, waitFor, waitForElementToBeRemoved, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { bodyOf, fixtures, jsonResponse, mockApi, renderApp } from '@/test/harness';
 
@@ -33,6 +33,31 @@ describe('InviteMemberPage', () => {
       ([, init]) => (init as RequestInit | undefined)?.method === 'POST',
     );
     return bodyOf(post?.[1] as RequestInit | undefined);
+  }
+
+  /**
+   * `/invitations` — TEK YOL, İKİ FARKLI YANIT ŞEKLİ.
+   *
+   * Backend sözleşmesi (InvitationController):
+   *
+   *   POST /invitations → 201 { data: <tek davet> }              (zarf AÇILIR)
+   *   GET  /invitations → 200 { data: [<davet>], links, meta }   (zarf AÇILMAZ)
+   *
+   * `mockApi` yolu yalnızca SON EK ile eşleştirir; metoda bakmayan tek
+   * bir yanıt İKİ uca birden hizmet eder ve POST'un tekil nesnesini
+   * GET'e döndürür. Liste bileşeni (`InvitationsSection`) o zaman
+   * `result.data`yı dizi sanıp `rows.filter` ile çöker.
+   *
+   * Bu çökme testleri YEŞİL BIRAKIR: `ErrorBoundary` render hatasını
+   * yutup kendi ekranına düşer, yalnızca POST gövdesini doğrulayan bir
+   * iddia bunu görmez. Aşağıdaki "regresyon" testi tam olarak bunu
+   * görünür kılmak için var.
+   */
+  function invitations(created: Record<string, unknown>) {
+    return (init?: RequestInit) =>
+      init?.method === 'POST'
+        ? jsonResponse(201, { data: created })
+        : jsonResponse(200, fixtures.paginated([created], 1));
   }
 
   it('e-posta alanı ve rol seçimi gösterir', async () => {
@@ -69,7 +94,7 @@ describe('InviteMemberPage', () => {
   it('yalnızca e-posta ve rol gönderir', async () => {
     const fetchMock = mockApi({
       ...session,
-      '/invitations': () => jsonResponse(201, { data: fixtures.invitation() }),
+      '/invitations': invitations(fixtures.invitation()),
     });
 
     vi.stubGlobal('fetch', fetchMock);
@@ -90,7 +115,7 @@ describe('InviteMemberPage', () => {
   it('sahip rolü seçilirse gövdede owner gönderir', async () => {
     const fetchMock = mockApi({
       ...session,
-      '/invitations': () => jsonResponse(201, { data: fixtures.invitation({ role: 'owner' }) }),
+      '/invitations': invitations(fixtures.invitation({ role: 'owner' })),
     });
 
     vi.stubGlobal('fetch', fetchMock);
@@ -112,10 +137,7 @@ describe('InviteMemberPage', () => {
       'fetch',
       mockApi({
         ...session,
-        '/invitations': (init) =>
-          (init as RequestInit | undefined)?.method === 'POST'
-            ? jsonResponse(201, { data: fixtures.invitation({ id: 99 }) })
-            : jsonResponse(200, fixtures.paginated([fixtures.invitation({ id: 99 })], 1)),
+        '/invitations': invitations(fixtures.invitation({ id: 99 })),
       }),
     );
 
@@ -126,6 +148,52 @@ describe('InviteMemberPage', () => {
     await user.click(screen.getByRole('button', { name: 'Davet gönder' }));
 
     expect(await screen.findByRole('table', { name: 'Davetler' })).toBeInTheDocument();
+  });
+
+  /**
+   * REGRESYON — "davet gönder → liste ekranı ÇÖKMEDEN render edilsin".
+   *
+   * GERÇEK HATA (düzeltildi): POST'un tekil nesnesi, aynı yolun GET
+   * yanıtı sanılıyordu. `InvitationsSection` `result.data`yı dizi kabul
+   * edip `rows.filter` çağırınca `TypeError: rows.filter is not a
+   * function` atıyordu. Hata RENDER sırasında oluştuğu için
+   * `ErrorBoundary` onu yutuyor ve suite YEŞİL kalıyordu — yukarıdaki
+   * test bile, tabloyu göremediği hâlde geçiyordu.
+   *
+   * BU TEST NEDEN FARKLI: yalnızca "bir tablo var mı" demiyor.
+   * ErrorBoundary'nin fallback'ine düşülmediğini AÇIKÇA doğruluyor ve
+   * ardından sayfanın gerçekten davet listesi olduğunu kanıtlıyor.
+   * Böylece aynı sınıf hata bir daha sessizce geçemez.
+   */
+  it('davet listesine dönerken ErrorBoundary fallback ekranına DÜŞMEZ', async () => {
+    vi.stubGlobal(
+      'fetch',
+      mockApi({
+        ...session,
+        '/invitations': invitations(fixtures.invitation({ id: 99 })),
+      }),
+    );
+
+    const user = userEvent.setup();
+    renderApp('/app/invitations/new', { token: 'gecerli-token' });
+
+    await user.type(await screen.findByLabelText('E-posta'), 'yeni@flowtiger.test');
+    await user.click(screen.getByRole('button', { name: 'Davet gönder' }));
+
+    // 1) Liste gerçekten kuruldu.
+    const table = await screen.findByRole('table', { name: 'Davetler' });
+    expect(table).toBeInTheDocument();
+
+    // 2) Ve render bir istisna ile düşmedi: ErrorBoundary'nin fallback
+    //    başlığı DOM'da OLMAMALI. Bu kontrol olmadan, çökme hâlinde de
+    //    test yeşil kalırdı — hatanın asıl görünmezlik sebebi buydu.
+    expect(screen.queryByText('Bir şeyler ters gitti.')).not.toBeInTheDocument();
+
+    // 3) Sayfa gerçekten davet listesi: POST ile oluşturulan davet satırı
+    //    görünür. (Durum dağılımı kartları BURADA yok: Ekip ekranı bu
+    //    bölümü `compact` render eder.)
+    expect(within(table).getByText('a***@flowtiger.test')).toBeInTheDocument();
+    expect(within(table).getByRole('button', { name: 'İptal et' })).toBeInTheDocument();
   });
 
   it('422 doğrulama hatasını alan altında gösterir', async () => {
