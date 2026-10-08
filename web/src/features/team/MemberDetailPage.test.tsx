@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { bodyOf, fixtures, jsonResponse, mockApi, renderApp } from '@/test/harness';
+import { formatDateTime } from '@/features/audit/auditLabels';
 
 /**
  * Üye detayı — rol değişimi ve ekipten çıkarma.
@@ -90,6 +91,70 @@ describe('MemberDetailPage', () => {
       'href',
       '/app/team/22/edit',
     );
+  });
+
+  /**
+   * REGRESYON — TARİHLER HAM ISO OLARAK GÖSTERİLİYORDU.
+   *
+   * Üye detayı, uygulamadaki tarih biçimlendirme kuralını uygulamayan TEK
+   * ekran kalmıştı: `created_at`/`updated_at` yanıttan geldiği gibi
+   * basılıyor ve ekranda "2026-07-01T08:00:00+00:00" görünüyordu. Müşteri,
+   * görev, finans, ödeme, denetim ve davet ekranları aynı alanı
+   * `formatDateTime` ile "01.07.2026 08:00" biçiminde gösteriyor.
+   *
+   * Test HAM DEĞERİ DEĞİL, gerçekten GÖRÜNEN metni ölçer: biçimlendirici
+   * değişirse iddia da onunla birlikte doğru kalır.
+   */
+  it('katılma ve güncelleme tarihlerini ham ISO değil okunur biçimde gösterir', async () => {
+    const dated = fixtures.member({
+      id: 22,
+      name: 'Mert Demir',
+      created_at: '2026-07-01T08:00:00+00:00',
+      updated_at: '2026-08-01T12:00:00+00:00',
+    });
+
+    vi.stubGlobal(
+      'fetch',
+      mockApi({
+        ...session,
+        '/members/22': () => jsonResponse(200, { data: dated }),
+      }),
+    );
+
+    renderApp('/app/team/22', { token: 'gecerli-token' });
+
+    await screen.findByRole('heading', { name: 'Mert Demir' });
+
+    const created = screen.getByTestId('member-created-at');
+    const updated = screen.getByTestId('member-updated-at');
+
+    expect(created).toHaveTextContent(formatDateTime('2026-07-01T08:00:00+00:00') as string);
+    expect(updated).toHaveTextContent(formatDateTime('2026-08-01T12:00:00+00:00') as string);
+
+    // Ham ISO metni ekranın hiçbir yerinde görünmemeli.
+    expect(created.textContent).not.toContain('T08:00:00');
+    expect(updated.textContent).not.toContain('T12:00:00');
+    expect(screen.queryByText(/2026-07-01T08:00:00/)).not.toBeInTheDocument();
+  });
+
+  /** Tarih yoksa uydurma değer değil, boşluk işareti. */
+  it('tarih alanları boşsa belirsizlik işareti gösterir', async () => {
+    const undated = fixtures.member({ id: 22, name: 'Mert Demir', created_at: null, updated_at: null });
+
+    vi.stubGlobal(
+      'fetch',
+      mockApi({
+        ...session,
+        '/members/22': () => jsonResponse(200, { data: undated }),
+      }),
+    );
+
+    renderApp('/app/team/22', { token: 'gecerli-token' });
+
+    await screen.findByRole('heading', { name: 'Mert Demir' });
+
+    expect(screen.getByTestId('member-created-at')).toHaveTextContent('—');
+    expect(screen.getByTestId('member-updated-at')).toHaveTextContent('—');
   });
 
   // --------------------------------------------------------- rol değişimi

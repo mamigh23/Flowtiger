@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { api, endpoints } from '@/lib/api';
 import { Badge, Button, Card, ConfirmPanel, ErrorState, LoadingScreen } from '@/components/ui';
 import { roleLabel } from '@/lib/company/roleLabel';
+import { formatDateTime } from '@/features/audit/auditLabels';
 import type { Member, Role } from '@/types/api';
 import { memberErrorMessage, removeErrorMessage } from './memberErrors';
 
@@ -138,11 +139,26 @@ export function MemberDetailPage() {
             <Badge tone={isOwner ? 'accent' : 'neutral'}>{roleLabel(member.role)}</Badge>
           </dd>
 
+          {/*
+            TARİHLER BİÇİMLENDİRİLİR — ham ISO metni kullanıcıya
+            gösterilmez.
+
+            REGRESYON: bu iki alan yanıttaki değeri olduğu gibi basıyordu
+            ve ekranda "2026-07-01T08:00:00+00:00" görünüyordu. Üye detayı
+            bu kuralı uygulamayan TEK ekran kalmıştı; müşteri, görev,
+            finans, ödeme, denetim ve davet ekranları aynı alanı
+            "01.07.2026 08:00" olarak gösteriyor. Aynı üründe aynı alan iki
+            farklı biçimde okunmamalı.
+
+            `formatDateTime` denetim ekranıyla AYNI fonksiyondur (Intl
+            kullanmaz: Node'un ICU derlemesi ortama göre değişir ve
+            tr-TR'siz bir derlemede sessizce en-US biçimine düşer).
+          */}
           <dt>Katılma</dt>
-          <dd>{member.created_at ?? '—'}</dd>
+          <dd data-testid="member-created-at">{formatDateTime(member.created_at) ?? '—'}</dd>
 
           <dt>Son güncelleme</dt>
-          <dd>{member.updated_at ?? '—'}</dd>
+          <dd data-testid="member-updated-at">{formatDateTime(member.updated_at) ?? '—'}</dd>
         </dl>
       </Card>
 
