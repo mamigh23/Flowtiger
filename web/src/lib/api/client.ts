@@ -83,10 +83,8 @@ export class ApiClient {
       headers['Content-Type'] = 'application/json';
     }
 
-    if (authenticated) {
-      const token = this.options.getToken();
-      if (token) headers['Authorization'] = `Bearer ${token}`;
-    }
+    const requestToken = authenticated ? this.options.getToken() : null;
+    if (requestToken) headers['Authorization'] = `Bearer ${requestToken}`;
 
     let response: Response;
 
@@ -110,7 +108,7 @@ export class ApiClient {
     const payload = await this.parseJson(response);
 
     if (!response.ok) {
-      throw this.toApiError(response, payload);
+      throw this.toApiError(response, payload, requestToken);
     }
 
     return payload as T;
@@ -142,16 +140,21 @@ export class ApiClient {
     }
   }
 
-  private toApiError(response: Response, payload: unknown): ApiError {
+  private toApiError(response: Response, payload: unknown, requestToken: string | null): ApiError {
     const data = (payload ?? {}) as {
       message?: string;
       code?: string;
       errors?: Record<string, string[]>;
     };
 
-    // 401 tek noktadan işlenir: özellik kodu oturum temizliğiyle
-    // uğraşmaz (§12, §13).
-    if (response.status === 401) {
+    // Yalnızca isteği gönderen oturum hâlâ aktifse temizle. Eski bir
+    // isteğin gecikmiş 401'i yeni girişin token'ını düşürmemeli; Bearer
+    // taşımayan public istek de mevcut oturum hakkında karar veremez.
+    if (
+      response.status === 401 &&
+      requestToken !== null &&
+      requestToken === this.options.getToken()
+    ) {
       this.options.onUnauthenticated?.();
     }
 

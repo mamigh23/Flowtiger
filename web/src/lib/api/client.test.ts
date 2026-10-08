@@ -97,6 +97,57 @@ describe('ApiClient', () => {
     expect(onUnauthenticated).toHaveBeenCalledOnce();
   });
 
+  it('eski token ile gönderilmiş gecikmiş 401 yeni oturumu kapatmaz', async () => {
+    let token = 'old-session';
+    let respond!: (response: Response) => void;
+    mockFetch(() => new Promise<Response>((resolve) => {
+      respond = resolve;
+    }));
+    const onUnauthenticated = vi.fn();
+    const client = new ApiClient({
+      baseUrl: 'https://api.test/api/v1',
+      getToken: () => token,
+      onUnauthenticated,
+    });
+
+    const pendingError = captureApiError(client.get('customers'));
+    token = 'new-session';
+    respond(jsonResponse(401, { message: 'Unauthenticated.' }));
+
+    expect((await pendingError).status).toBe(401);
+    expect(onUnauthenticated).not.toHaveBeenCalled();
+  });
+
+  it('public isteğin 401 yanıtı mevcut oturumu kapatmaz', async () => {
+    mockFetch(async () => jsonResponse(401, { message: 'Invalid credentials.' }));
+    const { client, onUnauthenticated } = createClient();
+
+    const error = await captureApiError(client.post('auth/login', {}, { authenticated: false }));
+    expect(error.status).toBe(401);
+    expect(onUnauthenticated).not.toHaveBeenCalled();
+  });
+
+  it('tokensız gönderilen isteğin gecikmiş 401 yanıtı yeni oturumu kapatmaz', async () => {
+    let token: string | null = null;
+    let respond!: (response: Response) => void;
+    mockFetch(() => new Promise<Response>((resolve) => {
+      respond = resolve;
+    }));
+    const onUnauthenticated = vi.fn();
+    const client = new ApiClient({
+      baseUrl: 'https://api.test/api/v1',
+      getToken: () => token,
+      onUnauthenticated,
+    });
+
+    const pendingError = captureApiError(client.get('customers'));
+    token = 'new-session';
+    respond(jsonResponse(401, { message: 'Unauthenticated.' }));
+
+    expect((await pendingError).status).toBe(401);
+    expect(onUnauthenticated).not.toHaveBeenCalled();
+  });
+
   it('403 için isForbidden ve kodu taşır', async () => {
     mockFetch(async () =>
       jsonResponse(403, { message: 'Yetkiniz yok.', code: 'no_active_company' }),

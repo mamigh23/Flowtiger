@@ -718,7 +718,40 @@ Bu nedenle lansmana kadar gereksiz büyük refactor, yeni dependency ve mimari d
 
 # 11. GÜNCEL CHECKPOINT
 
-**Checkpoint:** 30.08.2026
+## 08.10.2026 — Web Release Stabilization / oturum yarış koşulu
+
+Çalışma dalı: `feat/release-stabilization` (başlangıç commit'i `44278bd`).
+
+- Merkezi API istemcisinde eski oturumun gecikmiş `401` yanıtının yeni
+  oturumu kapatması regresyon testiyle yeniden üretildi ve düzeltildi.
+- Oturum temizliği yalnızca istekte gönderilen Bearer token hâlâ aktif
+  token ile eşleşiyorsa çalışır. Public ve tokensız isteklerin `401`
+  yanıtları mevcut oturumu temizlemez; hata çağırana iletilmeye devam eder.
+- Üç regresyon testi eklendi; mevcut aktif token için `401` oturum kapatma
+  testi korunmuştur. Backend yetki ve tenant kontrolleri değiştirilmedi.
+
+08.10.2026 doğrulama çıktıları:
+
+```text
+Backend: 820 tests passed / 3071 assertions
+Web: 48 test files / 822 tests passed
+npm run typecheck: GREEN
+npm run build: GREEN
+git diff --check: GREEN
+```
+
+Windows backend doğrulaması kurulu PHP 8.4 ile kendi `php.ini` dosyası
+seçilerek çalıştırıldı. Varsayılan `php` komutu PHP 8.5 ile PHP 8.4
+eklentilerini eşleştirdiği için uygun değildir; sistem ayarları değiştirilmedi.
+Test veritabanı koruması ve PostgreSQL gereksinimi korunmuştur.
+
+**Aşama 9 devam ediyor.** Gerçek tarayıcı + API kullanıcı turu bu checkpoint'te
+tamamlanmadı. Sıradaki iş §12'deki uçtan uca akışın doğrulanmasıdır.
+Lansman / resmi çıkış tarihleri tarihsel hedeflerdir; gerçekleştiği veya
+yeni bir tarihe taşındığı doğrulanmamıştır. Mobil productization, Finance V2
+ve resmi release tamamlandı olarak işaretlenmez.
+
+## Önceki checkpoint — 30.08.2026
 
 Son Git commit:
 
