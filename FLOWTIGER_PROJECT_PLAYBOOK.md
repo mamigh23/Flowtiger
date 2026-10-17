@@ -10,6 +10,10 @@
 **Repository:** `https://github.com/mamigh23/Flowtiger`  
 **Branch:** `master`
 
+**17.10.2026 uygulama yol haritası:** [Durum analizi ve iş sırası](docs/ROADMAP.md).
+Bu bağlantıdaki belge playbook'un tamamlayıcısıdır. Aktif çalışma dalı
+`feat/release-stabilization`; `master` ile eşit olduğu varsayılmaz.
+
 ---
 
 # 1. PROJENİN ANA HEDEFİ
