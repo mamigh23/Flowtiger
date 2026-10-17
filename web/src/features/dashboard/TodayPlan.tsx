@@ -62,6 +62,7 @@ export function TodayPlan({
         </h2>
         <p className="ft-panel__meta">{today}</p>
       </div>
+      <p className="ft-plan-scope">Şirketin bugünkü planı</p>
 
       <PlanBody panel={panel} nextStops={nextStops} />
     </section>
@@ -105,7 +106,7 @@ function PlanBody({ panel, nextStops }: { panel: Panel<Task[]>; nextStops: Focus
         <span className="ft-plan-empty__glyph" aria-hidden="true" />
         <p className="ft-plan-empty__title">Bugün için planlanmış bir iş yok.</p>
         <p className="ft-plan-empty__hint">
-          Planlama hazır olduğunda günün işleri burada sırasıyla görünecek.
+          Bir iş planladığında günün işleri burada sırasıyla görünecek.
         </p>
 
         {/*
@@ -175,6 +176,9 @@ function PlanBody({ panel, nextStops }: { panel: Panel<Task[]>; nextStops: Focus
                 {task.customer.name}
               </span>
             )}
+            <span className="ft-task__meta ft-muted">
+              {task.assigned_to ? `Sorumlu: ${task.assigned_to.name}` : 'Henüz atanmamış'}
+            </span>
           </span>
         </li>
       ))}

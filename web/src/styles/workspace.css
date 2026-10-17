@@ -63,6 +63,34 @@
 .ft-shell--workspace .ft-workspace-form .ft-field { display: flex; flex-direction: column; gap: 0.5rem; }
 .ft-shell--workspace .ft-dashboard { gap: 1.75rem; }
 .ft-shell--workspace .ft-dashboard__grid { gap: 1.5rem; }
+.ft-shell--workspace .ft-dashboard--guided .ft-hero { padding-bottom: 0; border: 0; }
+.ft-shell--workspace .ft-dashboard--guided .ft-hero__title { font-size: 1.5rem; }
+.ft-shell--workspace .ft-day-guide {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 1rem;
+  padding: 2rem; border: 1px solid #61412a; border-radius: 0.875rem;
+  background: linear-gradient(120deg, #272019 0%, #191c23 70%);
+}
+.ft-shell--workspace .ft-day-guide h2 { font-size: 0.875rem; font-weight: 500; color: #c8b5a4; }
+.ft-shell--workspace .ft-day-guide__eyebrow { display: flex; align-items: center; gap: 0.5rem; font-size: 0.75rem; font-weight: 600; color: #ffab66; }
+.ft-shell--workspace .ft-day-guide__eyebrow svg { width: 1.125rem; height: 1.125rem; }
+.ft-shell--workspace .ft-day-guide .ft-day-guide__title { font-size: clamp(1.375rem, 2.4vw, 2rem); line-height: 1.3; letter-spacing: -0.025em; font-weight: 600; color: var(--ft-color-text); }
+.ft-shell--workspace .ft-day-guide > p { max-width: 65ch; color: var(--ft-color-text-muted); }
+.ft-shell--workspace .ft-day-guide__reason { font-size: 0.8125rem; }
+.ft-shell--workspace .ft-day-guide__context { display: flex; flex-wrap: wrap; gap: 0.5rem 1.25rem; font-size: 0.875rem; color: #c3c9d3; }
+.ft-shell--workspace .ft-day-guide__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem 1.5rem; margin-top: 0.5rem; }
+.ft-shell--workspace .ft-day-guide__secondary { display: inline-flex; align-items: center; min-height: 2.75rem; color: #d1d6df; font-size: 0.8125rem; text-underline-offset: 4px; }
+.ft-shell--workspace .ft-day-guide__secondary:hover { color: #ffab66; }
+.ft-shell--workspace .ft-day-guide__progress { width: 100%; margin-top: 0.75rem; padding-top: 1.25rem; border-top: 1px solid #41403e; font-size: 0.8125rem; color: #bcc3ce; }
+.ft-shell--workspace .ft-day-guide__progress progress { display: block; width: 100%; height: 0.375rem; border: 0; border-radius: 1rem; margin-top: 0.75rem; overflow: hidden; accent-color: #ff943d; background: #303640; }
+.ft-shell--workspace .ft-day-guide__progress progress::-webkit-progress-bar { background: #303640; }
+.ft-shell--workspace .ft-day-guide__progress progress::-webkit-progress-value { background: #ff943d; border-radius: 1rem; }
+.ft-shell--workspace .ft-day-guide__progress progress::-moz-progress-bar { background: #ff943d; }
+.ft-shell--workspace .ft-day-guide__loading { width: min(100%, 38rem); display: grid; gap: 1rem; }
+.ft-shell--workspace .ft-dashboard__overview { padding-top: 1.5rem; border-top: 1px solid var(--ft-color-border); }
+.ft-shell--workspace .ft-dashboard__overview-label { margin-bottom: 1rem; color: var(--ft-color-text-muted); font-size: 0.8125rem; }
+.ft-shell--workspace .ft-plan-scope { padding: 0 1.5rem 1rem; color: var(--ft-color-text-muted); font-size: 0.75rem; }
+.ft-shell--workspace .ft-day-return { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; padding: 1.25rem; border: 1px solid var(--ft-color-border); border-radius: 0.75rem; background: var(--ft-color-surface); }
+.ft-shell--workspace .ft-day-return p { color: #c3c9d3; font-size: 0.875rem; }
 
 /* Marka gezinmede kalır; karşılama alanı işlere yer bırakır. */
 .ft-shell--workspace .ft-hero {
@@ -231,6 +259,8 @@
   .ft-shell--workspace .ft-shell__main { padding: 1.75rem; }
 }
 @media (max-width: 60rem) {
+  .ft-shell--workspace .ft-day-guide { padding: 1.25rem; }
+  .ft-shell--workspace .ft-day-guide__actions { width: 100%; }
   .ft-shell--workspace .ft-topbar { padding: 0.75rem 1rem; gap: 0.625rem; }
   .ft-shell--workspace .ft-shell__main { padding: 1.25rem 1rem 2rem; }
   .ft-shell--workspace .ft-hero { gap: 1.25rem; padding-bottom: 1.25rem; }

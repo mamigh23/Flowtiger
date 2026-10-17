@@ -40,7 +40,7 @@ import { taskErrorMessage } from './taskErrors';
  * VERİ VE İSTEK SÖZLEŞMESİ AYNI: aynı uç, aynı sayfalama, aynı alanlar,
  * aynı sıralama.
  */
-export function TaskListPage() {
+export function TaskListPage({ todayOnly = false }: { todayOnly?: boolean }) {
   const [page, setPage] = useState(1);
   const [result, setResult] = useState<Paginated<Task> | null>(null);
   const [error, setError] = useState<unknown>(null);
@@ -51,7 +51,9 @@ export function TaskListPage() {
     setError(null);
 
     try {
-      setResult(await endpoints.tasks.list(api, { page: requestedPage }));
+      setResult(await (todayOnly
+        ? endpoints.tasks.today(api, { page: requestedPage })
+        : endpoints.tasks.list(api, { page: requestedPage })));
     } catch (caught) {
       // 401 merkezî olarak ApiClient'ta ele alınır.
       setError(caught);
@@ -59,7 +61,7 @@ export function TaskListPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [todayOnly]);
 
   useEffect(() => {
     void load(page);
@@ -83,17 +85,18 @@ export function TaskListPage() {
   const completedCount = rows.filter((task) => task.is_completed).length;
   const openCount = rows.length - completedCount;
   const singlePage = result !== null && result.meta.last_page <= 1;
-  const scopeNote = singlePage ? 'tüm görevler' : 'bu sayfada';
+  const scopeNote = singlePage ? (todayOnly ? 'bugünkü tüm işler' : 'tüm görevler') : 'bu sayfada';
 
   return (
     <div className="ft-page ft-tasks">
       {/* ----------------------------------------------------- başlık */}
       <header className="ft-tasks-hero">
         <div className="ft-tasks-hero__text">
-          <h1 className="ft-tasks-hero__title">Görevler</h1>
+          <h1 className="ft-tasks-hero__title">{todayOnly ? 'Bugünün işleri' : 'Görevler'}</h1>
           <p className="ft-tasks-hero__lead">
-            Ekibin işlerini tek bir yerden planlayın ve takip edin.
+            {todayOnly ? 'Şirketinizin bugüne planlanan işlerini sırayla gözden geçirin.' : 'Ekibin işlerini tek bir yerden planlayın ve takip edin.'}
           </p>
+          {todayOnly && <Link className="ft-day-guide__secondary" to="/app/tasks">Tüm görevleri gör</Link>}
         </div>
 
         {/* İşaret `aria-hidden`: bağlantının erişilebilir adı
@@ -113,7 +116,7 @@ export function TaskListPage() {
           <article className="ft-tasks-stat" data-testid="tasks-summary-total">
             <span className="ft-tasks-stat__label">Toplam görev</span>
             <span className="ft-tasks-stat__value">{result.meta.total}</span>
-            <span className="ft-tasks-stat__note">tüm kayıtlar</span>
+            <span className="ft-tasks-stat__note">{todayOnly ? 'bugüne planlanan' : 'tüm kayıtlar'}</span>
           </article>
 
           <article className="ft-tasks-stat ft-tasks-stat--open" data-testid="tasks-summary-open">
@@ -187,7 +190,7 @@ export function TaskListPage() {
             ✓
           </span>
           {/* Metin AYNEN korunur: boş durumun davranışı bu turda değişmedi. */}
-          <h2 className="ft-tasks-empty__title">Henüz görev yok.</h2>
+          <h2 className="ft-tasks-empty__title">{todayOnly ? 'Bugüne planlanmış görev yok.' : 'Henüz görev yok.'}</h2>
           <p className="ft-tasks-empty__text">
             İlk görevi ekleyerek günü planlamaya başlayın. Eklediğiniz görevler burada saati,
             tarihi ve durumuyla listelenir.

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { screen, waitFor } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import { fixtures, jsonResponse, mockApi, renderApp } from '@/test/harness';
 
 /**
@@ -145,7 +145,7 @@ describe('DashboardPage', () => {
     renderAtHour(9);
 
     expect(await screen.findByText('Hoş geldiniz.')).toBeInTheDocument();
-    expect(screen.getByText('Bugün işletmeniz için neler var?')).toBeInTheDocument();
+    expect(screen.getByText('Bugün ne yapacağını buradan takip edebilirsin.')).toBeInTheDocument();
   });
 
   /**
@@ -167,12 +167,12 @@ describe('DashboardPage', () => {
   });
 
   /**
-   * REGRESYON — ANA EKRANDA YALNIZCA İKİ BAŞLIKLI BÖLÜM VAR.
+   * REGRESYON — BAŞLIKLI BÖLÜMLERİN GERÇEK VERİ KAYNAĞI VAR.
    *
    * Referans tasarımda dört blok var; ikisinin ("dikkat gerekenler"
    * uyarıları ve gün özeti yüzdesi) backend'de karşılığı YOK. Bu test
-   * onların sessizce geri sızmasını engelliyor: yeni bir bölüm ancak
-   * gerçek bir veri kaynağıyla birlikte gelebilir.
+   * onların sessizce geri sızmasını engelliyor. Günlük yönlendirme
+   * bölümü de mevcut /tasks/today verisini kullanır.
    *
    * ÖZET ŞERİDİ BU LİSTEDE YOK ve olmamalı: o bir bölüm değil, hero'nun
    * altındaki bir kısayol şerididir. Kendi h2'si olsaydı ekranın başlık
@@ -189,7 +189,8 @@ describe('DashboardPage', () => {
 
     const sections = screen.getAllByRole('heading', { level: 2 }).map((node) => node.textContent);
 
-    expect(sections).toEqual(['Bugünün Odağı', 'Son hareketler']);
+    // Yeni yönlendirme de gerçek /tasks/today verisinden beslenir; finansal uyarı uydurmaz.
+    expect(sections).toEqual(['Sıradaki adım', 'Bugünün Odağı', 'Son hareketler']);
   });
 
   // -------------------------------------------------------------- bugün
@@ -251,7 +252,8 @@ describe('DashboardPage', () => {
 
     renderAtHour(9);
 
-    expect(await screen.findByText('Müşteri görüşmesi')).toBeInTheDocument();
+    await screen.findByTestId('task-1');
+    expect(within(screen.getByRole('region', { name: 'Bugünün Odağı' })).getByText('Müşteri görüşmesi')).toBeInTheDocument();
     expect(screen.getByText('09:00')).toBeInTheDocument();
     expect(screen.queryByTestId('plan-empty')).not.toBeInTheDocument();
   });
@@ -274,7 +276,8 @@ describe('DashboardPage', () => {
 
     renderAtHour(9);
 
-    expect(await screen.findByText('Bir ara yapılacak')).toBeInTheDocument();
+    await screen.findByTestId('task-1');
+    expect(within(screen.getByRole('region', { name: 'Bugünün Odağı' })).getByText('Bir ara yapılacak')).toBeInTheDocument();
     expect(screen.queryByText(/\d{2}:\d{2}/)).not.toBeInTheDocument();
   });
 

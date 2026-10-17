@@ -1,11 +1,19 @@
 # FlowTiger — durum analizi ve uygulama yol haritası
 
-Tarih: 17.10.2026. İncelenen kod: `a6cd7b3`, `feat/release-stabilization`.
+İlk envanter: 17.10.2026 / `a6cd7b3`. Güncel ürün yönü: 18.10.2026.
+Çalışma dalı: `feat/release-stabilization`; sonraki uygulama commitleri Git
+geçmişi ve ana playbook checkpoint'lerinde izlenir.
 Bu belge ana playbook'un operasyonel tamamlayıcısıdır; güvenlik kurallarını
 ve faz sırasını değiştirmez. Öncelik mevcut web sürümünün yayınıdır.
 Sonraki fazlar burada planlanır; başlatılmaları ayrıca kararlaştırılır.
 
 ## 1. Yönetim özeti
+
+**Ürün kararı:** Kullanıcı uygulamayı çözmek veya modüller arasında ne
+arayacağını düşünmek zorunda kalmamalı. Girişte günün işini ve sonraki
+somut adımı görmeli. Ekran önceliği günlük rehber → mevcut işin ayrıntısı
+→ işi tamamladıktan sonra rehbere dönüş → şirket planı → genel sayımlar.
+Bir kaydın var olması tek başına yapılacak iş/uyarı üretmez.
 
 FlowTiger'ın kimlik/şirket omurgası ve web üzerindeki temel işletme modülleri
 uygulanmıştır. Aktif faz Aşama 9 — Web Release Stabilization'dır.
@@ -20,12 +28,12 @@ Takvim, sunucunun açılma ve kabul sonuçları bilinmeden tarih taahhüdüne ç
 
 ## 2. Kanıt ve doğrulama durumu
 
-17.10.2026 tarihli son çalıştırılmış kontroller:
+Son çalıştırılmış kontroller: backend 17.10.2026, günlük rehber sonrası web 18.10.2026.
 
 | Kapı | Sonuç | Kanıtın sınırı |
 |---|---|---|
 | Backend tam paket | 824 test, 3.083 assertion geçti | Ayrı `flowtiger_test`; canlı doğrulama değil |
-| Web regresyon | 48 dosya, 822 test geçti | Taklit HTTP yanıtları gerçek sunucunun yerine geçmez |
+| Web regresyon | 49 dosya, 839 test geçti | Taklit HTTP yanıtları gerçek sunucunun yerine geçmez |
 | Yayın adresi kontrolü | 14 test geçti | DNS/TLS/erişilebilirlik kontrolü yapmaz |
 | TypeScript, normal build | Geçti | Gerçek API ile yayın paketi henüz üretilmedi |
 | Pint | Değişen üç PHP dosyası geçti | Tüm deponun stil kontrolü olarak yorumlanmaz |
@@ -33,10 +41,9 @@ Takvim, sunucunun açılma ve kabul sonuçları bilinmeden tarih taahhüdüne ç
 | Gerçek browser/API turu | Bekliyor | İzole test şirketleriyle çalıştırılmalı |
 | Canlı yayın/geri dönüş | Bekliyor | Sunucu envanteri ve yedek gerekli |
 
-Bu dokümantasyon taramasında aynı kod için testler gereksiz yere tekrarlanmadı.
-Sonuçlar önceki çalıştırma ve playbook checkpoint'inden aktarılmıştır.
-GitHub'a en son gönderilen uygulama commit'i `a6cd7b3`'tür. Yeni çekme/yayın
-öncesi uzak dal tekrar okunur; `master` ile aynı olduğu varsayılmaz.
+İlk envanterdeki sonuçlar sonraki uygulama checkpoint'leriyle güncellenmiştir.
+Her yayın öncesi aday commit ve uzak dal tekrar okunur; `master` ile çalışma
+dalının aynı olduğu varsayılmaz. Canlıya alınmış commit henüz doğrulanmadı.
 
 ## 3. Modül envanteri
 
@@ -49,7 +56,7 @@ GitHub'a en son gönderilen uygulama commit'i `a6cd7b3`'tür. Yeni çekme/yayın
 | Görev | Oluşturma, atama, tarih/saat, tamamlama/yeniden açma | Canlı saat dilimi, günlük görünüm ve atama kabulü |
 | Ekip/davet | Üyelik/rol, kaldırma, davet gönderme/iptal/kabul, gelen davetler | Gerçek alıcılarla kabul ve e-posta doğrulama zinciri |
 | Audit | Liste, filtre/sayfalama, güvenli detay gösterimi | Canlı iş işlemiyle iz tutarlılığı ve erişim kabulü |
-| Dashboard | Bugünün görevleri, son hareketler, kayıt sayıları | Dönemsel finansal tutar/karşılaştırma API'si yok |
+| Dashboard | Kişisel atamayı gözeten günlük rehber, şirket planı, rehbere dönüş, alt bölümde kayıt sayıları | Öneri görünen günlük görevlerle sınırlı; dönemsel finansal raporlama API'si yok |
 | İşletme finansı | Gelir/gider, KDV hesabı, ödeme/dağıtım ve iptal | Fatura, tam alacak/borç, dönem raporları, export yok |
 | Güvenlik yönetimi | Backend oturum ve güvenlik olayı uçları | Web profilinde oturum/güvenlik olayı ekranları yok |
 | Mali kimlik | Backend şirket/müşteri billing güncelleme uçları | Eksiksiz web mali kimlik düzenleme akışı yok |
@@ -117,6 +124,17 @@ kısa dashboard başlığı/iki doğrudan aksiyon, ortak sakin yüzeyler ve dar 
 822 web testi ve 14 yayın kontrol testi geçti; typecheck/build başarılı.
 Görsel kontrol örnek verili geçici yerel önizlemedir; dosyalar kaldırıldı.
 Kullanıcı görsel geri bildirimi ve gerçek sunucu kabulü hâlâ bekleniyor.
+
+18.10.2026 günlük rehber yönü: ana giriş "Bugün" olarak adlandırıldı.
+`/tasks/today` verisinden önce kişiye atanmış açık iş, yoksa atanmamış iş
+önerilir; her alt kümede sunucunun sırası korunur. Başkasının işi kişisel
+öneri gibi sunulmaz; finans/ödeme kayıt sayıları zorunlu aksiyona dönüştürülmez.
+49 dosyada 839 web testi ve 14 yayın kontrol testi geçti; typecheck/build
+başarılı. İlerleme yalnızca bugünün tüm görevleri görülebiliyorsa gösterilir. Kısmi
+sayfada tamamlanma iddiası yerine tam günlük plana bağlantı sunulur.
+Yeni istemci rotası `/app/tasks/today` aynı backend ucunu sayfalayarak açar;
+tarih istemciden gönderilmez. Görev tamamlandığında günlük rehbere dönüş
+bağlantısı vardır. Sunucu sözleşmesi ve veri modeli değiştirilmez.
 
 18.10.2026 devam geçişi: kullanıcı ilk tasarım yönünü olumlu değerlendirdi.
 Liste başlıkları/satırları, dokunma alanları, bölüm seçicileri, sayfalama ve

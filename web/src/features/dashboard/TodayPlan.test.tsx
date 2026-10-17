@@ -92,6 +92,12 @@ describe('TodayPlan', () => {
     expect(screen.queryByTestId('plan-empty')).not.toBeInTheDocument();
   });
 
+  it('şirket planını kişisel plan gibi sunmaz ve görev sorumlusunu açıklar', () => {
+    renderPlan(ready([fixtures.task({ assigned_to: { id: 2, name: 'Ece Demir' } }) as Task]));
+    expect(screen.getByText('Şirketin bugünkü planı')).toBeInTheDocument();
+    expect(screen.getByText('Sorumlu: Ece Demir')).toBeInTheDocument();
+  });
+
   /**
    * REGRESYON — DASHBOARD OKUMA YÜZEYİDİR.
    *

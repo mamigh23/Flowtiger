@@ -70,7 +70,7 @@ import { FlowTigerMark } from '@/features/brand/FlowTigerMark';
  * İkonlar `aria-hidden`: erişilebilir adı metin taşır.
  */
 const NAV_ITEMS = [
-  { to: '/app', label: 'Panel', icon: 'panel', end: true },
+  { to: '/app', label: 'Bugün', icon: 'panel', end: true },
   /*
     Görevler panele en yakın madde: ana ekranın sorusu ("bugün ne yapmam
     gerekiyor?") buradan devam ediyor.

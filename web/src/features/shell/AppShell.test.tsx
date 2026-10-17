@@ -245,7 +245,7 @@ describe('AppShell', () => {
     const nav = await screen.findByRole('navigation', { name: 'Ana gezinme' });
 
     for (const label of [
-      'Panel',
+      'Bugün',
       'Müşteriler',
       'Finans',
 
@@ -269,7 +269,7 @@ describe('AppShell', () => {
     const nav = await screen.findByRole('navigation', { name: 'Ana gezinme' });
 
     const expected: Record<string, string> = {
-      Panel: '/app',
+      Bugün: '/app',
       Müşteriler: '/app/customers',
       Finans: '/app/finance',
 
@@ -626,7 +626,7 @@ describe('AppShell', () => {
 
     const nav = await screen.findByRole('navigation', { name: 'Ana gezinme' });
 
-    for (const label of ['Panel', 'Müşteriler', 'Finans', 'Ekip', 'Denetim', 'Profil']) {
+    for (const label of ['Bugün', 'Müşteriler', 'Finans', 'Ekip', 'Denetim', 'Profil']) {
       expect(within(nav).getByRole('link', { name: label })).toBeInTheDocument();
     }
   });

@@ -295,7 +295,8 @@ export function App() {
                 /app/tasks/new isteği id'si "new" olan bir görev araması
                 olarak yorumlanabilirdi.
               */}
-              <Route path="tasks" element={<TaskListPage />} />
+              <Route path="tasks" element={<TaskListPage key="all" />} />
+              <Route path="tasks/today" element={<TaskListPage key="today" todayOnly />} />
               <Route path="tasks/new" element={<TaskCreatePage />} />
               <Route path="tasks/:id" element={<TaskDetailPage />} />
               <Route path="tasks/:id/edit" element={<TaskEditPage />} />

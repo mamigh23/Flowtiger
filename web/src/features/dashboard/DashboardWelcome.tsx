@@ -1,8 +1,7 @@
 import { greetingFor } from './greeting';
-import { Link } from 'react-router-dom';
 
 /**
- * Karşılama — ana ekranın ilk ve en güçlü bloğu.
+ * Karşılama — günlük rehberin üstündeki kısa selamlama.
  *
  * İSİM OTURUMDAKİ GERÇEK KULLANICIDAN GELİR. Yer tutucu bir ad yazmak,
  * ekranı dolu göstermek için kimliği uydurmak olurdu; kullanıcı ilk
@@ -43,16 +42,7 @@ export function DashboardWelcome({ name, hour }: { name: string | null; hour: nu
         </h1>
 
         <p className="ft-hero__lead">Hoş geldiniz.</p>
-        <p className="ft-hero__sub ft-muted">Bugün işletmeniz için neler var?</p>
-      </div>
-
-      <div className="ft-hero__actions">
-        <Link className="ft-button" to="/app/tasks/new">
-          Yeni görev
-        </Link>
-        <Link className="ft-button ft-button--secondary" to="/app/customers/new">
-          Müşteri ekle
-        </Link>
+        <p className="ft-hero__sub ft-muted">Bugün ne yapacağını buradan takip edebilirsin.</p>
       </div>
 
       {/* Marka rengini taşıyan sakin bir ışık; içerik değil, atmosfer. */}

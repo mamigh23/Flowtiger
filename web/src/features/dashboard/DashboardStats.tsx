@@ -60,7 +60,7 @@ export function DashboardStats({ counts }: { counts: DashboardCounts }) {
       glyph: 'tasks',
       title: 'Görevler',
       helper: 'bugün planlanan iş',
-      to: '/app/tasks',
+      to: '/app/tasks/today',
       panel: counts.todayTasks,
     },
     {

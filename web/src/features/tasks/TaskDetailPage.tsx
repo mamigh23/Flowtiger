@@ -167,6 +167,13 @@ export function TaskDetailPage() {
         <span aria-hidden="true">‹</span> Görevlere dön
       </Link>
 
+      {task.is_completed && (
+        <div className="ft-day-return">
+          <p>Bu iş tamamlandı. Günün diğer işlerine göz atabilirsin.</p>
+          <Link className="ft-button ft-button--secondary" to="/app">Günlük rehbere dön</Link>
+        </div>
+      )}
+
       {/* ------------------------------------------------ kimlik kartı */}
       <header className="ft-task-detail__hero">
         <div className="ft-task-detail__headline">

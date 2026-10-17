@@ -28,6 +28,44 @@ describe('TaskListPage', () => {
       jsonResponse(200, { data: [fixtures.company()], meta: { active_company_id: 7 } }),
   };
 
+  it('günlük plan bağlantısı şirketin bugün ucunu çağırır; istemci tarihi göndermez', async () => {
+    const fetchMock = mockApi({
+      ...session,
+      '/tasks/today': () => jsonResponse(200, fixtures.paginated([fixtures.task()], 1)),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    renderApp('/app/tasks/today', { token: 'gecerli-token' });
+    expect(await screen.findByRole('heading', { name: 'Bugünün işleri' })).toBeInTheDocument();
+    await screen.findByText("Ahmet Yılmaz'ı ara");
+    const urls = fetchMock.mock.calls.map(([input]) => String(input));
+    expect(urls.some((url) => url.includes('/tasks/today?page=1'))).toBe(true);
+    expect(urls.some((url) => url.includes('date='))).toBe(false);
+    expect(screen.getByRole('link', { name: 'Tüm görevleri gör' })).toHaveAttribute('href', '/app/tasks');
+  });
+
+  it('günlük planda sayfalar ve tüm görevlere geçerken sayfayı sıfırlar', async () => {
+    const fetchMock = mockApi({
+      ...session,
+      '/tasks/today': (_init, url) => {
+        const page = Number(new URL(url!, 'http://test.local').searchParams.get('page'));
+        return jsonResponse(200, fixtures.paginated([
+          fixtures.task({ id: page === 2 ? 991 : 990, title: `Günlük sayfa ${page}` }),
+        ], 2, { currentPage: page, lastPage: 2, perPage: 1 }));
+      },
+      '/tasks': () => jsonResponse(200, fixtures.paginated([fixtures.task({ id: 992, title: 'Tüm görevler ilk sayfa' })], 1)),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    const user = userEvent.setup();
+    renderApp('/app/tasks/today', { token: 'gecerli-token' });
+    const pager = await screen.findByRole('navigation', { name: 'Sayfalama' });
+    await user.click(within(pager).getByRole('button', { name: 'Sonraki' }));
+    expect(await screen.findByTestId('task-row-991')).toBeInTheDocument();
+    await user.click(screen.getByRole('link', { name: 'Tüm görevleri gör' }));
+    expect(await screen.findByTestId('task-row-992')).toBeInTheDocument();
+    expect(fetchMock.mock.calls.some(([url]) => String(url).endsWith('/tasks?page=1'))).toBe(true);
+    expect(fetchMock.mock.calls.some(([url]) => String(url).endsWith('/tasks?page=2'))).toBe(false);
+  });
+
   const timed = fixtures.task({
     id: 301,
     title: 'Müşteri görüşmesi',

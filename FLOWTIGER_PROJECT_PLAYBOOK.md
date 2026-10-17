@@ -722,6 +722,43 @@ Bu nedenle lansmana kadar gereksiz büyük refactor, yeni dependency ve mimari d
 
 # 11. GÜNCEL CHECKPOINT
 
+## 18.10.2026 — Ürün yönü: girişte günlük rehber
+
+Kullanıcı kararı: kişi modüller arasında ne yapacağını aramamalı; uygulamaya
+girdiğinde gün içinde ne yapacağını görmeli. Mevcut web tasarımı bu karara
+göre güncellendi; yeni backend/AI/Finance V2 fazı başlatılmadı.
+
+- Ana gezinmenin ilk maddesi "Bugün". Sayımlar aşağıdaki genel bakışa
+  taşındı; ilk işlevsel bölüm "Sıradaki adım" ve tek bir "Bu işe geç" aksiyonu.
+- Öneri /tasks/today yanıtındaki açık işlerden seçilir: önce kullanıcının
+  atandığı iş, yoksa henüz atanmamış iş. Alt kümelerde API sırası korunur.
+  Başkasına atanmış iş kişisel öneri olarak sunulmaz; gerekçe kartta görünür.
+- Saat, müşteri ve tamamlanma durumu yanıttan gelir. Vade/aciliyet/finansal
+  yükümlülük uydurulmaz. Kısmi sayfada tüm gün bitti denmez veya yüzde
+  üretilmez. Tam görev kümesi doğrulandığında şirketin gerçek ilerlemesi
+  gösterilir; bunun kişisel tamamlanma oranı olduğu iddia edilmez.
+- Boş planda ilk işi planlama, hata durumunda günlük planı açma yönlendirmesi
+  vardır. Şirket planında görev sorumluları açıkça gösterilir.
+- Yeni web rotası `/app/tasks/today` mevcut /tasks/today API'sini sayfalar;
+  istemci kendi tarihini sunucuya göndermez. Tüm görevler/günlük plan
+  geçişinde sayfa durumu sıfırlanır. Tamamlanan görevde rehbere dönüş var.
+
+Doğrulama: 49 dosyada 839 web testi (17 ek senaryo), 14 yayın kontrol testi,
+typecheck, normal build ve diff kontrolü başarılı. Eski testler kaldırılmadı;
+yeni gerçek veri bölümü ve gezinme metni için beklentiler kapsamı korunarak
+güncellendi. API, veri modeli, tenant/policy ve backend değişmediği için
+backend paketi bu turda tekrarlanmadı.
+
+1440x1000 ve 375x812 yerel örnek verili önizlemede sıradaki iş kartı,
+günlük plana geçiş ve doğru görev detayına geçiş incelendi. Mobil sayfa
+taşması görülmedi. Geçici önizleme kaynakları kaldırıldı; üretim paketinde
+örnek token/veri işaretleri bulunmadığı kontrol edildi.
+
+Kapsam sınırı: öneri mevcut günlük yanıtın görünen görevleriyle sınırlıdır;
+daha fazla sayfa varsa bu açıkça belirtilir ve tam günlük plana gidilir.
+Henüz kaydı olmayan iş otomatik icat edilmez. Canlı sunucu/e-posta/yedek/TLS
+kabulü beklediği için Aşama 9 açık ve canlı yayın yapılmadı.
+
 ## 18.10.2026 — İç tasarım / liste ve detay tutarlılığı
 
 - Müşteri/ekip/denetim/davet tablolarının başlık, satır ve işlem alanları

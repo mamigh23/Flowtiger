@@ -153,6 +153,7 @@ describe('TaskDetailPage', () => {
     expect(await screen.findByTestId('task-status')).toHaveTextContent('Tamamlandı');
     expect(screen.getByRole('button', { name: 'Yeniden aç' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Tamamla' })).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Günlük rehbere dön' })).toHaveAttribute('href', '/app');
   });
 
   // ----------------------------------------------------------- tamamlama
