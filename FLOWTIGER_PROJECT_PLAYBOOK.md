@@ -722,6 +722,17 @@ Bu nedenle lansmana kadar gereksiz büyük refactor, yeni dependency ve mimari d
 
 # 11. GÜNCEL CHECKPOINT
 
+## 18.10.2026 — Finans, ekip, denetim ve profil düzeni
+
+- Finans ve ekip ekranlarına mevcut işlemleri açıklayan ortak `WorkspaceGuide` eklendi. Finans kaydı, gerçekleşen ödeme ve dağıtım birbirinden açıklamayla ayrılır; ekipte davet, katılım ve erişim sırası görünür.
+- Denetimde kayıt bulma, kişi/zaman ve satır ayrıntısını inceleme yönlendirmesi eklendi. Veri görünürlüğü ve hassas alan izin listeleri değişmedi.
+- Profilden hesap, doğrulama ve parola alanlarına doğrudan bölüm bağlantıları eklendi. Kimlik kartı ve formlar ortak çalışma alanı görünümüne uyarlandı.
+- Özet kartları küçültüldü; rozetler, liste başlıkları, davet gezinmesi ve form yüzeyleri sadeleştirildi. Yeni API, migration veya yetki değişikliği yok.
+- Doğrulama: 49 dosyada 839 web testi, 14 yayın kontrol testi, typecheck, build ve diff kontrolü geçti. Backend değişmedi; backend testleri yeniden çalıştırılmadı.
+- Gerçek React ekranları açıkça örnek olarak işaretli fixture verileriyle masaüstünde incelendi; denetim ve profil 375px genişlikte kontrol edildi. Yatay sayfa taşması yok; profil bölüm bağlantısı doğrulandı. Geçici önizleme kaynakları kaldırıldı.
+- Yerel CORS yapılandırmasına yalnızca `http://127.0.0.1:5173` eklendi; git dışındaki yerel ortam ayarıdır. Kayıt rotası hesap oluşturmadan 422 ve doğru CORS başlığıyla doğrulandı.
+- Canlı yayın kabulü bekleniyor; Aşama 9 açık. Çalışma dalı `feat/release-stabilization` olarak korunur.
+
 ## 18.10.2026 — Ürün yönü: girişte günlük rehber
 
 Kullanıcı kararı: kişi modüller arasında ne yapacağını aramamalı; uygulamaya

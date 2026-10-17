@@ -3,6 +3,7 @@ import { Link, NavLink } from 'react-router-dom';
 import { api, endpoints } from '@/lib/api';
 import { FinanceEntriesSection } from './FinanceEntryListPage';
 import { PaymentsSection } from '@/features/payments/PaymentListPage';
+import { WorkspaceGuide } from '@/components/ui/WorkspaceGuide';
 
 /**
  * FİNANS — GELİR/GİDER KAYITLARI VE TAHSİLATLARIN TEK EKRANI.
@@ -70,7 +71,7 @@ export function FinanceHubPage({ segment }: FinanceHubPageProps) {
           <span className="ft-finance-hub__eyebrow">Para akışı</span>
           <h1 className="ft-finance-hub__title">Finans</h1>
           <p className="ft-finance-hub__lead">
-            Gelir–gider kayıtları ve tahsilatlar tek ekranda.
+            Önce gelir veya gideri kaydet, ardından gerçekleşen ödemeyi takip et.
           </p>
         </div>
 
@@ -104,6 +105,19 @@ export function FinanceHubPage({ segment }: FinanceHubPageProps) {
           )}
         </div>
       </header>
+
+      <WorkspaceGuide
+        module="finance"
+        title={segment === 'entries' ? 'Ne kaydetmek istiyorsun?' : 'Ödeme ve dağıtımı takip et'}
+        description={segment === 'entries'
+          ? 'Gelir ve gider, işin finans kaydıdır. Gerçekleşen para hareketini Ödemeler bölümünde tutabilirsin.'
+          : 'Ödeme kaydını açarak hangi finans kayıtlarına dağıtıldığını inceleyebilirsin.'}
+        steps={[
+          { title: 'Gelir veya gider', description: 'Müşteriye ait finans kaydını oluştur.' },
+          { title: 'Gerçekleşen ödeme', description: 'Para hareketi olduğunda ödeme kaydet.' },
+          { title: 'Dağıtım ayrıntısı', description: 'Ödemeyi ilgili kayıtlarla eşleştir.' },
+        ]}
+      />
 
       {/* ----------------------------------------------------- özet */}
       <section className="ft-finance-hub__summary" aria-labelledby="ft-finance-summary-title">

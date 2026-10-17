@@ -94,7 +94,7 @@ export function ProfilePage() {
           <span className="ft-profile-hero__eyebrow">Hesap</span>
           <h1 className="ft-profile-hero__title">Profil</h1>
           <p className="ft-profile-hero__lead">
-            Ad, e-posta ve parola — yalnızca sizin hesabınız.
+            Hesap bilgilerini güncelle, e-posta adresini doğrula ve parolanı yönet.
           </p>
         </div>
       </header>
@@ -121,17 +121,23 @@ export function ProfilePage() {
         <>
           <ProfileIdentity profile={profile} />
 
+          <nav className="ft-profile-navigation" aria-label="Profil bölümleri">
+            <a href="#profile-account">Hesap bilgileri <span aria-hidden="true">↗</span></a>
+            <a href="#profile-verify">E-posta doğrulama <span aria-hidden="true">↗</span></a>
+            <a href="#profile-password">Parola <span aria-hidden="true">↗</span></a>
+          </nav>
+
           {/*
             IZGARA `ft-form-page` KAPSAMINI TAŞIR: kartların içindeki
             alanlar, etiketler, düğmeler ve hata kutuları diğer
             formlarla aynı kurallardan gelir.
           */}
           <div className="ft-form-page ft-profile-grid">
-            <div className="ft-profile-slot ft-profile-slot--account">
+            <div id="profile-account" className="ft-profile-slot ft-profile-slot--account">
               <AccountCard profile={profile} onSaved={setProfile} />
             </div>
 
-            <div className="ft-profile-slot ft-profile-slot--verify">
+            <div id="profile-verify" className="ft-profile-slot ft-profile-slot--verify">
               {/*
                 key: e-posta değişince kart YENİDEN KURULUR ve içindeki
                 "backend zaten doğrulanmış dedi" işareti sıfırlanır. Aksi
@@ -141,7 +147,7 @@ export function ProfilePage() {
               <EmailVerificationCard key={profile.email} profile={profile} />
             </div>
 
-            <div className="ft-profile-slot ft-profile-slot--password">
+            <div id="profile-password" className="ft-profile-slot ft-profile-slot--password">
               <PasswordCard />
             </div>
           </div>

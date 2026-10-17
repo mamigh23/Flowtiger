@@ -3,6 +3,7 @@ import { MembersSection } from './MemberListPage';
 import { InvitationsSection } from '@/features/invitations/InvitationListPage';
 import { IncomingInvitationsPage } from '@/features/invitations/IncomingInvitationsPage';
 import { useCompanies } from '@/lib/company/CompanyContext';
+import { WorkspaceGuide } from '@/components/ui/WorkspaceGuide';
 
 export type TeamSegment = 'members' | 'invitations';
 
@@ -17,7 +18,7 @@ export function TeamHubPage({ segment }: { segment: TeamSegment }) {
         <div className="ft-team-hero__text">
           <span className="ft-team-hero__eyebrow">{activeCompany?.name ?? 'Çalışma alanı'}</span>
           <h1 className="ft-team-hero__title">Ekip</h1>
-          <p className="ft-team-hero__lead">Üyeleri yönetin, davetlerinizi tek yerden takip edin.</p>
+          <p className="ft-team-hero__lead">Doğru kişileri çalışma alanına ekle, erişimlerini tek yerden takip et.</p>
         </div>
         {activeCompany?.role === 'owner' && (
           <Link className="ft-invitations-cta" to="/app/invitations/new">
@@ -25,6 +26,18 @@ export function TeamHubPage({ segment }: { segment: TeamSegment }) {
           </Link>
         )}
       </header>
+      <WorkspaceGuide
+        module="team"
+        title={segment === 'members' ? 'Birlikte çalışacağın kişiler' : 'Davetin hangi aşamada?'}
+        description={segment === 'members'
+          ? 'Bir kişinin adına dokunarak üyelik ayrıntılarını açabilirsin. Şirket sahibi davet ve rol işlemlerini yönetir.'
+          : 'Bu şirkete gönderilen davetlerle sana gelen davetleri aşağıdaki bölümlerden ayırabilirsin.'}
+        steps={[
+          { title: 'Davet et', description: 'Şirket sahibi e-posta adresine davet gönderir.' },
+          { title: 'Katılımı takip et', description: 'Davetler bölümünden durumunu incele.' },
+          { title: 'Erişimi yönet', description: 'Üyenin ayrıntısından rolünü ve üyeliğini incele.' },
+        ]}
+      />
       <nav className="ft-team-hub__segments" aria-label="Ekip bölümleri">
         <NavLink end to="/app/team" className={({ isActive }) =>
           `ft-team-hub__segment${isActive ? ' ft-team-hub__segment--active' : ''}`}>

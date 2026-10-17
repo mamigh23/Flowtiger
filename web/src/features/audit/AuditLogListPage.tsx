@@ -5,6 +5,7 @@ import type { AuditLog, Paginated } from '@/types/api';
 import { auditActionLabel, auditableTypeLabel, formatDateTime } from './auditLabels';
 import { auditErrorMessage } from './auditErrors';
 import { describeChanges, hasVisibleDetails, visibleMetadata } from './auditFormat';
+import { WorkspaceGuide } from '@/components/ui/WorkspaceGuide';
 
 /**
  * Denetim kayıtları.
@@ -105,6 +106,17 @@ export function AuditLogListPage() {
           </p>
         </div>
       </header>
+
+      <WorkspaceGuide
+        module="audit"
+        title="Bir değişikliğin izini sür"
+        description="Kayıtlar en yeniden eskiye sıralanır. İncelemek istediğin işlemin ayrıntısını satırdan açabilirsin."
+        steps={[
+          { title: 'İşlemi bul', description: 'Eylem ve nesne sütunlarından kaydı tanı.' },
+          { title: 'Kişi ve zamanı gör', description: 'İşlemi yapan kişiyi ve kayıt zamanını incele.' },
+          { title: 'Değişikliği aç', description: 'Ayrıntısı olan satırda önceki ve yeni değerleri karşılaştır.' },
+        ]}
+      />
 
       {/* ------------------------------------------------------- özet */}
       {!loading && !error && result && result.data.length > 0 && (
