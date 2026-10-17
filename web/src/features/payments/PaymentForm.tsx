@@ -288,7 +288,7 @@ export function PaymentForm({
       : null;
 
   return (
-    <div className="ft-page">
+    <div className="ft-page ft-workspace-form">
       <header className="ft-page__header">
         <h1 className="ft-page__title">{title}</h1>
       </header>

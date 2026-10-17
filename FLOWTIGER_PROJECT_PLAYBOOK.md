@@ -722,6 +722,33 @@ Bu nedenle lansmana kadar gereksiz büyük refactor, yeni dependency ve mimari d
 
 # 11. GÜNCEL CHECKPOINT
 
+## İç tasarım geçişi — mevcut web kapsamı
+
+- Masaüstünde sürekli etiketli, sabit genişlikte gezinme; dar ekranda mevcut
+  çekmece davranışı. Menü ve dashboard için ortak dekoratif SVG simgeleri.
+- Büyük dekoratif dashboard karşılama alanı yerine kısa başlık ve mevcut
+  görev/müşteri oluşturma ekranlarına iki doğrudan bağlantı.
+- Ortak `workspace.css` kapsamıyla sakin yüzeyler, belirgin kenarlar,
+  okunaklı ikincil metinler ve daha az parlama. Liste/ayrıntı/profil
+  yüzeyleri aynı dilde; görev/finans/ödeme form genişlikleri sınırlandı.
+- Dar ekranda özetler iki sütun; form alanlarında daha düzenli boşluklar.
+  Auth, tenant, para hesapları, API ve backend davranışı değiştirilmedi.
+
+Doğrulama: 48 dosyada 822 web testi, 14 yayın kontrol testi, typecheck,
+normal build ve `git diff --check` başarılı. Backend değiştirilmediği için
+bu tasarım işi için backend paketi yeniden çalıştırılmadı.
+
+1440x1000 ve 375x812 görsel kontrolleri gerçek bileşenlerin geçici,
+örnek verili yerel önizlemesinde yapıldı. Dashboard, görev listesi,
+finans listesi/formu, profil ve mobil menüden gezinme incelendi; kontrol
+edilen dar ekranlarda yatay taşma görülmedi. Önizleme dosyaları kaldırıldı
+ve üretim paketinde örnek önizleme işaretlerinin bulunmadığı kontrol edildi.
+Bu çalışma canlı API/gerçek veri kabulü değildir; tüm sayfalar için kapsamlı
+erişilebilirlik denetimi yapıldığı anlamına da gelmez.
+
+**Aşama 9 açık.** Görsel kullanıcı geri bildirimi ve canlı sunucu kabulü
+bekleniyor; diğer ürün fazlarına geçilmedi.
+
 ## 17.10.2026 — Web yayın hazırlığı / canlı sunucu bekleniyor
 
 Kapsam yalnızca mevcut web sürümünün güvenilir yayınıdır. Kullanıcı sunucunun

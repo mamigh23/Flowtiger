@@ -111,6 +111,13 @@ görüntüleri yalnızca tasarım geçmişidir; güncel durum yerel önizlemede 
   error durumları ve mevcut işlevler korunur. Tasarım tamamlandıktan sonra
   nihai kullanıcı kabulü ve yayın kapıları yeniden çalıştırılır.
 
+İlk uygulama geçişi yapıldı: etiketli masaüstü menüsü, ortak SVG simgeleri,
+kısa dashboard başlığı/iki doğrudan aksiyon, ortak sakin yüzeyler ve dar ekran
+özetleri; görev/finans/ödeme formlarında genişlik/alan boşluğu düzenlemesi.
+822 web testi ve 14 yayın kontrol testi geçti; typecheck/build başarılı.
+Görsel kontrol örnek verili geçici yerel önizlemedir; dosyalar kaldırıldı.
+Kullanıcı görsel geri bildirimi ve gerçek sunucu kabulü hâlâ bekleniyor.
+
 ### A. Sunucu ve test ortamı
 
 1. Kullanıcı sunucuyu açar; panel veya SSH erişim yolu belirlenir.

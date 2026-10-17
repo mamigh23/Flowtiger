@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { App } from '@/app/App';
 import { ROUTER_FUTURE } from '@/app/routerFuture';
 import '@/styles/global.css';
+import '@/styles/workspace.css';
 
 const container = document.getElementById('root');
 

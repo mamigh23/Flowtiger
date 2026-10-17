@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { ModuleIcon } from '@/components/ui/ModuleIcon';
 import type { CountPanel, DashboardCounts } from './useDashboardData';
 
 /**
@@ -36,7 +37,7 @@ import type { CountPanel, DashboardCounts } from './useDashboardData';
 interface StatDefinition {
   key: string;
   /** Dekoratif; anlam METİNDE taşınır (aria-hidden). */
-  glyph: string;
+  glyph: 'customers' | 'tasks' | 'finance' | 'payments' | 'team';
   title: string;
   /** Sayının NEYİ saydığını söyler. Tutar sanılmasını engeller. */
   helper: string;
@@ -48,7 +49,7 @@ export function DashboardStats({ counts }: { counts: DashboardCounts }) {
   const definitions: StatDefinition[] = [
     {
       key: 'customers',
-      glyph: '☺',
+      glyph: 'customers',
       title: 'Müşteriler',
       helper: 'kayıtlı müşteri',
       to: '/app/customers',
@@ -56,7 +57,7 @@ export function DashboardStats({ counts }: { counts: DashboardCounts }) {
     },
     {
       key: 'tasks',
-      glyph: '✓',
+      glyph: 'tasks',
       title: 'Görevler',
       helper: 'bugün planlanan iş',
       to: '/app/tasks',
@@ -64,7 +65,7 @@ export function DashboardStats({ counts }: { counts: DashboardCounts }) {
     },
     {
       key: 'finance',
-      glyph: '≡',
+      glyph: 'finance',
       title: 'Finans',
       helper: 'finans kaydı',
       to: '/app/finance',
@@ -72,7 +73,7 @@ export function DashboardStats({ counts }: { counts: DashboardCounts }) {
     },
     {
       key: 'payments',
-      glyph: '⇄',
+      glyph: 'payments',
       title: 'Ödemeler',
       helper: 'ödeme kaydı',
       to: '/app/payments',
@@ -80,7 +81,7 @@ export function DashboardStats({ counts }: { counts: DashboardCounts }) {
     },
     {
       key: 'team',
-      glyph: '◎',
+      glyph: 'team',
       title: 'Ekip',
       helper: 'ekip üyesi',
       to: '/app/team',
@@ -112,7 +113,7 @@ function StatCard({ definition }: { definition: StatDefinition }) {
     return (
       <div className="ft-kpi ft-kpi--loading" data-testid={`stat-${definition.key}-loading`}>
         <span className="ft-kpi__icon" aria-hidden="true">
-          {glyph}
+          <ModuleIcon name={glyph} />
         </span>
         <span className="ft-kpi__title">{title}</span>
         <span className="ft-kpi__value ft-kpi__value--placeholder" aria-hidden="true">
@@ -133,7 +134,7 @@ function StatCard({ definition }: { definition: StatDefinition }) {
       aria-label={`${title}, ${panel.data ?? 0}`}
     >
       <span className="ft-kpi__icon" aria-hidden="true">
-        {glyph}
+        <ModuleIcon name={glyph} />
       </span>
       <span className="ft-kpi__title">{title}</span>
       <span className="ft-kpi__value">{panel.data ?? 0}</span>

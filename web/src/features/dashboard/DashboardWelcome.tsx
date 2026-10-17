@@ -1,4 +1,5 @@
 import { greetingFor } from './greeting';
+import { Link } from 'react-router-dom';
 
 /**
  * Karşılama — ana ekranın ilk ve en güçlü bloğu.
@@ -43,6 +44,15 @@ export function DashboardWelcome({ name, hour }: { name: string | null; hour: nu
 
         <p className="ft-hero__lead">Hoş geldiniz.</p>
         <p className="ft-hero__sub ft-muted">Bugün işletmeniz için neler var?</p>
+      </div>
+
+      <div className="ft-hero__actions">
+        <Link className="ft-button" to="/app/tasks/new">
+          Yeni görev
+        </Link>
+        <Link className="ft-button ft-button--secondary" to="/app/customers/new">
+          Müşteri ekle
+        </Link>
       </div>
 
       {/* Marka rengini taşıyan sakin bir ışık; içerik değil, atmosfer. */}

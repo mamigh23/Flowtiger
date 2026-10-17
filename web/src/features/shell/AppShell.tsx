@@ -3,19 +3,14 @@ import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '@/lib/auth/AuthContext';
 import { useCompanies } from '@/lib/company/CompanyContext';
 import { Badge, Button, ErrorState, Spinner } from '@/components/ui';
+import { ModuleIcon } from '@/components/ui/ModuleIcon';
 import { roleLabel } from '@/lib/company/roleLabel';
 import { FlowTigerSplash } from '@/features/splash/FlowTigerSplash';
 import { FlowTigerMark } from '@/features/brand/FlowTigerMark';
 
 /**
- * Ürün kabuğu: dar kenar çubuğu + ince üst bar + içerik.
- *
- * KENAR ÇUBUĞU DARALDI ama ETİKETLER DOM'DA KALDI. İkon-only bir menü
- * görsel olarak sakin görünür, erişilebilirlik açısından ise bir
- * gerilemedir: ekran okuyucu kullanıcısı "🏠" duyar. Bu yüzden her
- * bağlantı ikonun yanında gerçek metnini taşır; metin geniş ekranda
- * GÖRSEL olarak kırpılır (CSS), a11y ağacından çıkmaz. Fare kullanıcısı
- * için `title` ipucu var.
+ * Ürün kabuğu: masaüstünde etiketli sabit gezinme, mobilde çekmece.
+ * Görsel düzen workspace.css içinde, tenant ve oturum davranışı burada korunur.
  *
  * MARKA GEÇİŞİ OTURUM BAŞINA BİR KEZ. Kabuk oturum boyunca bir kez mount
  * olur ve alt rotalar arasında gezinirken yerinde kalır; bu yüzden perde
@@ -75,17 +70,17 @@ import { FlowTigerMark } from '@/features/brand/FlowTigerMark';
  * İkonlar `aria-hidden`: erişilebilir adı metin taşır.
  */
 const NAV_ITEMS = [
-  { to: '/app', label: 'Panel', icon: '◈', end: true },
+  { to: '/app', label: 'Panel', icon: 'panel', end: true },
   /*
     Görevler panele en yakın madde: ana ekranın sorusu ("bugün ne yapmam
     gerekiyor?") buradan devam ediyor.
   */
-  { to: '/app/tasks', label: 'Görevler', icon: '✓' },
-  { to: '/app/customers', label: 'Müşteriler', icon: '☺' },
-  { to: '/app/finance', label: 'Finans', icon: '₺' },
-  { to: '/app/team', label: 'Ekip', icon: '◎' },
-  { to: '/app/audit', label: 'Denetim', icon: '❑' },
-  { to: '/app/profile', label: 'Profil', icon: '⌂' },
+  { to: '/app/tasks', label: 'Görevler', icon: 'tasks' },
+  { to: '/app/customers', label: 'Müşteriler', icon: 'customers' },
+  { to: '/app/finance', label: 'Finans', icon: 'finance' },
+  { to: '/app/team', label: 'Ekip', icon: 'team' },
+  { to: '/app/audit', label: 'Denetim', icon: 'audit' },
+  { to: '/app/profile', label: 'Profil', icon: 'profile' },
 ] as const;
 
 export function AppShell() {
@@ -203,6 +198,7 @@ export function AppShell() {
     <div
       className={[
         'ft-shell',
+        'ft-shell--workspace',
         navOpen ? 'ft-shell--nav-open' : '',
         // Perde açıkken içerik ve kenar çubuğu geride bekler; sınıf
         // kalkınca yumuşakça yerine oturur. VARSAYILAN HÂL GÖRÜNÜRDÜR —
@@ -230,7 +226,7 @@ export function AppShell() {
               className={({ isActive }) => `ft-nav__link${isActive ? ' ft-nav__link--active' : ''}`}
             >
               <span className="ft-nav__icon" aria-hidden="true">
-                {item.icon}
+                <ModuleIcon name={item.icon} />
               </span>
               {/*
                 Etiket DOM'da kalır. Dar kenar çubuğunda görsel olarak
