@@ -722,6 +722,29 @@ Bu nedenle lansmana kadar gereksiz büyük refactor, yeni dependency ve mimari d
 
 # 11. GÜNCEL CHECKPOINT
 
+## 18.10.2026 — İç tasarım / liste ve detay tutarlılığı
+
+- Müşteri/ekip/denetim/davet tablolarının başlık, satır ve işlem alanları
+  ortaklaştırıldı. Mevcut işlem bağlantıları en az 44px yüksekliğinde;
+  müşteri ayrıntı bağlantısı hover olmadan da görünür.
+- Mevcut finans/ekip bölüm seçicileri, sayfalama ve birincil aksiyonlar
+  ortak tasarım diline alındı. Üye, finans kaydı ve ödeme ayrıntıları için
+  ortak genişlik ve bilgi satırı düzeni; müşteri/görev kartlarında eş boşluk.
+- Üye rolü açıklaması kullanıcı diline çevrildi. Yetki/rol/iptal/silme
+  davranışları ve API sözleşmeleri değiştirilmedi.
+
+48 dosyada 822 web testi, 14 yayın kontrol testi, typecheck, normal build ve
+diff kontrolü geçti. Backend değişmedi; backend testleri bu turda tekrarlanmadı.
+Gövde, ikincil metin, tablo başlığı ve birincil düğmenin ölçülen kontrastları
+sırasıyla 15,20:1; 7,54:1; 9,39:1; 8,96:1. Bu dört renk çifti ölçümü tüm
+arayüz/erişilebilirlik sertifikasyonu değildir.
+
+Geçici örnek verili yerel önizlemede müşteri listesi/detayı, ekip listesi/
+üye detayı ve açılmış denetim ayrıntısı incelendi. 375px sayfalarda yatay
+sayfa taşması yok; çok sütunlu denetim tablosu kendi içinde yatay kayar.
+Önizleme kaynakları kaldırıldı ve paket içinde örnek token/veri işaretleri
+bulunmadığı kontrol edildi. Canlı sunucuya yayın yapılmadı. Aşama 9 açık.
+
 ## İç tasarım geçişi — mevcut web kapsamı
 
 - Masaüstünde sürekli etiketli, sabit genişlikte gezinme; dar ekranda mevcut

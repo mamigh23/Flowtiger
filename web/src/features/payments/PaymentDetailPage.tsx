@@ -113,7 +113,7 @@ export function PaymentDetailPage() {
   const voided = payment.voided_at !== null;
 
   return (
-    <div className="ft-page">
+    <div className="ft-page ft-record-detail">
       <header className="ft-page__header">
         <h1 className="ft-page__title">Ödeme</h1>
 

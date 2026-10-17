@@ -136,6 +136,87 @@
 .ft-shell--workspace :is(.ft-input, .ft-select, .ft-textarea) { background: #13161c; border-color: #46505e; border-radius: 0.5rem; }
 .ft-shell--workspace .ft-input:focus { border-color: var(--ft-color-focus); }
 .ft-shell--workspace .ft-button { border-radius: 0.5rem; box-shadow: none; }
+.ft-shell--workspace a.ft-button { text-decoration: none; }
+
+/* Liste ve kayıt ayrıntıları: aynı başlık, satır ve işlem hiyerarşisi. */
+.ft-shell--workspace :is(.ft-customers, .ft-tasks, .ft-team-hub, .ft-audit,
+  .ft-finance-hub, .ft-invitations, .ft-record-detail) { gap: 1.5rem; }
+.ft-shell--workspace :is(.ft-customers-hero, .ft-tasks-hero, .ft-team-hero,
+  .ft-audit-hero, .ft-finance-hub__hero) { padding-bottom: 1.25rem; border-bottom: 1px solid var(--ft-color-border); }
+.ft-shell--workspace :is(.ft-customers-panel__head, .ft-tasks-panel__head) { padding: 1.25rem 1.5rem; }
+.ft-shell--workspace :is(.ft-customers-panel__title, .ft-tasks-panel__title,
+  .ft-team-hub__section-title, .ft-finance-section__title) { font-size: 1rem; letter-spacing: -0.015em; }
+.ft-shell--workspace :is(.ft-invitations-panel, .ft-invitations-stat,
+  .ft-customers-stat, .ft-tasks-stat, .ft-team-stat, .ft-audit-stat) {
+  border-color: var(--ft-color-border); background: var(--ft-color-surface);
+  box-shadow: none; border-radius: 0.75rem;
+}
+.ft-shell--workspace :is(.ft-customers-stat, .ft-tasks-stat, .ft-team-stat,
+  .ft-audit-stat, .ft-invitations-stat):hover { transform: none; box-shadow: none; }
+.ft-shell--workspace :is(.ft-table, .ft-customers-table) { font-size: 0.875rem; }
+.ft-shell--workspace :is(.ft-table, .ft-customers-table) th {
+  padding: 0.875rem 1.25rem; background: #15181e;
+  color: #b5bdc9; font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.045em;
+  border-bottom: 1px solid var(--ft-color-border);
+}
+.ft-shell--workspace :is(.ft-table, .ft-customers-table) td {
+  padding: 1rem 1.25rem; vertical-align: middle;
+  border-bottom-color: var(--ft-color-border);
+}
+.ft-shell--workspace :is(.ft-table, .ft-customers-table) tbody tr:hover,
+.ft-shell--workspace :is(.ft-table, .ft-customers-table) tbody tr:focus-within { background: #20242d; }
+.ft-shell--workspace :is(.ft-customers-action, .ft-team-action, .ft-audit-action,
+  .ft-invitations-action, .ft-customer-detail__action, .ft-task-detail__action) {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-height: 2.75rem; padding-inline: 0.875rem; border-radius: 0.5rem;
+  font-size: 0.8125rem; text-decoration: none; box-shadow: none;
+}
+.ft-shell--workspace .ft-customers-action--quiet { opacity: 1; }
+.ft-shell--workspace :is(.ft-customers-cta, .ft-tasks-cta,
+  .ft-invitations-cta, .ft-finance-hub__cta--primary) {
+  min-height: 2.75rem; border-radius: 0.5rem;
+  background: var(--ft-color-primary); color: var(--ft-color-primary-contrast); box-shadow: none;
+}
+.ft-shell--workspace :is(.ft-customers-cta, .ft-tasks-cta,
+  .ft-invitations-cta, .ft-finance-hub__cta--primary):hover {
+  background: var(--ft-color-primary-hover); transform: none; box-shadow: none;
+}
+.ft-shell--workspace :is(.ft-finance-hub__segments, .ft-team-hub__segments) {
+  width: fit-content; max-width: 100%; border: 1px solid var(--ft-color-border);
+  padding: 0.25rem; border-radius: 0.625rem; background: #15181e; gap: 0.25rem;
+}
+.ft-shell--workspace :is(.ft-finance-hub__segment, .ft-team-hub__segment) {
+  min-height: 2.75rem; padding: 0.625rem 1.25rem; border-radius: 0.375rem;
+}
+.ft-shell--workspace :is(.ft-finance-hub__segment--active, .ft-team-hub__segment--active) {
+  background: #2b303a; color: #fff; box-shadow: none;
+}
+.ft-shell--workspace :is(.ft-customers-pager, .ft-tasks-pager, .ft-team-pager,
+  .ft-audit-pager, .ft-invitations-pager, .ft-finance-pager) {
+  padding-top: 1rem; border-top: 1px solid var(--ft-color-border); gap: 0.75rem;
+}
+.ft-shell--workspace :is(.ft-record-detail, .ft-customer-detail, .ft-task-detail) { max-width: 72rem; }
+.ft-shell--workspace .ft-record-detail > .ft-page__header { padding-bottom: 1.25rem; border-bottom: 1px solid var(--ft-color-border); flex-wrap: wrap; gap: 1rem; }
+.ft-shell--workspace .ft-record-detail > .ft-card { display: flex; flex-direction: column; gap: 1rem; padding: 1.5rem; }
+.ft-shell--workspace .ft-record-detail .ft-section__title { font-size: 1rem; margin: 0; }
+.ft-shell--workspace .ft-record-detail .ft-details { margin: 0; column-gap: 2rem; row-gap: 0; }
+.ft-shell--workspace .ft-record-detail .ft-details :is(dt, dd) {
+  padding-block: 0.75rem; margin: 0; border-bottom: 1px solid var(--ft-color-border);
+  overflow-wrap: anywhere;
+}
+.ft-shell--workspace :is(.ft-customer-detail__card, .ft-task-detail__card) { padding: 1.5rem; }
+.ft-shell--workspace :is(.ft-customer-detail__hero, .ft-task-detail__hero) {
+  padding-bottom: 1.5rem; border-bottom: 1px solid var(--ft-color-border);
+}
+.ft-shell--workspace :is(.ft-customer-detail__title, .ft-task-detail__title) { font-size: 1.75rem; letter-spacing: -0.035em; }
+.ft-shell--workspace :is(.ft-customer-detail__avatar, .ft-profile-identity__avatar) {
+  background: #35281e; border-color: #62432b; color: #ffab66; box-shadow: none;
+}
+.ft-shell--workspace .ft-audit-detail { border-color: #46505e; padding: 1.25rem; }
+.ft-shell--workspace .ft-audit-detail dd { overflow-wrap: anywhere; }
+.ft-shell--workspace .ft-input:focus-visible,
+.ft-shell--workspace .ft-select:focus-visible,
+.ft-shell--workspace .ft-textarea:focus-visible { outline-offset: 3px; }
 
 @media (min-width: 60.0625rem) {
   .ft-shell--workspace .ft-shell__sidebar,
@@ -168,6 +249,12 @@
   }
   .ft-shell--workspace :is(.ft-customers-stat, .ft-tasks-stat,
     .ft-finance-stat, .ft-team-stat, .ft-audit-stat) { padding: 1rem; }
+  .ft-shell--workspace .ft-record-detail .ft-details dt { padding-bottom: 0; border-bottom: 0; }
+  .ft-shell--workspace .ft-record-detail .ft-details dd { padding-top: 0.375rem; }
+  .ft-shell--workspace :is(.ft-record-detail > .ft-card,
+    .ft-customer-detail__card, .ft-task-detail__card) { padding: 1.125rem; }
+  .ft-shell--workspace :is(.ft-finance-hub__segments, .ft-team-hub__segments) { width: 100%; }
+  .ft-shell--workspace :is(.ft-finance-hub__segment, .ft-team-hub__segment) { flex: 1; text-align: center; padding-inline: 0.75rem; }
 }
 @media (max-width: 25rem) {
   .ft-shell--workspace .ft-topbar__company { flex-wrap: wrap; gap: 0.25rem 0.5rem; }

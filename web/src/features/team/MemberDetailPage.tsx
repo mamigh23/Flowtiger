@@ -107,7 +107,7 @@ export function MemberDetailPage() {
   const isOwner = member.role === 'owner';
 
   return (
-    <div className="ft-page">
+    <div className="ft-page ft-record-detail">
       <header className="ft-page__header">
         <h1 className="ft-page__title">{member.name}</h1>
         <div className="ft-page__actions">
@@ -165,7 +165,7 @@ export function MemberDetailPage() {
       <Card>
         <h2 className="ft-section__title">Rol</h2>
         <p className="ft-muted">
-          Rol ayrı bir işlemdir ve düzenleme formundan değiştirilemez.
+          Bu üyenin şirketteki erişim rolünü yönetin.
         </p>
         <div className="ft-form__actions">
           {isOwner ? (

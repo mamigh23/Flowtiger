@@ -118,6 +118,12 @@ kısa dashboard başlığı/iki doğrudan aksiyon, ortak sakin yüzeyler ve dar 
 Görsel kontrol örnek verili geçici yerel önizlemedir; dosyalar kaldırıldı.
 Kullanıcı görsel geri bildirimi ve gerçek sunucu kabulü hâlâ bekleniyor.
 
+18.10.2026 devam geçişi: kullanıcı ilk tasarım yönünü olumlu değerlendirdi.
+Liste başlıkları/satırları, dokunma alanları, bölüm seçicileri, sayfalama ve
+üye/finans/ödeme ayrıntıları ortaklaştırıldı. 822 web testi ve 14 yayın kontrol
+testi, typecheck/build başarılı. Müşteri/ekip/denetim akışları örnek verili
+yerel önizlemede incelendi; canlı kabul hâlâ bekliyor.
+
 ### A. Sunucu ve test ortamı
 
 1. Kullanıcı sunucuyu açar; panel veya SSH erişim yolu belirlenir.
