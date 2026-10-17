@@ -135,9 +135,9 @@ export function FinanceEntriesSection({ onTotal }: FinanceEntriesSectionProps) {
               tablo) — sarmalayıcı en çok burada işe yarar.
             */}
             <div className="ft-table-scroll">
-              <table className="ft-table" aria-label="Finans kayıtları">
-                <thead>
-                  <tr>
+              <table role="table" className="ft-table ft-responsive-records" aria-label="Finans kayıtları">
+                <thead role="rowgroup">
+                  <tr role="row">
                     <th scope="col">Tarih</th>
                     <th scope="col">Yön</th>
                     <th scope="col">Müşteri</th>
@@ -148,12 +148,12 @@ export function FinanceEntriesSection({ onTotal }: FinanceEntriesSectionProps) {
                     <th scope="col">İşlemler</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody role="rowgroup">
                   {result.data.map((entry) => {
                     const voided = entry.voided_at !== null;
 
                     return (
-                      <tr
+                      <tr role="row"
                         key={entry.id}
                         data-testid={`finance-row-${entry.id}`}
                         // Yalnızca stil kancası; kullanıcıya görünen işaret
@@ -161,8 +161,9 @@ export function FinanceEntriesSection({ onTotal }: FinanceEntriesSectionProps) {
                         data-voided={voided ? 'true' : 'false'}
                       >
                         {/* Takvim günü Date'e çevrilmeden biçimlenir. */}
-                        <td>{formatFinancialDate(entry.financial_date) ?? '—'}</td>
-                        <td>
+                        <td role="cell"><span className="ft-mobile-cell-label" aria-hidden="true">Tarih</span>{formatFinancialDate(entry.financial_date) ?? '—'}</td>
+                        <td role="cell">
+                          <span className="ft-mobile-cell-label" aria-hidden="true">Yön</span>
                           <span
                             className={`ft-finance-chip ft-finance-chip--${
                               entry.direction === 'in' ? 'in' : 'out'
@@ -171,14 +172,16 @@ export function FinanceEntriesSection({ onTotal }: FinanceEntriesSectionProps) {
                             {directionLabel(entry.direction)}
                           </span>
                         </td>
-                        <td data-testid="finance-row-customer">{entry.customer?.name ?? '—'}</td>
-                        <td>{entry.category ?? '—'}</td>
+                        <td role="cell" data-testid="finance-row-customer"><span className="ft-mobile-cell-label" aria-hidden="true">Müşteri</span>{entry.customer?.name ?? '—'}</td>
+                        <td role="cell"><span className="ft-mobile-cell-label" aria-hidden="true">Kategori</span>{entry.category ?? '—'}</td>
                         {/* Ham kuruş asla gösterilmez. */}
-                        <td className="ft-finance-amount">
+                        <td role="cell" className="ft-finance-amount">
+                          <span className="ft-mobile-cell-label" aria-hidden="true">Brüt tutar</span>
                           {formatMoney(entry.gross_minor, entry.currency)}
                         </td>
-                        <td>{vatRateLabel(entry.vat_rate_bp)}</td>
-                        <td>
+                        <td role="cell"><span className="ft-mobile-cell-label" aria-hidden="true">KDV</span>{vatRateLabel(entry.vat_rate_bp)}</td>
+                        <td role="cell">
+                          <span className="ft-mobile-cell-label" aria-hidden="true">Durum</span>
                           {voided ? (
                             <span className="ft-finance-state ft-finance-state--voided">
                               İptal edildi
@@ -187,7 +190,7 @@ export function FinanceEntriesSection({ onTotal }: FinanceEntriesSectionProps) {
                             <span className="ft-finance-state">Aktif</span>
                           )}
                         </td>
-                        <td>
+                        <td role="cell">
                           {/* Altı çizili bağlantı yok: liste içindeki bir
                               eylem, düz metin değil bir kontrol gibi
                               görünmeli. */}

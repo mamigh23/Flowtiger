@@ -722,6 +722,16 @@ Bu nedenle lansmana kadar gereksiz büyük refactor, yeni dependency ve mimari d
 
 # 11. GÜNCEL CHECKPOINT
 
+## 18.10.2026 — Dar ekranlarda okunabilir kayıt kartları
+
+- Finans, ödeme, ekip ve denetim listeleri 768px ve altında etiketli kartlara dönüşür. Masaüstü tablo görünümü korunur; aynı kayıtlar tek DOM üzerinden gösterilir.
+- Finans/ödemede tutar, dağıtılan, kalan ve durum alanları kartta görünür; ayrıntı işlemi tam genişlik ve en az 44px yüksekliktedir. Ekipte isim, e-posta ve rol okunur kalır.
+- Denetim satır ayrıntısı kartların altında açılmaya devam eder. Hassas veri filtreleri, API istekleri ve sayfalama davranışı değişmedi.
+- Tablo/satır/hücre rolleri açıkça korunur; sütun başlıkları erişilebilir ağaçtan kaldırılmaz. Kartların görsel alan etiketleri ekran okuyucuya tekrar okutulmaz.
+- Doğrulama: etkilenen dört dosyada 102 test, typecheck, build, 14 yayın kontrol testi ve diff kontrolü geçti. Önceki tam web kontrolü 839 testtir; bu tur yalnızca etkilenen listeler yeniden çalıştırıldı. Backend değişmedi.
+- Örnek verilerle 375px ödeme kartı ve denetim ayrıntı açma kontrolü yapıldı; sayfa yatay taşmıyor. Geçici önizleme kaynakları kaldırıldı. Yerel web/API süreçleri açık bırakıldı.
+- Canlı kabul henüz yapılmadı; Aşama 9 açık. Mobil uygulama veya yeni finans işlevi geliştirilmedi; değişiklik mevcut webin duyarlı görünümüdür.
+
 ## 18.10.2026 — Finans, ekip, denetim ve profil düzeni
 
 - Finans ve ekip ekranlarına mevcut işlemleri açıklayan ortak `WorkspaceGuide` eklendi. Finans kaydı, gerçekleşen ödeme ve dağıtım birbirinden açıklamayla ayrılır; ekipte davet, katılım ve erişim sırası görünür.

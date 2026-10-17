@@ -172,18 +172,18 @@ export function MembersSection({ onTotal, compact = false }: MembersSectionProps
               taşırmaz. Sarmalayıcı tablonun DOĞRUDAN ebeveyni olmalı.
             */}
             <div className="ft-table-scroll">
-              <table className="ft-table" aria-label="Ekip üyeleri">
-                <thead>
-                  <tr>
+              <table role="table" className="ft-table ft-responsive-records" aria-label="Ekip üyeleri">
+                <thead role="rowgroup">
+                  <tr role="row">
                     <th scope="col">Ad</th>
                     <th scope="col">E-posta</th>
                     <th scope="col">Rol</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody role="rowgroup">
                   {result.data.map((member) => (
-                    <tr key={member.id} data-role={member.role}>
-                      <td>
+                    <tr role="row" key={member.id} data-role={member.role}>
+                      <td role="cell">
                         {/*
                           Baş harfler yalnızca GÖRSEL bir işaret;
                           `aria-hidden` ile sunulur, çünkü bağlantının
@@ -196,8 +196,9 @@ export function MembersSection({ onTotal, compact = false }: MembersSectionProps
                           <span className="ft-team-person__name">{member.name}</span>
                         </Link>
                       </td>
-                      <td className="ft-team-email">{member.email}</td>
-                      <td>
+                      <td role="cell" className="ft-team-email"><span className="ft-mobile-cell-label" aria-hidden="true">E-posta</span>{member.email}</td>
+                      <td role="cell">
+                        <span className="ft-mobile-cell-label" aria-hidden="true">Rol</span>
                         {/* Yalnızca görüntüleme; bu değerle yetki kararı verilmez. */}
                         <span
                           className={`ft-team-role${

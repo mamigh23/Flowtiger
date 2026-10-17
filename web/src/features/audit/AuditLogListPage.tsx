@@ -184,9 +184,9 @@ export function AuditLogListPage() {
               taşırmaz. Sarmalayıcı tablonun DOĞRUDAN ebeveyni olmalı.
             */}
             <div className="ft-table-scroll">
-              <table className="ft-table" aria-label="Denetim kayıtları">
-                <thead>
-                  <tr>
+              <table role="table" className="ft-table ft-responsive-records" aria-label="Denetim kayıtları">
+                <thead role="rowgroup">
+                  <tr role="row">
                     <th scope="col">Eylem</th>
                     <th scope="col">Kim</th>
                     <th scope="col">Nesne</th>
@@ -197,7 +197,7 @@ export function AuditLogListPage() {
                     </th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody role="rowgroup">
                   {result.data.map((log) => {
                     const open = expanded === log.id;
                     const changes = describeChanges(log.old_values, log.new_values);
@@ -205,12 +205,13 @@ export function AuditLogListPage() {
 
                     return (
                       <Fragment key={log.id}>
-                        <tr
+                        <tr role="row"
                           data-testid={`audit-row-${log.id}`}
                           className={open ? 'ft-audit-row--open' : undefined}
                         >
                           {/* Tanınmayan kod uydurulmaz, ham hâliyle gösterilir. */}
-                          <td>
+                          <td role="cell">
+                            <span className="ft-mobile-cell-label" aria-hidden="true">Eylem</span>
                             <span className="ft-audit-action-chip">
                               {auditActionLabel(log.action)}
                             </span>
@@ -229,7 +230,8 @@ export function AuditLogListPage() {
                             Baş harfler yalnızca GÖRSEL bir işaret ve
                             `aria-hidden`: ekran okuyucu adı bir kez okur.
                           */}
-                          <td>
+                          <td role="cell">
+                            <span className="ft-mobile-cell-label" aria-hidden="true">Kim</span>
                             {log.actor ? (
                               <span className="ft-audit-actor">
                                 <span className="ft-audit-actor__avatar" aria-hidden="true">
@@ -242,7 +244,8 @@ export function AuditLogListPage() {
                             )}
                           </td>
 
-                          <td className="ft-audit-object">
+                          <td role="cell" className="ft-audit-object">
+                            <span className="ft-mobile-cell-label" aria-hidden="true">Nesne</span>
                             {log.auditable
                               ? `${auditableTypeLabel(log.auditable.type)} #${log.auditable.id}`
                               : '—'}
@@ -254,12 +257,12 @@ export function AuditLogListPage() {
                             işlerinden biridir. user_agent ise yanıtta hiç
                             yoktur.
                           */}
-                          <td className="ft-audit-ip">{log.ip_address ?? '—'}</td>
+                          <td role="cell" className="ft-audit-ip"><span className="ft-mobile-cell-label" aria-hidden="true">IP</span>{log.ip_address ?? '—'}</td>
 
                           {/* Ham ISO metni gösterilmez; biçim denetim ekranınınki. */}
-                          <td className="ft-audit-time">{formatDateTime(log.created_at) ?? '—'}</td>
+                          <td role="cell" className="ft-audit-time"><span className="ft-mobile-cell-label" aria-hidden="true">Zaman</span>{formatDateTime(log.created_at) ?? '—'}</td>
 
-                          <td className="ft-audit-row-action">
+                          <td role="cell" className="ft-audit-row-action">
                             {/*
                               Gösterilecek güvenli bir ayrıntı yoksa düğme
                               HİÇ ÇIKMAZ. Boş bir paneli açan düğme,
@@ -280,12 +283,12 @@ export function AuditLogListPage() {
                         </tr>
 
                         {open && (
-                          <tr
+                          <tr role="row"
                             className="ft-audit-detail-row"
                             data-testid={`audit-detail-${log.id}`}
                             id={`audit-detail-${log.id}`}
                           >
-                            <td colSpan={6}>
+                            <td role="cell" colSpan={6}>
                               <dl className="ft-details ft-audit-detail">
                                 {changes.map((change) => (
                                   <Fragment key={`change-${change.label}`}>

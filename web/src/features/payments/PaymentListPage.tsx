@@ -126,9 +126,9 @@ export function PaymentsSection({ onTotal }: PaymentsSectionProps) {
           <div className="ft-finance-panel ft-finance-panel--table">
             {/* Dar viewportta yalnızca tablo yatayda kayar; panel sayfayı taşırmaz. */}
             <div className="ft-table-scroll">
-              <table className="ft-table" aria-label="Ödemeler">
-                <thead>
-                  <tr>
+              <table role="table" className="ft-table ft-responsive-records" aria-label="Ödemeler">
+                <thead role="rowgroup">
+                  <tr role="row">
                     <th scope="col">Tarih</th>
                     <th scope="col">Müşteri</th>
                     <th scope="col">Yöntem</th>
@@ -139,12 +139,12 @@ export function PaymentsSection({ onTotal }: PaymentsSectionProps) {
                     <th scope="col">İşlemler</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody role="rowgroup">
                   {result.data.map((payment) => {
                     const voided = payment.voided_at !== null;
 
                     return (
-                      <tr
+                      <tr role="row"
                         key={payment.id}
                         data-testid={`payment-row-${payment.id}`}
                         // Yalnızca stil kancası; kullanıcıya görünen işaret
@@ -152,27 +152,31 @@ export function PaymentsSection({ onTotal }: PaymentsSectionProps) {
                         data-voided={voided ? 'true' : 'false'}
                       >
                         {/* Takvim günü Date'e çevrilmeden biçimlenir. */}
-                        <td>{formatFinancialDate(payment.financial_date) ?? '—'}</td>
-                        <td data-testid="payment-row-customer">{payment.customer?.name ?? '—'}</td>
+                        <td role="cell"><span className="ft-mobile-cell-label" aria-hidden="true">Tarih</span>{formatFinancialDate(payment.financial_date) ?? '—'}</td>
+                        <td role="cell" data-testid="payment-row-customer"><span className="ft-mobile-cell-label" aria-hidden="true">Müşteri</span>{payment.customer?.name ?? '—'}</td>
                         {/* `method` serbest metindir; ne gelirse yazılır. */}
-                        <td data-testid="payment-row-method">{payment.method ?? '—'}</td>
-                        <td className="ft-finance-amount" data-testid="payment-row-amount">
+                        <td role="cell" data-testid="payment-row-method"><span className="ft-mobile-cell-label" aria-hidden="true">Yöntem</span>{payment.method ?? '—'}</td>
+                        <td role="cell" className="ft-finance-amount" data-testid="payment-row-amount">
+                          <span className="ft-mobile-cell-label" aria-hidden="true">Tutar</span>
                           {formatMoney(payment.amount_minor, payment.currency)}
                         </td>
-                        <td className="ft-finance-amount" data-testid="payment-row-allocated">
+                        <td role="cell" className="ft-finance-amount" data-testid="payment-row-allocated">
+                          <span className="ft-mobile-cell-label" aria-hidden="true">Dağıtılan</span>
                           {formatMoney(payment.allocated_minor, payment.currency)}
                         </td>
                         {/*
                           KALAN VURGULANIR: "bu tahsilattan ne kadarı hâlâ
                           dağıtılmadı" sorusu, listedeki asıl sorudur.
                         */}
-                        <td
+                        <td role="cell"
                           className="ft-finance-amount ft-finance-amount--strong"
                           data-testid="payment-row-remaining"
                         >
+                          <span className="ft-mobile-cell-label" aria-hidden="true">Kalan</span>
                           {formatMoney(payment.remaining_minor, payment.currency)}
                         </td>
-                        <td>
+                        <td role="cell">
+                          <span className="ft-mobile-cell-label" aria-hidden="true">Durum</span>
                           {voided ? (
                             <span className="ft-finance-state ft-finance-state--voided">
                               İptal edildi
@@ -181,7 +185,7 @@ export function PaymentsSection({ onTotal }: PaymentsSectionProps) {
                             <span className="ft-finance-state">Aktif</span>
                           )}
                         </td>
-                        <td>
+                        <td role="cell">
                           {/* Altı çizili bağlantı yok. */}
                           <Link className="ft-finance-link" to={`/app/payments/${payment.id}`}>
                             Ayrıntılar
