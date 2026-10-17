@@ -91,6 +91,26 @@ politikaları da raporlama öncesi netleştirilmelidir; bugünkü kuralların
 
 ## 5. Şimdi yapılacaklar — Aşama 9
 
+### İç tasarım yenilemesi — kullanıcı tarafından yetkilendirildi
+
+Kullanıcı mevcut iç tasarımı beğenmediğini belirtti ve düzenlemeyi sıraya aldı.
+Bu iş mevcut web kapsamındadır; yeni modül/ürün fazı başlatmaz. Eski ekran
+görüntüleri yalnızca tasarım geçmişidir; güncel durum yerel önizlemede ölçülür.
+
+- Yön: sade, okunaklı işletme arayüzü; marka turuncusu kontrollü vurgu,
+  daha az gradyan/parlama, belirgin yüzey ve tipografi hiyerarşisi.
+- Sıra: ortak kabuk/navigasyon → dashboard → müşteri/görev/finans/ekip
+  listeleri → detay/formlar → profil/davet/audit → mobil ekran uyumu.
+- Dar simge menüsü, gereğinden büyük karşılama alanları, tekrar eden kartlar,
+  boşluk kullanımı ve aksiyonların bulunabilirliği güncel ekranlarda incelenir.
+- Ortak token/bileşenler üzerinden tutarlılık sağlanır; yeni UI bağımlılığı,
+  sahte finansal metrik, yetki/API değişikliği veya yeni özellik eklenmez.
+- Önce kabuk ve dashboard üzerinde tasarım yönü somutlaştırılır; sonra aynı
+  dil diğer mevcut ekranlara uygulanır. Kullanıcı geri bildirimiyle düzeltilir.
+- Kabul: güncel 375px/masaüstü önizleme, klavye/focus/kontrast, loading/empty/
+  error durumları ve mevcut işlevler korunur. Tasarım tamamlandıktan sonra
+  nihai kullanıcı kabulü ve yayın kapıları yeniden çalıştırılır.
+
 ### A. Sunucu ve test ortamı
 
 1. Kullanıcı sunucuyu açar; panel veya SSH erişim yolu belirlenir.
