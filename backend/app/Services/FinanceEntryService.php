@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\AuditAction;
 use App\Enums\Currency;
+use App\Enums\FinanceDirection;
 use App\Exceptions\FinanceEntryException;
 use App\Finance\Money;
 use App\Finance\VatBreakdown;
@@ -64,11 +65,12 @@ class FinanceEntryService
      */
     public function update(Company $company, FinanceEntry $entry, array $attributes): FinanceEntry
     {
-        if ($entry->isVoided()) {
-            throw FinanceEntryException::voided();
-        }
-
         return DB::transaction(function () use ($company, $entry, $attributes): FinanceEntry {
+            $entry = FinanceEntry::query()->whereKey($entry->getKey())->lockForUpdate()->firstOrFail();
+            if ($entry->isVoided()) {
+                throw FinanceEntryException::voided();
+            }
+
             $oldValues = $this->auditValues($entry);
 
             $this->applyAttributes($entry, $attributes);
@@ -97,11 +99,12 @@ class FinanceEntryService
      */
     public function void(Company $company, FinanceEntry $entry, ?string $reason): FinanceEntry
     {
-        if ($entry->isVoided()) {
-            throw FinanceEntryException::alreadyVoided();
-        }
-
         return DB::transaction(function () use ($company, $entry, $reason): FinanceEntry {
+            $entry = FinanceEntry::query()->whereKey($entry->getKey())->lockForUpdate()->firstOrFail();
+            if ($entry->isVoided()) {
+                throw FinanceEntryException::alreadyVoided();
+            }
+
             // İptal anındaki tutarlar ize girer: kaydın o günkü hâli
             // sonradan değiştirilemeyeceği için bu satır kalıcı kanıttır.
             $oldValues = $this->auditValues($entry);
@@ -181,7 +184,7 @@ class FinanceEntryService
     private function auditValues(FinanceEntry $entry): array
     {
         return [
-            'direction' => $entry->direction instanceof \App\Enums\FinanceDirection
+            'direction' => $entry->direction instanceof FinanceDirection
                 ? $entry->direction->value
                 : $entry->direction,
             'financial_date' => $entry->financial_date?->format('Y-m-d'),

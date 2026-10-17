@@ -68,14 +68,13 @@ class PaymentService
      */
     public function update(Company $company, Payment $payment, array $attributes): Payment
     {
-        if ($payment->isVoided()) {
-            throw PaymentException::voided();
-        }
-
         return DB::transaction(function () use ($company, $payment, $attributes): Payment {
-            // Satır kilidi: eşzamanlı iki güncelleme birbirinin toplam
-            // kontrolünü geçersiz kılamasın.
-            Payment::query()->whereKey($payment->getKey())->lockForUpdate()->firstOrFail();
+            // Kilitli güncel satırı kullan: route binding nesnesi kilit
+            // beklerken başka bir istek tarafından iptal edilmiş olabilir.
+            $payment = Payment::query()->whereKey($payment->getKey())->lockForUpdate()->firstOrFail();
+            if ($payment->isVoided()) {
+                throw PaymentException::voided();
+            }
 
             $payment->load('allocations');
             $oldValues = $this->auditValues($payment);
@@ -110,11 +109,12 @@ class PaymentService
      */
     public function void(Company $company, Payment $payment, ?string $reason): Payment
     {
-        if ($payment->isVoided()) {
-            throw PaymentException::alreadyVoided();
-        }
-
         return DB::transaction(function () use ($company, $payment, $reason): Payment {
+            $payment = Payment::query()->whereKey($payment->getKey())->lockForUpdate()->firstOrFail();
+            if ($payment->isVoided()) {
+                throw PaymentException::alreadyVoided();
+            }
+
             $payment->load('allocations');
             $oldValues = $this->auditValues($payment);
 

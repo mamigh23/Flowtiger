@@ -149,3 +149,6 @@ jobs:
 
       - name: Build
         run: npm run build
+
+      - name: Check release configuration validation
+        run: npm run test:release

@@ -718,6 +718,48 @@ Bu nedenle lansmana kadar gereksiz büyük refactor, yeni dependency ve mimari d
 
 # 11. GÜNCEL CHECKPOINT
 
+## 17.10.2026 — Web yayın hazırlığı / canlı sunucu bekleniyor
+
+Kapsam yalnızca mevcut web sürümünün güvenilir yayınıdır. Kullanıcı sunucunun
+kapalı olduğunu bildirdi; sunucu yolu/dalı, API origin, TLS, yedek ve yayın
+dizini henüz doğrulanmadı. Canlıya dosya veya veri yazılmadı.
+
+- Payment ve FinanceEntry güncelleme/iptal işlemleri güncel satırı transaction
+  içinde `lockForUpdate` ile okuyup iptal kontrolünü kilit altında yapar.
+  Önceden okunmuş aktif nesne, başka isteğin iptalini atlayamaz; ilk iptal
+  nedeni/zamanı ve audit korunur. Dört regresyon senaryosu önce başarısız,
+  düzeltmeden sonra başarılı oldu. Bunlar deterministik eski nesne testleridir;
+  iki ayrı eşzamanlı bağlantı/yük testi veya canlı API turu değildir.
+- `npm run build:release`, gerçek HTTPS `/api/v1` adresi olmadan üretim
+  paketini oluşturmaz. Kontrolün 14 testi CI'a eklendi. Normal geliştirme
+  derlemesi değişmedi; mevcut localhost ayarıyla yayın komutu beklendiği
+  gibi reddedildi. Canlı API bilinmediği için yayın paketi üretilmedi.
+- API sözleşmesi, migration geçmişi ve tenant kapsamları değiştirilmedi.
+- Yayın, gerçek kullanıcı turu ve geri dönüş adımları `docs/WEB_RELEASE.md`
+  içinde kayıtlıdır. Server açılınca ilk adım salt okunur envanterdir.
+
+Doğrulama:
+
+```text
+Backend full suite: 824 passed / 3083 assertions (yalnızca flowtiger_test)
+Web: 48 files / 822 passed
+Release configuration: 14 passed
+TypeScript: GREEN
+Development production build: GREEN (yayın paketi olarak kullanılmayacak)
+Pint (değişen üç PHP dosyası): GREEN
+git diff --check: GREEN
+```
+
+İlk backend doğrulamasına ikinci bir veritabanı testi erken başlatıldığı
+için test veritabanında kilit/şema çakışmaları oluştu. Bu sonuç GREEN
+sayılmadı; süreçler bittikten sonra tek başına tam paket yeniden çalıştırıldı
+ve yukarıdaki 824/824 sonucu alındı. Aynı test veritabanı üzerinde test
+süreçleri paralel çalıştırılmayacak.
+
+**Aşama 9 açık.** Gerçek sunucu kabulü, TLS, e-posta teslimi, browser/API turu
+ve yedek/geri dönüş doğrulaması bekleniyor. Mobil, Finance V2, AI ve
+abonelik aşamalarına geçilmeyecek.
+
 ## 08.10.2026 — Web Release Stabilization / oturum yarış koşulu
 
 Çalışma dalı: `feat/release-stabilization` (başlangıç commit'i `44278bd`).

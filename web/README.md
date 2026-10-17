@@ -25,6 +25,15 @@ npm test            # vitest run
 npm run build       # tsc -b && vite build
 ```
 
+## Mevcut web sürümünün yayını
+
+Canlı API kökü (`VITE_API_BASE_URL`, HTTPS ve `/api/v1` dahil) production
+ortamında doğrulandıktan sonra `npm run build:release` kullanılır.
+Eksik/yerel API adresiyle yayın derlemesi durur. Kontrol testleri:
+`npm run test:release`. Normal `npm run build` tek başına yayın onayı değildir.
+Sunucu envanteri, kabul turu ve geri dönüş için
+[web yayın adımları](../docs/WEB_RELEASE.md) izlenir.
+
 ## Yapı
 
 ```

@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:release": "node scripts/check-release-env.mjs && npm run build",
+    "test:release": "node --test scripts/check-release-env.node.mjs",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
