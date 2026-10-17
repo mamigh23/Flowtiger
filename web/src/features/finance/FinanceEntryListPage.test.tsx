@@ -309,6 +309,8 @@ describe('FinanceEntryListPage', () => {
     renderApp('/app/finance', { token: 'gecerli-token' });
 
     expect(await screen.findByText('Henüz finans kaydı yok.')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Gelir kaydı oluştur' })).toHaveAttribute('href', '/app/finance/new/income');
+    expect(screen.getByRole('link', { name: 'Gider kaydı oluştur' })).toHaveAttribute('href', '/app/finance/new/expense');
     expect(screen.queryByRole('table', { name: 'Finans kayıtları' })).not.toBeInTheDocument();
     // Boş durumda da kayıt açma yolu kapanmamalı.
     expect(screen.getByRole('link', { name: 'Yeni gelir' })).toBeInTheDocument();

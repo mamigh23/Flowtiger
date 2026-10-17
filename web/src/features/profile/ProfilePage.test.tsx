@@ -560,6 +560,24 @@ describe('ProfilePage', () => {
 
   // -------------------------------------------------------------- hata
 
+  it('profil yükleme hatasından sayfayı yenilemeden kurtulabilir', async () => {
+    let attempt = 0;
+    vi.stubGlobal('fetch', mockApi({
+      ...session,
+      '/profile': () => ++attempt === 1
+        ? jsonResponse(500, { message: 'Server Error' })
+        : jsonResponse(200, { data: fixtures.user() }),
+    }));
+    const user = userEvent.setup();
+    renderApp('/app/profile', { token: 'gecerli-token' });
+    await screen.findByRole('alert');
+    expect(screen.queryByTestId('profile-form')).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Tekrar dene' }));
+    expect(await screen.findByTestId('profile-form')).toBeInTheDocument();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(attempt).toBe(2);
+  });
+
   it('sunucu hatasında ham metni göstermez', async () => {
     vi.stubGlobal(
       'fetch',

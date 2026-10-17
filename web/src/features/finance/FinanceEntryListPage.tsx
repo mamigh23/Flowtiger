@@ -123,6 +123,10 @@ export function FinanceEntriesSection({ onTotal }: FinanceEntriesSectionProps) {
           <p className="ft-finance-empty__note">
             İlk gelir ya da gider kaydını ekleyerek başlayın.
           </p>
+          <div className="ft-empty-actions">
+            <Link className="ft-button ft-button--primary" to="/app/finance/new/income">Gelir kaydı oluştur</Link>
+            <Link className="ft-button ft-button--secondary" to="/app/finance/new/expense">Gider kaydı oluştur</Link>
+          </div>
         </div>
       )}
 
@@ -130,9 +134,8 @@ export function FinanceEntriesSection({ onTotal }: FinanceEntriesSectionProps) {
         <>
           <div className="ft-finance-panel ft-finance-panel--table">
             {/*
-              Dar viewportta yalnızca tablo yatayda kayar; panel sayfayı
-              taşırmaz. Bu tablo 8 kolonludur (uygulamadaki en geniş
-              tablo) — sarmalayıcı en çok burada işe yarar.
+              Orta genişlikte tablo kendi içinde kayar; dar ekranda
+              aynı satırlar etiketli kartlara dönüşür.
             */}
             <div className="ft-table-scroll">
               <table role="table" className="ft-table ft-responsive-records" aria-label="Finans kayıtları">

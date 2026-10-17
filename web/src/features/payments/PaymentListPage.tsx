@@ -118,6 +118,11 @@ export function PaymentsSection({ onTotal }: PaymentsSectionProps) {
         <div className="ft-finance-panel ft-finance-empty">
           <p className="ft-finance-empty__title">Henüz ödeme yok.</p>
           <p className="ft-finance-empty__note">İlk tahsilatı ekleyerek başlayın.</p>
+          <p className="ft-empty-help">Henüz para hareketi olmadıysa önce gelir veya gider kaydını oluşturabilirsin.</p>
+          <div className="ft-empty-actions">
+            <Link className="ft-button ft-button--primary" to="/app/payments/new">İlk ödemeyi kaydet</Link>
+            <Link className="ft-button ft-button--secondary" to="/app/finance">Finans kayıtlarına git</Link>
+          </div>
         </div>
       )}
 

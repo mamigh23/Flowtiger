@@ -722,6 +722,14 @@ Bu nedenle lansmana kadar gereksiz büyük refactor, yeni dependency ve mimari d
 
 # 11. GÜNCEL CHECKPOINT
 
+## 18.10.2026 — Boş ekranlardan ilk işleme geçiş ve profil kurtarma
+
+- Başarılı fakat boş finans listesinde doğrudan gelir/gider oluşturma bağlantıları eklendi. Boş ödeme listesi ilk ödeme kaydına ve finans kayıtlarına yönlendirir; gerçekleşmemiş para hareketi kaydetmeye teşvik etmez.
+- Başarılı fakat boş gönderilen davetler listesinde ilk davet bağlantısı bulunur. Hata/403 yanıtları boş durum sayılmaz; yeni bağlantılar bu durumlarda gösterilmez.
+- Profil yükleme hatasında sayfayı yenilemeden tekrar deneme eklendi. Yeni regresyon testi ilk 500 yanıtından sonra ikinci istekte formun açılmasını ve hatanın kalkmasını doğrular.
+- Mevcut boş durum testleri yeni bağlantıların doğru hedeflerini doğrulayacak şekilde genişletildi. Bu tur etkilenen dört dosyada 83 test, typecheck, build, 14 yayın kontrol testi ve diff kontrolü geçti.
+- Backend, migration, yetkiler ve API sözleşmesi değişmedi. Canlı kabul bekleniyor; Aşama 9 açık. Çalışma dalı `feat/release-stabilization`.
+
 ## 18.10.2026 — Dar ekranlarda okunabilir kayıt kartları
 
 - Finans, ödeme, ekip ve denetim listeleri 768px ve altında etiketli kartlara dönüşür. Masaüstü tablo görünümü korunur; aynı kayıtlar tek DOM üzerinden gösterilir.

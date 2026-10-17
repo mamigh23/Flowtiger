@@ -295,6 +295,17 @@
 
 /* Finans, ekip ve hesap: önce yönlendirme, sonra kayıtlar. */
 .ft-mobile-cell-label { display: none; }
+.ft-shell--workspace .ft-empty-actions {
+  display: flex; flex-wrap: wrap; justify-content: center; gap: 0.75rem; margin-top: 1.25rem;
+}
+.ft-shell--workspace .ft-empty-actions .ft-button {
+  display: inline-flex; align-items: center; justify-content: center; min-height: 2.75rem;
+  padding: 0.75rem 1rem; white-space: normal;
+}
+.ft-shell--workspace .ft-empty-help {
+  max-width: 48ch; margin: 0.75rem auto 0; color: #aeb8c7; font-size: 0.8125rem; line-height: 1.65;
+}
+.ft-shell--workspace .ft-profile-panel--notice { display: grid; justify-items: start; gap: 1rem; }
 .ft-shell--workspace .ft-workspace-guide {
   border: 1px solid var(--ft-color-border); border-radius: 1rem;
   background: #1b2028; padding: 1.5rem; min-width: 0;
@@ -367,6 +378,7 @@
 .ft-shell--workspace .ft-profile .ft-form__actions { margin-top: 1.25rem; }
 .ft-shell--workspace .ft-profile .ft-muted { font-size: 0.8125rem; line-height: 1.7; }
 @media (max-width: 48rem) {
+  .ft-shell--workspace .ft-empty-actions { flex-direction: column; align-items: stretch; }
   /* Başlıklar erişilebilir kalır; tek DOM hem tablo hem kart görünümünü taşır. */
   .ft-shell--workspace .ft-responsive-records { display: block; min-width: 0; width: 100%; }
   .ft-shell--workspace .ft-responsive-records thead {

@@ -1,4 +1,5 @@
 import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { api, endpoints } from '@/lib/api';
 import { Button, ConfirmPanel, ErrorState } from '@/components/ui';
 import { roleLabel } from '@/lib/company/roleLabel';
@@ -211,6 +212,9 @@ export function InvitationsSection({ onTotal, compact = false }: InvitationsSect
           <p className="ft-invitations-empty__note">
             Ekibe katılmasını istediğiniz kişiyi davet edin.
           </p>
+          <div className="ft-empty-actions">
+            <Link className="ft-button ft-button--primary" to="/app/invitations/new">Ekibine birini davet et</Link>
+          </div>
         </div>
       )}
 

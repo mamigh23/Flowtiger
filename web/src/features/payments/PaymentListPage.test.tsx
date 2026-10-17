@@ -345,6 +345,8 @@ describe('PaymentListPage', () => {
     renderApp('/app/payments', { token: 'gecerli-token' });
 
     expect(await screen.findByText('Henüz ödeme yok.')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'İlk ödemeyi kaydet' })).toHaveAttribute('href', '/app/payments/new');
+    expect(screen.getByRole('link', { name: 'Finans kayıtlarına git' })).toHaveAttribute('href', '/app/finance');
     expect(screen.queryByRole('table', { name: 'Ödemeler' })).not.toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Yeni ödeme' })).toBeInTheDocument();
   });

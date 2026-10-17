@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { api, endpoints, toUserMessage } from '@/lib/api';
-import { ErrorState } from '@/components/ui';
+import { Button, ErrorState } from '@/components/ui';
 import { formatDateTime } from '@/features/audit/auditLabels';
 import { useCompanies } from '@/lib/company/CompanyContext';
 import { roleLabel } from '@/lib/company/roleLabel';
@@ -114,6 +114,7 @@ export function ProfilePage() {
       {!loading && error !== null && (
         <div className="ft-profile-panel ft-profile-panel--notice">
           <ErrorState message={toUserMessage(error)} />
+          <Button variant="secondary" onClick={() => void load()}>Tekrar dene</Button>
         </div>
       )}
 

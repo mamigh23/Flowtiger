@@ -173,6 +173,7 @@ describe('InvitationListPage', () => {
     renderApp('/app/invitations', { token: 'gecerli-token' });
 
     expect(await screen.findByText('Henüz davet yok.')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Ekibine birini davet et' })).toHaveAttribute('href', '/app/invitations/new');
     expect(screen.getByRole('link', { name: 'Davet gönder' })).toBeInTheDocument();
     expect(screen.queryByRole('table', { name: 'Davetler' })).not.toBeInTheDocument();
   });
