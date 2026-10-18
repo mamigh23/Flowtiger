@@ -722,6 +722,14 @@ Bu nedenle lansmana kadar gereksiz büyük refactor, yeni dependency ve mimari d
 
 # 11. GÜNCEL CHECKPOINT
 
+## 18.10.2026 — M0 Android emülatör / API başlangıç doğrulaması
+
+- Kullanıcının paket/lisans onayıyla Android Emulator ve Android 36 Google APIs x86_64 kuruldu. WHPX kullanılabilir. Ayrı `FlowTiger_API_36` AVD, 1536 MB RAM / iki CPU / software GPU; ekran 720×1600.
+- Ana manifestte eksik INTERNET izni eklendi. Yalnız debug için üç yerel adreste HTTP istisnası tanımlandı; diğer adresler cleartext kapalı. Debug APK build ve release manifest birleştirmesi geçti; release manifestte debug network config olmadığı doğrulandı.
+- APK emülatöre yüklendi, giriş ekranına ulaşıldı. Boş form gerçek yerel API'nin email/password alan hatalarını gösterdi. Yerel `/up` HTTP 200. Gerçek hesap/finans verisi kullanılmadı.
+- İlk boot System UI ANR ve iki `am start -W` timeout kaydı var; sonraki UI ağacı/ekranla giriş açılışı doğrulandı. Performans kabulü yapılmadı; gerçek cihaz testi gerekli. Ayrıntı/hash: `docs/MOBILE_ENVIRONMENT.md`.
+- Dart/bağımlılıklar değişmedi; önceki 229 test sonucu geçerli. M1 için oturum yarışları ve hata yüzeyi sırada; Mac/Xcode, gerçek cihaz ve web canlı kabulü açık.
+
 ## 18.10.2026 — M0 Android debug paketi üretildi
 
 - Kullanıcı NDK 28.2'nin korunmasını, CMake 3.22.1 kurulumunu ve yalnızca bu paketlerin gerektirdiği SDK lisans kabulünü açıkça onayladı. CMake kuruldu.

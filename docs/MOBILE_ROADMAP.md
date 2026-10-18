@@ -6,7 +6,8 @@ mağazaya gönderim veya tamamlanmış mobil sürüm beyanı değildir.
 
 M0 uygulama kanıtı: [Mobil geliştirme ortamı](MOBILE_ENVIRONMENT.md).
 Flutter analizi temiz, mevcut 229 test ve Android debug APK derlemesi
-başarılı; cihaz açılışı ve iOS kabulü açıktır.
+başarılı; Android emülatörde giriş açılışı ve yerel API alan hataları
+doğrulandı. İlk açılış performansı, gerçek cihaz ve iOS kabulü açıktır.
 
 ## 1. Hedef ve kapsam
 
