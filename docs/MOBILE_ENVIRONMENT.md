@@ -151,6 +151,14 @@ smoke başarılı sayılmadı; önceki M1 parçasının açılış kanıtı yeri
 kullanılmadı. Sonraki cihaz denemesinde paket servisi/ortam kaynakları
 incelenmeli; gerçek Android cihaz erişimi de hâlâ yok.
 
+Takip doğrulaması (kullanıcının canlı önizleme talebi): aynı AVD görünür
+pencerede 2048 MB RAM ile açıldı. `adb install -r --no-streaming` başarılı
+oldu. Kurulu `base.apk` SHA256 değeri yukarıdaki güncel paketle birebir
+eşleşti; uygulama başlatıldı ve UI ağacında giriş düğmesi doğrulandı.
+Son paketin kurulum/açılış engeli bu denemede giderildi; gerçek cihaz,
+oturumlu iki şirket/API zinciri ve iOS kabulü açık kalır. Emülatör
+kullanıcıya görünür biçimde açık bırakıldı. Kanıt: `.dart_tool/live-window.xml`.
+
 M1 kalan: güvenli depolama hata yüzeyi, Türkçe alan hataları, yeni mobil
 gezinme/kabuk ve iki platform cihaz kabulü. Bu testler taklit HTTP ile
 çalışır; gerçek iki şirket, owner/member, iPhone kabulü yerine geçmez.
