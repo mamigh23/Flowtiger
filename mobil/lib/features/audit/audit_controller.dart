@@ -4,6 +4,7 @@ import '../../core/network/api_client.dart';
 import '../../core/network/api_exception.dart';
 import '../../core/providers.dart';
 import '../../models/models.dart';
+import '../companies/company_scope.dart';
 
 /// Denetim listesi durumu.
 ///
@@ -45,8 +46,16 @@ class AuditListController extends StateNotifier<AuditListState> {
         super(const AuditListState());
 
   final ApiClient _api;
+  int _revision = 0;
+  bool _current(int revision) => mounted && revision == _revision;
+
+  void reset() {
+    ++_revision;
+    state = const AuditListState();
+  }
 
   Future<void> load({int page = 1}) async {
+    final int revision = ++_revision;
     state = AuditListState(status: AuditListStatus.loading, currentPage: page);
 
     try {
@@ -58,6 +67,7 @@ class AuditListController extends StateNotifier<AuditListState> {
         'audit-logs',
         query: <String, String>{'page': '$page'},
       );
+      if (!_current(revision)) return;
 
       final List<AuditLog> logs = (payload['data'] as List<dynamic>? ?? <dynamic>[])
           .map((dynamic item) => AuditLog.fromJson(item as Map<String, dynamic>))
@@ -74,6 +84,7 @@ class AuditListController extends StateNotifier<AuditListState> {
         total: meta['total'] as int? ?? logs.length,
       );
     } on ApiException catch (error) {
+      if (!_current(revision)) return;
       // 401'de token zaten silindi ve oturum düştü; burada ek iş yok.
       state = AuditListState(
         status: AuditListStatus.error,
@@ -81,6 +92,7 @@ class AuditListController extends StateNotifier<AuditListState> {
         currentPage: page,
       );
     } on NetworkException catch (error) {
+      if (!_current(revision)) return;
       state = AuditListState(
         status: AuditListStatus.error,
         error: error,
@@ -98,5 +110,9 @@ class AuditListController extends StateNotifier<AuditListState> {
 
 final StateNotifierProvider<AuditListController, AuditListState> auditListControllerProvider =
     StateNotifierProvider<AuditListController, AuditListState>(
-  (Ref ref) => AuditListController(api: ref.watch(apiClientProvider)),
+  (Ref ref) {
+    final AuditListController controller = AuditListController(api: ref.watch(apiClientProvider));
+    resetOnCompanyScopeChange(ref, controller.reset);
+    return controller;
+  },
 );

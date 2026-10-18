@@ -4,6 +4,7 @@ import '../../core/network/api_client.dart';
 import '../../core/network/api_exception.dart';
 import '../../core/providers.dart';
 import '../../models/models.dart';
+import '../companies/company_scope.dart';
 
 /// Müşteri listesi durumu.
 ///
@@ -42,8 +43,16 @@ class CustomerListController extends StateNotifier<CustomerListState> {
         super(const CustomerListState());
 
   final ApiClient _api;
+  int _revision = 0;
+  bool _current(int revision) => mounted && revision == _revision;
+
+  void reset() {
+    ++_revision;
+    state = const CustomerListState();
+  }
 
   Future<void> load({int page = 1}) async {
+    final int revision = ++_revision;
     state = CustomerListState(status: CustomerListStatus.loading, currentPage: page);
 
     try {
@@ -51,6 +60,7 @@ class CustomerListController extends StateNotifier<CustomerListState> {
         'customers',
         query: <String, String>{'page': '$page'},
       );
+      if (!_current(revision)) return;
 
       final List<Customer> customers = (payload['data'] as List<dynamic>? ?? <dynamic>[])
           .map((dynamic item) => Customer.fromJson(item as Map<String, dynamic>))
@@ -70,9 +80,11 @@ class CustomerListController extends StateNotifier<CustomerListState> {
         total: meta['total'] as int? ?? customers.length,
       );
     } on ApiException catch (error) {
+      if (!_current(revision)) return;
       // 401'de token zaten silindi ve oturum düştü; burada ek iş yok.
       state = CustomerListState(status: CustomerListStatus.error, error: error, currentPage: page);
     } on NetworkException catch (error) {
+      if (!_current(revision)) return;
       state = CustomerListState(status: CustomerListStatus.error, error: error, currentPage: page);
     }
   }
@@ -87,7 +99,12 @@ class CustomerListController extends StateNotifier<CustomerListState> {
 final StateNotifierProvider<CustomerListController, CustomerListState>
     customerListControllerProvider =
     StateNotifierProvider<CustomerListController, CustomerListState>(
-  (Ref ref) => CustomerListController(api: ref.watch(apiClientProvider)),
+  (Ref ref) {
+    final CustomerListController controller =
+        CustomerListController(api: ref.watch(apiClientProvider));
+    resetOnCompanyScopeChange(ref, controller.reset);
+    return controller;
+  },
 );
 
 /// Tek müşteri işlemleri.
@@ -104,8 +121,7 @@ class CustomerRepository {
   final ApiClient _api;
 
   Future<Customer> find(int id) async {
-    final Map<String, dynamic> payload =
-        await _api.get<Map<String, dynamic>>('customers/$id');
+    final Map<String, dynamic> payload = await _api.get<Map<String, dynamic>>('customers/$id');
 
     return Customer.fromJson(payload);
   }

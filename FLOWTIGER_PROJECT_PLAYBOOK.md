@@ -722,6 +722,14 @@ Bu nedenle lansmana kadar gereksiz büyük refactor, yeni dependency ve mimari d
 
 # 11. GÜNCEL CHECKPOINT
 
+## 18.10.2026 — M1 ikinci parça / şirket verisi ve rota ömrü
+
+- Hesap/şirket/seçim değişiminde müşteri, ekip, davet, denetim, profil ve panel durumu senkron temizlenir. Controller işlem sürümleri geç başarı/hata yanıtlarının yeni veriye yazılmasını engeller. Şirket kimliği istek gövdesine/başlığına eklenmedi.
+- Seçim sırasında eski kabuk kapatılır, detay/form rotaları temizlenir; yeni hesap/şirket kabuğu yeniden açılır. Geç profil PUT yanıtı yeni hesaba uygulanmaz. Başarısız seçim mevcut şirketi korur ve hatayı ortak kabukta gösterir.
+- 34 yeni regresyon; tam mobil paket 23 dosya / 288 test başarılı. Analyzer temiz, debug APK build başarılı. Hash ve ortam kaydı: `docs/MOBILE_ENVIRONMENT.md`.
+- Son APK'nın emülatör kurulumu iki yöntemle de tamamlanmadı (dosya aktarımı başarılı). Ortam kapatıldı; son sürüm için cihaz açılışı/API smoke açık, önceki sürüm sonucu bu sürüme taşınmadı.
+- M1 açık: güvenli depo hata yüzeyi, Türkçe alan hataları, gezinme/kabuk ve iki platform cihaz kabulü. Gerçek şirket izolasyonu/owner-member turu, Mac/iOS ve web canlı kabulü kapanmadı. Backend/API/migration/bağımlılık değişmedi.
+
 ## 18.10.2026 — M1 ilk parça / oturum ve şirket yanıt yarışları
 
 - Bootstrap/login sonuçları işlem sürümü ve controller yaşam süresiyle sınırlandı. Güvenli depo işleri sıraya alındı; geciken write/clear yeni token üzerine çalışmaz. Logout yerel durumu hemen kapatır ve yalnız eski token ile sunucu iptali yapar.

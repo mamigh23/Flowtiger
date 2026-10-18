@@ -10,7 +10,7 @@ M0–M7 sırasını ve iki platformun kabul kapılarını içerir. Web'in canlı
 yayın kabulü ayrı ve açıktır; mobil temel mağazaya hazır kabul edilmez.
 
 [M0 ortam ve test kaydı](../docs/MOBILE_ENVIRONMENT.md): Flutter analizi
-temiz, mevcut 254 test ve Android debug APK derlemesi başarılı;
+temiz, mevcut 288 test ve Android debug APK derlemesi başarılı;
 Android cihaz ve iOS kabulü açıktır.
 Eksik SDK paketleri kendi lisans koşulları değerlendirilerek Android SDK
 araçlarıyla ayrıca kurulmalıdır. `android.builder.sdkDownload=false`

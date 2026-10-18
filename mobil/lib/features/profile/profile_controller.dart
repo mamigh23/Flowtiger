@@ -4,6 +4,7 @@ import '../../core/network/api_client.dart';
 import '../../core/network/api_exception.dart';
 import '../../core/providers.dart';
 import '../../models/models.dart';
+import '../companies/company_scope.dart';
 
 /// Kullanıcının KENDİ hesabı.
 ///
@@ -69,6 +70,13 @@ class ProfileController extends StateNotifier<ProfileState> {
         super(const ProfileState());
 
   final ApiClient _api;
+  int _revision = 0;
+  bool _current(int revision) => mounted && revision == _revision;
+
+  void reset() {
+    ++_revision;
+    state = const ProfileState();
+  }
 
   /// Profil GET /profile'DAN okunur, oturumdaki kullanıcıdan DEĞİL.
   ///
@@ -77,15 +85,19 @@ class ProfileController extends StateNotifier<ProfileState> {
   /// kaynağını okumazsa, başka bir cihazdan yapılmış bir değişiklik hiç
   /// görünmez.
   Future<void> load() async {
+    final int revision = ++_revision;
     state = const ProfileState();
 
     try {
       final Map<String, dynamic> payload = await _api.get<Map<String, dynamic>>('profile');
+      if (!_current(revision)) return;
       state = ProfileState(user: User.fromJson(payload), status: ProfileStatus.ready);
     } on ApiException catch (error) {
+      if (!_current(revision)) return;
       // 401'de token zaten silindi ve oturum düştü; burada ek iş yok.
       state = ProfileState(status: ProfileStatus.error, error: error);
     } on NetworkException catch (error) {
+      if (!_current(revision)) return;
       state = ProfileState(status: ProfileStatus.error, error: error);
     }
   }
@@ -95,12 +107,19 @@ class ProfileController extends StateNotifier<ProfileState> {
   /// Yeniden GET yapılmaz: e-posta değiştiğinde backend
   /// `email_verified_at`'i null'a çeker ve bunu ZATEN bu yanıtta bildirir.
   /// İkinci bir istek, aynı bilgiyi bir kez daha sormak olurdu.
-  void apply(User user) => state = ProfileState(user: user, status: ProfileStatus.ready);
+  void apply(User user) {
+    ++_revision;
+    state = ProfileState(user: user, status: ProfileStatus.ready);
+  }
 }
 
 final StateNotifierProvider<ProfileController, ProfileState> profileControllerProvider =
     StateNotifierProvider<ProfileController, ProfileState>(
-  (Ref ref) => ProfileController(api: ref.watch(apiClientProvider)),
+  (Ref ref) {
+    final ProfileController controller = ProfileController(api: ref.watch(apiClientProvider));
+    resetOnCompanyScopeChange(ref, controller.reset);
+    return controller;
+  },
 );
 
 /// Yazma işlemleri.

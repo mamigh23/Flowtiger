@@ -53,8 +53,8 @@ derleme günlüğü `mobil/.dart_tool/m0-android-build.log` içindedir.
 Bağımlılık yükseltmesi, backend/API/migration değişikliği yapılmadı.
 
 Yerel paket: `mobil/build/app/outputs/flutter-apk/app-debug.apk`
-(M1 güncel paket: 179.904.171 bayt). arm64-v8a, armeabi-v7a ve x86_64 içerir.
-SHA256: `5F0399B10C2579BB8856C2493B013DFF24D2EF0AB1B455D3061878D8C8D51FEC`.
+(M1 güncel paket: 179.909.328 bayt). arm64-v8a, armeabi-v7a ve x86_64 içerir.
+SHA256: `0E82B3D1FBD9664C0133536A8C27092667D725C2A03537DA04697C8C28D5DFA5`.
 APK ve araçlar Git'e eklenmedi. Paket varsayılan development API adresini
 (`http://10.0.2.2:8000/api/v1`) kullanır; gerçek telefonda bu adres
 geliştirme bilgisayarına yönlenmez. Üretim veya telefon dağıtım paketi değildir.
@@ -119,10 +119,41 @@ yerel API'nin iki alan hatasını gösterdi. AndroidRuntime/flutter crash
 kaydı görülmedi. Günlükler: `.dart_tool/m1-tests.log`,
 `.dart_tool/m1-android-build.log`, `.dart_tool/m1-window.xml`.
 
-M1 açık: şirket değişiminde müşteri/ekip/denetim gibi modüllerin cache/rota
-temizliği ve geç yanıtları, güvenli depo hata yüzeyi, Türkçe alan hataları,
-mobil kabuk ve iki platform smoke kabulü. Bu aşamada auth/şirket yarış
-düzeltmesi bütün uygulamanın tenant kabulü olarak sunulmaz.
+Bu ilk parçanın ardından cache/rota temizliği ikinci parçada ele alındı.
+M1 genel kabulü ve gerçek iki şirket turu hâlâ açıktır.
+
+## M1 — Şirket verisi ve rota ömrü, ikinci parça
+
+18.10.2026: müşteri, ekip, davet, denetim, profil ve panel controller'ları
+hesap/aktif şirket/seçim değişiminde senkron sıfırlanır. İşlem sürümleri
+ve mounted kontrolü eski başarı, 403, 500 ve ağ hatalarının yeni veriyi
+değiştirmesini önler. Şirket kimliği API isteklerine eklenmez; backend
+yetki ve tenant kararının kaynağıdır.
+
+Şirket seçimi sırasında eski kabuk etkileşime kapatılır. Açık detay/form
+rotaları kapanır; yeni hesap/şirket kendi kabuğuyla başlar. Geç dönen profil
+kaydı yeni hesabın cache'ine uygulanmaz. Başarısız seçim eski şirketi
+korur; hata ortak kabukta görünür.
+
+`company_scope_test.dart`: 34 yeni regresyon. Aynı hesaba tekrar giriş,
+çıkışta hazır veri temizliği, kaydedilmiş notifier ile yeni yükleme,
+eski başarı/hata yanıtları ve açık müşteri/profil rotaları sınandı.
+Tam mobil paket: **23 dosya / 288 test başarılı**, analyzer **0 sorun**,
+Android debug build başarılı. Günlükler aynı `.dart_tool/m1-tests.log`
+ve `.dart_tool/m1-android-build.log` dosyalarında güncellendi.
+Veritabanı, API sözleşmesi ve bağımlılık kilidi değiştirilmedi.
+
+Son APK için emülatör yeniden açıldı; Android boot tamamlandı. Streamed
+kurulum sonuç vermeden uzadı ve durduruldu. `--no-streaming` denemesinde
+179.909.328 bayt aktarımı tamamlandı, ancak paket kurulum sonucu yine
+alınamadı. Test emülatörü kapatıldı. Bu son paket için emülatör açılışı/API
+smoke başarılı sayılmadı; önceki M1 parçasının açılış kanıtı yerine
+kullanılmadı. Sonraki cihaz denemesinde paket servisi/ortam kaynakları
+incelenmeli; gerçek Android cihaz erişimi de hâlâ yok.
+
+M1 kalan: güvenli depolama hata yüzeyi, Türkçe alan hataları, yeni mobil
+gezinme/kabuk ve iki platform cihaz kabulü. Bu testler taklit HTTP ile
+çalışır; gerçek iki şirket, owner/member, iPhone kabulü yerine geçmez.
 
 Üretim API adresi ve HTTPS sunucu kabulü, kalıcı Android/iOS imzaları ve
 gerçek cihaz testleri hâlâ açık. Web Aşama 9'un canlı kabulü kapanmadı.

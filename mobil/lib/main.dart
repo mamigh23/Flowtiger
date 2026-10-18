@@ -8,6 +8,7 @@ import 'features/auth/auth_controller.dart';
 import 'features/auth/login_screen.dart';
 import 'features/companies/company_controller.dart';
 import 'features/companies/company_select_screen.dart';
+import 'features/companies/company_scope.dart';
 import 'features/shell/app_shell.dart';
 import 'widgets/ui.dart';
 
@@ -61,19 +62,15 @@ class _AuthGateState extends ConsumerState<_AuthGate> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       unawaited(ref.read(authControllerProvider.notifier).restoreSession());
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    // Oturum kapandığında şirket durumu SIFIRLANIR. Aksi hâlde bir
-    // sonraki kullanıcı, önceki oturumun aktif şirketiyle açılırdı.
-    ref.listen<AuthState>(authControllerProvider, (AuthState? previous, AuthState next) {
-      if (next.status != AuthStatus.unauthenticated) return;
-
-      ref.read(companyControllerProvider.notifier).reset();
-
+    // Close account/company routes at the same boundary that clears data.
+    ref.listen<CompanyScope>(companyScopeProvider, (CompanyScope? previous, CompanyScope next) {
       // Kare içinde pop edilmez: bu geri çağrı bir build sırasında
       // tetiklenebilir ve Navigator o anda değiştirilemez.
       final NavigatorState navigator = Navigator.of(context);
@@ -91,7 +88,7 @@ class _AuthGateState extends ConsumerState<_AuthGate> {
       case AuthStatus.loading:
         return const Scaffold(body: FtLoading());
       case AuthStatus.authenticated:
-        return const _CompanyGate();
+        return _CompanyGate(key: ObjectKey(auth));
       case AuthStatus.unauthenticated:
         return const LoginScreen();
     }
@@ -105,7 +102,7 @@ class _AuthGateState extends ConsumerState<_AuthGate> {
 /// reddedilir. Buradaki amaç, kullanıcıyı boş ve bozuk görünen bir
 /// panele düşürmemek.
 class _CompanyGate extends ConsumerStatefulWidget {
-  const _CompanyGate();
+  const _CompanyGate({super.key});
 
   @override
   ConsumerState<_CompanyGate> createState() => _CompanyGateState();
@@ -116,6 +113,7 @@ class _CompanyGateState extends ConsumerState<_CompanyGate> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       // Zaten yüklenmişse (ör. şirket değiştirme sonrası) tekrar istenmez.
       if (ref.read(companyControllerProvider).status == CompanyStatus.idle) {
         unawaited(ref.read(companyControllerProvider.notifier).load());
@@ -126,6 +124,9 @@ class _CompanyGateState extends ConsumerState<_CompanyGate> {
   @override
   Widget build(BuildContext context) {
     final CompanyState companies = ref.watch(companyControllerProvider);
+    if (companies.selectingId != null) {
+      return const Scaffold(body: FtLoading());
+    }
 
     switch (companies.status) {
       case CompanyStatus.idle:
@@ -138,7 +139,7 @@ class _CompanyGateState extends ConsumerState<_CompanyGate> {
         // hiç görünmez; seçim sürerken de burada kalınır.
         return companies.activeCompanyId == null
             ? const CompanySelectScreen()
-            : const AppShell();
+            : AppShell(key: ValueKey<int>(companies.activeCompanyId!));
     }
   }
 }

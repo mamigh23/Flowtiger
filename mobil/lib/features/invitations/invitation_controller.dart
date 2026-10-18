@@ -4,6 +4,7 @@ import '../../core/network/api_client.dart';
 import '../../core/network/api_exception.dart';
 import '../../core/providers.dart';
 import '../../models/models.dart';
+import '../companies/company_scope.dart';
 
 /// Davet listesi durumu.
 ///
@@ -40,8 +41,16 @@ class InvitationListController extends StateNotifier<InvitationListState> {
         super(const InvitationListState());
 
   final ApiClient _api;
+  int _revision = 0;
+  bool _current(int revision) => mounted && revision == _revision;
+
+  void reset() {
+    ++_revision;
+    state = const InvitationListState();
+  }
 
   Future<void> load({int page = 1}) async {
+    final int revision = ++_revision;
     state = InvitationListState(status: InvitationListStatus.loading, currentPage: page);
 
     try {
@@ -49,11 +58,11 @@ class InvitationListController extends StateNotifier<InvitationListState> {
         'invitations',
         query: <String, String>{'page': '$page'},
       );
+      if (!_current(revision)) return;
 
-      final List<Invitation> invitations =
-          (payload['data'] as List<dynamic>? ?? <dynamic>[])
-              .map((dynamic item) => Invitation.fromJson(item as Map<String, dynamic>))
-              .toList();
+      final List<Invitation> invitations = (payload['data'] as List<dynamic>? ?? <dynamic>[])
+          .map((dynamic item) => Invitation.fromJson(item as Map<String, dynamic>))
+          .toList();
 
       final Map<String, dynamic> meta =
           payload['meta'] as Map<String, dynamic>? ?? <String, dynamic>{};
@@ -66,6 +75,7 @@ class InvitationListController extends StateNotifier<InvitationListState> {
         total: meta['total'] as int? ?? invitations.length,
       );
     } on ApiException catch (error) {
+      if (!_current(revision)) return;
       // 401'de token zaten silindi ve oturum düştü; burada ek iş yok.
       state = InvitationListState(
         status: InvitationListStatus.error,
@@ -73,6 +83,7 @@ class InvitationListController extends StateNotifier<InvitationListState> {
         currentPage: page,
       );
     } on NetworkException catch (error) {
+      if (!_current(revision)) return;
       state = InvitationListState(
         status: InvitationListStatus.error,
         error: error,
@@ -91,7 +102,12 @@ class InvitationListController extends StateNotifier<InvitationListState> {
 final StateNotifierProvider<InvitationListController, InvitationListState>
     invitationListControllerProvider =
     StateNotifierProvider<InvitationListController, InvitationListState>(
-  (Ref ref) => InvitationListController(api: ref.watch(apiClientProvider)),
+  (Ref ref) {
+    final InvitationListController controller =
+        InvitationListController(api: ref.watch(apiClientProvider));
+    resetOnCompanyScopeChange(ref, controller.reset);
+    return controller;
+  },
 );
 
 /// Davet oluşturma ve iptal.
@@ -122,7 +138,6 @@ class InvitationRepository {
   Future<void> revoke(int id) => _api.delete('invitations/$id');
 }
 
-final Provider<InvitationRepository> invitationRepositoryProvider =
-    Provider<InvitationRepository>(
+final Provider<InvitationRepository> invitationRepositoryProvider = Provider<InvitationRepository>(
   (Ref ref) => InvitationRepository(ref.watch(apiClientProvider)),
 );

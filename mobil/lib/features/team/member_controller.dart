@@ -4,6 +4,7 @@ import '../../core/network/api_client.dart';
 import '../../core/network/api_exception.dart';
 import '../../core/providers.dart';
 import '../../models/models.dart';
+import '../companies/company_scope.dart';
 
 /// Ekip listesi durumu.
 ///
@@ -39,8 +40,16 @@ class MemberListController extends StateNotifier<MemberListState> {
         super(const MemberListState());
 
   final ApiClient _api;
+  int _revision = 0;
+  bool _current(int revision) => mounted && revision == _revision;
+
+  void reset() {
+    ++_revision;
+    state = const MemberListState();
+  }
 
   Future<void> load({int page = 1}) async {
+    final int revision = ++_revision;
     state = MemberListState(status: MemberListStatus.loading, currentPage: page);
 
     try {
@@ -48,6 +57,7 @@ class MemberListController extends StateNotifier<MemberListState> {
         'members',
         query: <String, String>{'page': '$page'},
       );
+      if (!_current(revision)) return;
 
       final List<Member> members = (payload['data'] as List<dynamic>? ?? <dynamic>[])
           .map((dynamic item) => Member.fromJson(item as Map<String, dynamic>))
@@ -64,9 +74,11 @@ class MemberListController extends StateNotifier<MemberListState> {
         total: meta['total'] as int? ?? members.length,
       );
     } on ApiException catch (error) {
+      if (!_current(revision)) return;
       // 401'de token zaten silindi ve oturum düştü; burada ek iş yok.
       state = MemberListState(status: MemberListStatus.error, error: error, currentPage: page);
     } on NetworkException catch (error) {
+      if (!_current(revision)) return;
       state = MemberListState(status: MemberListStatus.error, error: error, currentPage: page);
     }
   }
@@ -78,10 +90,13 @@ class MemberListController extends StateNotifier<MemberListState> {
   Future<void> reload() => load(page: state.currentPage);
 }
 
-final StateNotifierProvider<MemberListController, MemberListState>
-    memberListControllerProvider =
+final StateNotifierProvider<MemberListController, MemberListState> memberListControllerProvider =
     StateNotifierProvider<MemberListController, MemberListState>(
-  (Ref ref) => MemberListController(api: ref.watch(apiClientProvider)),
+  (Ref ref) {
+    final MemberListController controller = MemberListController(api: ref.watch(apiClientProvider));
+    resetOnCompanyScopeChange(ref, controller.reset);
+    return controller;
+  },
 );
 
 /// Tek üye işlemleri.
@@ -102,8 +117,7 @@ class MemberRepository {
   final ApiClient _api;
 
   Future<Member> find(int id) async {
-    final Map<String, dynamic> payload =
-        await _api.get<Map<String, dynamic>>('members/$id');
+    final Map<String, dynamic> payload = await _api.get<Map<String, dynamic>>('members/$id');
 
     return Member.fromJson(payload);
   }

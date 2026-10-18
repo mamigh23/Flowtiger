@@ -5,15 +5,18 @@ hazırlanarak başlatmayı istedi. Bu belge uygulama geliştirme sırasıdır;
 mağazaya gönderim veya tamamlanmış mobil sürüm beyanı değildir.
 
 M0 uygulama kanıtı: [Mobil geliştirme ortamı](MOBILE_ENVIRONMENT.md).
-Flutter analizi temiz, mevcut 254 test ve Android debug APK derlemesi
+Flutter analizi temiz, mevcut 288 test ve Android debug APK derlemesi
 başarılı; Android emülatörde giriş açılışı ve yerel API alan hataları
 doğrulandı. İlk açılış performansı, gerçek cihaz ve iOS kabulü açıktır.
 
 M1 ilk parça: oturum/bootstrap/login/logout ve güvenli depolama yarışları
 ile şirket listesinin geç yanıtları için 25 kontrollü regresyon testi eklendi.
 Eski token'ın 401'i yeni oturumu kapatmaz; şirket seçimi aynı anda tek
-istektir. Şirket değişiminde diğer modüllerin cache/rota temizliği, depolama
-hatası yüzeyi, Türkçe hata metinleri ve yeni kabuk henüz tamamlanmadı.
+istektir. M1 ikinci parçada müşteri/ekip/davet/denetim/profil/panel
+verileri hesap veya şirket değişiminde temizlenir; geç yanıtlar uygulanmaz,
+açık rotalar kapanır. Başarısız seçim mevcut şirketi korur ve ortak kabukta
+hata gösterir. Bu parça için 34 regresyon eklendi. Depolama hatası yüzeyi,
+Türkçe hata metinleri ve yeni kabuk henüz tamamlanmadı.
 Bu parça M1'in tamamlandığı anlamına gelmez.
 
 ## 1. Hedef ve kapsam
@@ -46,7 +49,7 @@ veri yedeği ve uçtan uca sunucu kabulüne bağlıdır.
 | Davet / profil / audit | Temel ekranlar ve test dosyaları var | Gelen davet/kabul zinciri, e-posta bağlantıları ve hesap eşitliği |
 | Ana ekran | Müşteri/üye sayımları ve son hareketler | Web'deki kişisel günlük rehber ve görev akışı yok |
 | Görev / finans / ödeme | Mobil modül/model katmanları henüz yok | Mevcut backend sözleşmelerine göre uygulanacak |
-| Testler | 22 test dosyası ve test harness mevcut | 254 test geçti; cihaz/iki şirket kabulü yerine geçmez |
+| Testler | 23 test dosyası ve test harness mevcut | 288 test geçti; cihaz/iki şirket kabulü yerine geçmez |
 | Yerel araçlar | Flutter/Dart, JDK, Android SDK/NDK/CMake ve emulator kuruldu | Tam yollarla kullanılıyor; Mac/Xcode ve gerçek cihaz erişimi yok |
 
 Mevcut mobil README'nin platform klasörleri yoktur bilgisi eskiydi; bu

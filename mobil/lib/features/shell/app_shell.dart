@@ -51,7 +51,18 @@ class _AppShellState extends ConsumerState<AppShell> {
       // IndexedStack YERİNE switch: yalnızca açık bölüm ağaçta durur.
       // Böylece görünmeyen bir bölüm arka planda istek atmaz ve ekranda
       // olmayan bir metin testlerde/erişilebilirlik ağacında görünmez.
-      body: SafeArea(child: _section(_index)),
+      body: SafeArea(
+        child: Column(
+          children: <Widget>[
+            if (companies.selectError != null)
+              Padding(
+                padding: const EdgeInsets.all(FtTokens.space4),
+                child: FtErrorState(message: companies.selectError!),
+              ),
+            Expanded(child: _section(_index)),
+          ],
+        ),
+      ),
 
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,

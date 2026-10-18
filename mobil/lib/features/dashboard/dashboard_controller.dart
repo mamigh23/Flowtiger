@@ -4,6 +4,7 @@ import '../../core/network/api_client.dart';
 import '../../core/network/api_exception.dart';
 import '../../core/providers.dart';
 import '../../models/models.dart';
+import '../companies/company_scope.dart';
 
 /// Panelin veri durumu.
 ///
@@ -68,21 +69,29 @@ class DashboardController extends StateNotifier<DashboardState> {
         super(const DashboardState());
 
   final ApiClient _api;
+  int _revision = 0;
+  bool _current(int revision) => mounted && revision == _revision;
+
+  void reset() {
+    ++_revision;
+    state = const DashboardState();
+  }
 
   Future<void> load() async {
+    final int revision = ++_revision;
     state = const DashboardState();
 
     // Üçü paralel: biri diğerini beklemez.
     await Future.wait<void>(<Future<void>>[
-      _loadCustomerCount(),
-      _loadMemberCount(),
-      _loadRecentActivity(),
+      _loadCustomerCount(revision),
+      _loadMemberCount(revision),
+      _loadRecentActivity(revision),
     ]);
   }
 
   /// Sayım için per_page=1 kullanılır: kayıtların kendisi gerekmez,
   /// yalnızca meta.total. En küçük sayfa en ucuz sorgudur.
-  Future<void> _loadCustomerCount() async {
+  Future<void> _loadCustomerCount(int revision) async {
     // ÖNCE bekle, SONRA state'e yaz. Tek satırda
     // `state = state.copyWith(x: await ...)` yazılamaz: Dart alıcıyı
     // argümandan önce değerlendirir, yani `state` await'ten ÖNCE okunur.
@@ -95,20 +104,20 @@ class DashboardController extends StateNotifier<DashboardState> {
       return _total(payload);
     });
 
-    state = state.copyWith(customerCount: panel);
+    if (_current(revision)) state = state.copyWith(customerCount: panel);
   }
 
-  Future<void> _loadMemberCount() async {
+  Future<void> _loadMemberCount(int revision) async {
     final Panel<int> panel = await _guard<int>(() async {
       final Map<String, dynamic> payload =
           await _api.getRaw('members', query: <String, String>{'per_page': '1'});
       return _total(payload);
     });
 
-    state = state.copyWith(memberCount: panel);
+    if (_current(revision)) state = state.copyWith(memberCount: panel);
   }
 
-  Future<void> _loadRecentActivity() async {
+  Future<void> _loadRecentActivity(int revision) async {
     final Panel<List<AuditLog>> panel = await _guard<List<AuditLog>>(() async {
       final Map<String, dynamic> payload =
           await _api.getRaw('audit-logs', query: <String, String>{'per_page': '5'});
@@ -118,7 +127,7 @@ class DashboardController extends StateNotifier<DashboardState> {
           .toList();
     });
 
-    state = state.copyWith(recentActivity: panel);
+    if (_current(revision)) state = state.copyWith(recentActivity: panel);
   }
 
   /// 403'ü diğer hatalardan ayırır.
@@ -143,5 +152,9 @@ class DashboardController extends StateNotifier<DashboardState> {
 
 final StateNotifierProvider<DashboardController, DashboardState> dashboardControllerProvider =
     StateNotifierProvider<DashboardController, DashboardState>(
-  (Ref ref) => DashboardController(api: ref.watch(apiClientProvider)),
+  (Ref ref) {
+    final DashboardController controller = DashboardController(api: ref.watch(apiClientProvider));
+    resetOnCompanyScopeChange(ref, controller.reset);
+    return controller;
+  },
 );

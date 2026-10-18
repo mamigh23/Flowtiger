@@ -7,6 +7,7 @@ import '../../core/theme/app_theme.dart';
 import '../../models/models.dart';
 import '../../widgets/ui.dart';
 import 'profile_controller.dart';
+import '../companies/company_scope.dart';
 import 'profile_errors.dart';
 
 /// Hesap bilgileri — ad, e-posta ve doğrulama durumu.
@@ -68,6 +69,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
 
   Future<void> _load() async {
     await ref.read(profileControllerProvider.notifier).load();
+    if (!mounted) return;
 
     final User? user = ref.read(profileControllerProvider).user;
     if (user != null && mounted) _syncFrom(user);
@@ -82,6 +84,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
   }
 
   Future<void> _save() async {
+    final CompanyScope scope = ref.read(companyScopeProvider);
     if (_saving) return;
 
     setState(() {
@@ -96,6 +99,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
             email: _email.text.trim(),
           );
 
+      if (!mounted || scope != ref.read(companyScopeProvider)) return;
       ref.read(profileControllerProvider.notifier).apply(updated);
 
       if (mounted) {
@@ -246,8 +250,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
 
     // Alan altında gösterilemeyen her hata form seviyesinde gösterilir;
     // sessizce yutulan bir hata, kullanıcıya "kaydedildi" izlenimi verir.
-    final bool hasFormError =
-        _error != null && nameError == null && emailError == null;
+    final bool hasFormError = _error != null && nameError == null && emailError == null;
 
     return FtCard(
       child: Column(
@@ -257,7 +260,6 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
             FtErrorState(message: profileErrorMessage(_error)),
             const SizedBox(height: FtTokens.space3),
           ],
-
           if (_saved && !hasFormError) ...<Widget>[
             Text(
               'Profil bilgileriniz güncellendi.',
@@ -265,14 +267,12 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
             ),
             const SizedBox(height: FtTokens.space3),
           ],
-
           TextField(
             key: const Key('profile-name'),
             controller: _name,
             decoration: InputDecoration(labelText: 'Ad', errorText: nameError),
           ),
           const SizedBox(height: FtTokens.space4),
-
           TextField(
             key: const Key('profile-email'),
             controller: _email,
@@ -282,7 +282,6 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
             decoration: InputDecoration(labelText: 'E-posta', errorText: emailError),
           ),
           const SizedBox(height: FtTokens.space5),
-
           FilledButton(
             key: const Key('profile-save'),
             onPressed: _saving ? null : () => unawaited(_save()),
