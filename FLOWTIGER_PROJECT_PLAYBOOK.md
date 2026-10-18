@@ -722,6 +722,14 @@ Bu nedenle lansmana kadar gereksiz büyük refactor, yeni dependency ve mimari d
 
 # 11. GÜNCEL CHECKPOINT
 
+## 18.10.2026 — M1 ilk parça / oturum ve şirket yanıt yarışları
+
+- Bootstrap/login sonuçları işlem sürümü ve controller yaşam süresiyle sınırlandı. Güvenli depo işleri sıraya alındı; geciken write/clear yeni token üzerine çalışmaz. Logout yerel durumu hemen kapatır ve yalnız eski token ile sunucu iptali yapar.
+- API 401 callback'i isteğin token'ını taşır; yalnız güncel token iptal edilir. Token göndermeyen girişin 401'i veya eski istek yeni oturumu kapatmaz. Devam eden açık login eski token'ın iptali yüzünden düşürülmez.
+- Şirket yükleme/seçme sonuçları reset/dispose sonrası uygulanmaz; auth değişikliği widget'a bağlı olmadan şirket listesini temizler. Paralel şirket seçimi kilitlendi.
+- 25 kontrollü yarış regresyonu eklendi. Tüm mobil: 22 dosya / 254 test başarılı; analyzer temiz; Android debug build geçti; emülatörde yeni APK giriş açılışı ve yerel API alan hataları doğrulandı. Kanıt/hash: `docs/MOBILE_ENVIRONMENT.md`.
+- M1 tamamlanmadı: diğer modüllerin şirket cache/rota temizliği, depolama/hata yüzeyi ve mobil kabuk sırada. Mac/iOS, gerçek cihaz ve web canlı kabulü açık; backend/API sözleşmesi/migration değişmedi.
+
 ## 18.10.2026 — M0 Android emülatör / API başlangıç doğrulaması
 
 - Kullanıcının paket/lisans onayıyla Android Emulator ve Android 36 Google APIs x86_64 kuruldu. WHPX kullanılabilir. Ayrı `FlowTiger_API_36` AVD, 1536 MB RAM / iki CPU / software GPU; ekran 720×1600.

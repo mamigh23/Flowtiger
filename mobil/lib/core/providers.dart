@@ -22,8 +22,9 @@ final Provider<TokenStorage> tokenStorageProvider = Provider<TokenStorage>(
 
 /// 401 davranışı burada bağlanır.
 ///
-/// Herhangi bir istek 401 alırsa iki şey olur: token cihazdan silinir ve
-/// oturum durumu düşürülür. TEK NOKTADA yapılır — her çağrı yerinde
+/// Güncel token'la yapılan istek 401 alırsa token silinir ve oturum
+/// durumu düşürülür. Eski token veya giriş isteği yeni oturumu kapatmaz.
+/// TEK NOKTADA yapılır — her çağrı yerinde
 /// "acaba 401 mi geldi" kontrolü tekrarlanmaz; bir yerde unutulursa
 /// kullanıcı geçersiz bir oturumla ürünün içinde kalırdı.
 /// Testlerin ağ katmanını değiştirdiği tek nokta.
@@ -36,17 +37,18 @@ final Provider<http.Client?> httpClientProvider = Provider<http.Client?>((Ref re
 
 final Provider<ApiClient> apiClientProvider = Provider<ApiClient>((Ref ref) {
   final TokenStorage storage = ref.watch(tokenStorageProvider);
+  bool active = true;
+  ref.onDispose(() => active = false);
 
   return ApiClient(
     config: ref.watch(appConfigProvider),
     tokenStorage: storage,
     httpClient: ref.watch(httpClientProvider),
-    onUnauthenticated: () async {
-      await storage.clear();
-
+    onUnauthenticated: (String requestToken) async {
+      if (!active) return;
       // ref.read GEÇ çalışır (istek anında), bu yüzden provider'lar
       // arasında kurulum sırası sorunu doğmaz.
-      ref.read(authControllerProvider.notifier).sessionExpired();
+      await ref.read(authControllerProvider.notifier).sessionExpired(requestToken);
     },
   );
 });

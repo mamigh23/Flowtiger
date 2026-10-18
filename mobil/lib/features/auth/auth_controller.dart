@@ -32,64 +32,103 @@ class AuthController extends StateNotifier<AuthState> {
 
   final ApiClient _api;
   final TokenStorage _tokenStorage;
+  int _revision = 0;
+  int? _pendingLoginRevision;
+  Future<void> _storageWork = Future<void>.value();
+
+  bool _current(int revision) => mounted && revision == _revision;
+
+  // Secure storage operations must finish in order: a delayed clear/write
+  // cannot run over a newer login. Errors still reach the original caller.
+  Future<T> _withStorage<T>(Future<T> Function() action) {
+    final Future<T> result = _storageWork.then((_) => action());
+    _storageWork = result.then<void>((_) {}, onError: (Object _, StackTrace __) {});
+    return result;
+  }
 
   /// Açılışta: cihazda token varsa kim olduğumuzu backend'e soralım.
   ///
   /// Token'ın varlığı yeterli değildir — iptal edilmiş ya da süresi
   /// dolmuş olabilir. Yetki kararı her zaman backend'e aittir.
   Future<void> restoreSession() async {
-    final String? token = await _tokenStorage.read();
-
-    if (token == null) {
-      state = const AuthState.unauthenticated();
-      return;
-    }
-
+    final int revision = ++_revision;
     try {
+      final String? token = await _withStorage(_tokenStorage.read);
+      if (!_current(revision)) return;
+      if (token == null) {
+        state = const AuthState.unauthenticated();
+        return;
+      }
       final Map<String, dynamic> payload = await _api.get<Map<String, dynamic>>('me');
-      state = AuthState(status: AuthStatus.authenticated, user: User.fromJson(payload));
+      if (!_current(revision)) return;
+      state = AuthState(
+        status: AuthStatus.authenticated,
+        user: User.fromJson(payload),
+      );
     } on Object {
-      // 401'de token zaten temizlendi; diğer hatalarda da oturum açık
-      // sayılmaz — fail closed.
-      await _tokenStorage.clear();
-      state = const AuthState.unauthenticated();
+      await _withStorage(() async {
+        if (!_current(revision)) return;
+        state = const AuthState.unauthenticated();
+        await _tokenStorage.clear();
+      });
     }
   }
 
   Future<void> login({required String email, required String password}) async {
-    final Map<String, dynamic> payload = await _api.post<Map<String, dynamic>>(
-      'auth/login',
-      body: <String, String>{'email': email, 'password': password},
-      authenticated: false,
-    );
+    final int revision = ++_revision;
+    _pendingLoginRevision = revision;
+    try {
+      final Map<String, dynamic> payload = await _api.post<Map<String, dynamic>>(
+        'auth/login',
+        body: <String, String>{'email': email, 'password': password},
+        authenticated: false,
+      );
 
-    final LoginResult result = LoginResult.fromJson(payload);
-
-    // Token yalnızca burada saklanır.
-    await _tokenStorage.write(result.token);
-
-    state = AuthState(status: AuthStatus.authenticated, user: result.user);
+      if (!_current(revision)) return;
+      final LoginResult result = LoginResult.fromJson(payload);
+      await _withStorage(() async {
+        if (!_current(revision)) return;
+        await _tokenStorage.write(result.token);
+        if (!_current(revision)) {
+          // A logout/dispose/new login happened while the platform was writing.
+          await _tokenStorage.clear();
+          return;
+        }
+        state = AuthState(status: AuthStatus.authenticated, user: result.user);
+      });
+    } finally {
+      if (_pendingLoginRevision == revision) _pendingLoginRevision = null;
+    }
   }
 
   /// Backend herhangi bir istekte 401 döndü.
   ///
-  /// Token ApiClient tarafından zaten silindi; burada yalnızca oturum
-  /// durumu düşürülür. Sunucuya çıkış isteği GÖNDERİLMEZ — o istek de
-  /// 401 alacaktı.
-  void sessionExpired() {
-    if (state.status == AuthStatus.unauthenticated) return;
-    state = const AuthState.unauthenticated();
-  }
+  /// Yalnızca isteğin token'ı hâlâ güncelse oturum kapatılır.
+  Future<void> sessionExpired(String requestToken) => _withStorage(() async {
+        if (!mounted) return;
+        final String? currentToken = await _tokenStorage.read();
+        if (!mounted || currentToken != requestToken) return;
+        // Expire the current token without cancelling an explicit newer login.
+        if (_pendingLoginRevision != _revision) ++_revision;
+        state = const AuthState.unauthenticated();
+        await _tokenStorage.clear();
+      });
 
   Future<void> logout() async {
+    ++_revision;
+    if (mounted) state = const AuthState.unauthenticated();
+    // Queue immediately, before a later login can queue its token write.
+    final String? token = await _withStorage(() async {
+      final String? token = await _tokenStorage.read();
+      await _tokenStorage.clear();
+      return token;
+    });
+    if (token == null) return;
     try {
-      await _api.post<void>('auth/logout');
+      await _api.post<void>('auth/logout', accessToken: token);
     } on Object {
       // Sunucuya ulaşılamasa bile yerel oturum kapanır: kullanıcı
       // "çıkış yaptım" dediyse cihazda token kalmamalı.
-    } finally {
-      await _tokenStorage.clear();
-      state = const AuthState.unauthenticated();
     }
   }
 }

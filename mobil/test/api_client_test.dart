@@ -19,14 +19,17 @@ void main() {
     return http.Response(
       body == null ? '' : jsonEncode(body),
       status,
-      headers: <String, String>{'content-type': 'application/json', ...?headers},
+      headers: <String, String>{
+        'content-type': 'application/json',
+        ...?headers,
+      },
     );
   }
 
   ApiClient clientReturning(
     http.Response Function(http.Request request) handler, {
     TokenStorage? storage,
-    Future<void> Function()? onUnauthenticated,
+    Future<void> Function(String requestToken)? onUnauthenticated,
   }) {
     return ApiClient(
       config: config,
@@ -70,7 +73,11 @@ void main() {
         return json(200, <String, dynamic>{'data': null});
       });
 
-      await api.post<void>('auth/login', body: <String, String>{}, authenticated: false);
+      await api.post<void>(
+        'auth/login',
+        body: <String, String>{},
+        authenticated: false,
+      );
 
       expect(sentHeader, isNull);
     });
@@ -86,7 +93,7 @@ void main() {
 
       final ApiClient api = clientReturning(
         (_) => json(401, <String, dynamic>{'message': 'Unauthenticated.'}),
-        onUnauthenticated: () async => cleared = true,
+        onUnauthenticated: (_) async => cleared = true,
       );
 
       await expectLater(api.get<void>('me'), throwsA(isA<ApiException>()));

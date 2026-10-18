@@ -4,6 +4,7 @@ import '../../core/network/api_client.dart';
 import '../../core/network/api_exception.dart';
 import '../../core/providers.dart';
 import '../../models/models.dart';
+import '../auth/auth_controller.dart';
 
 /// Aktif şirket durumu.
 ///
@@ -75,13 +76,18 @@ class CompanyController extends StateNotifier<CompanyState> {
   /// Otomatik seçim yalnızca BİR KEZ denenir; başarısız olursa tekrar
   /// denemek sonsuz istek döngüsü yaratırdı.
   bool _autoSelectAttempted = false;
+  int _revision = 0;
+  bool _current(int revision) => mounted && revision == _revision;
 
   Future<void> load() async {
+    if (state.selectingId != null) return;
+    final int revision = ++_revision;
     state = state.copyWith(status: CompanyStatus.loading, clearError: true);
 
     try {
       // Liste ucu meta.active_company_id de taşır; zarf açılmaz.
       final Map<String, dynamic> payload = await _api.getRaw('companies');
+      if (!_current(revision)) return;
 
       final List<Company> companies = (payload['data'] as List<dynamic>? ?? <dynamic>[])
           .map((dynamic item) => Company.fromJson(item as Map<String, dynamic>))
@@ -98,6 +104,7 @@ class CompanyController extends StateNotifier<CompanyState> {
 
       await _autoSelectSingleCompany();
     } on ApiException catch (error) {
+      if (!_current(revision)) return;
       if (error.isUnauthenticated) {
         // Oturum bitti: token silindi, AuthController giriş ekranına aldı.
         // Burada hata durumu BIRAKILMAZ — bırakılsaydı bir sonraki girişte
@@ -110,25 +117,31 @@ class CompanyController extends StateNotifier<CompanyState> {
 
       state = state.copyWith(status: CompanyStatus.error, error: error.userMessage);
     } on NetworkException catch (error) {
+      if (!_current(revision)) return;
       state = state.copyWith(status: CompanyStatus.error, error: error.userMessage);
     }
   }
 
   /// Aktif şirketi değiştirmenin TEK yolu.
   Future<void> select(int companyId) async {
+    if (state.isBusy) return;
+    final int revision = ++_revision;
     state = state.copyWith(selectingId: companyId, clearSelectError: true);
 
     try {
       final Map<String, dynamic> payload =
           await _api.post<Map<String, dynamic>>('companies/$companyId/select');
+      if (!_current(revision)) return;
 
       state = state.copyWith(
         activeCompanyId: Company.fromJson(payload).id,
         clearSelecting: true,
       );
     } on ApiException catch (error) {
+      if (!_current(revision)) return;
       state = state.copyWith(selectError: error.userMessage, clearSelecting: true);
     } on NetworkException catch (error) {
+      if (!_current(revision)) return;
       state = state.copyWith(selectError: error.userMessage, clearSelecting: true);
     }
   }
@@ -146,6 +159,7 @@ class CompanyController extends StateNotifier<CompanyState> {
 
   /// Oturum kapandığında çağrılır.
   void reset() {
+    ++_revision;
     _autoSelectAttempted = false;
     state = const CompanyState();
   }
@@ -153,5 +167,12 @@ class CompanyController extends StateNotifier<CompanyState> {
 
 final StateNotifierProvider<CompanyController, CompanyState> companyControllerProvider =
     StateNotifierProvider<CompanyController, CompanyState>(
-  (Ref ref) => CompanyController(api: ref.watch(apiClientProvider)),
+  (Ref ref) {
+    final CompanyController controller = CompanyController(api: ref.watch(apiClientProvider));
+    ref.listen<AuthState>(
+      authControllerProvider,
+      (_, __) => controller.reset(),
+    );
+    return controller;
+  },
 );

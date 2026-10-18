@@ -53,8 +53,8 @@ derleme günlüğü `mobil/.dart_tool/m0-android-build.log` içindedir.
 Bağımlılık yükseltmesi, backend/API/migration değişikliği yapılmadı.
 
 Yerel paket: `mobil/build/app/outputs/flutter-apk/app-debug.apk`
-(158.315.030 bayt). arm64-v8a, armeabi-v7a ve x86_64 içerir.
-SHA256: `8F72DD11A136D75161B470B4F89804A07D623820F03FEEF0E7D56006849D0FD1`.
+(M1 güncel paket: 179.904.171 bayt). arm64-v8a, armeabi-v7a ve x86_64 içerir.
+SHA256: `5F0399B10C2579BB8856C2493B013DFF24D2EF0AB1B455D3061878D8C8D51FEC`.
 APK ve araçlar Git'e eklenmedi. Paket varsayılan development API adresini
 (`http://10.0.2.2:8000/api/v1`) kullanır; gerçek telefonda bu adres
 geliştirme bilgisayarına yönlenmez. Üretim veya telefon dağıtım paketi değildir.
@@ -80,7 +80,7 @@ iki manifestte INTERNET, yalnız debug'da networkSecurityConfig doğrulandı.
 Yerel Laravel `/up` sağlık kontrolü HTTP 200. Emülatörde boş giriş formu
 gerçek API'ye gönderildi; sunucunun email/password required hataları
 arayüzde görüldü. Hesap oluşturulmadı veya gerçek kullanıcı kullanılmadı.
-Dart kodu değişmedi, önceki 229 test sonucu korunur.
+M0 kontrolünde Dart kodu değişmemişti; ilk 229 test sonucu başlangıç kanıtıdır.
 
 İlk açılışta Android System UI ANR uyarısı görüldü; Bekle seçildi.
 `am start -W` iki kez timeout bildirdi; sonrasında UI ağacı ve ekran
@@ -92,6 +92,37 @@ Sunucu alan hataları İngilizce göründü; M1 hata yüzeyinde ele alınacak.
 Yerel ekran/UI kanıtı: `.dart_tool/m0-screen.png`, `.dart_tool/m0-window.xml`.
 
 Ağ yapılandırma kaynağı: [Android Network Security Configuration](https://developer.android.com/privacy-and-security/security-config).
+
+## M1 — Oturum ve şirket yanıt sırası, ilk parça
+
+18.10.2026: `session_race_test.dart` 25 kontrollü senaryo ekler. Gerçek
+provider bağlantısı kullanılır, yalnız HTTP ve secure storage taklit edilir.
+Yanıtlar ve depolama gecikmeleri Completer ile sıralanır; süre artırımı,
+gerçek hesap, canlı veritabanı veya backend değişikliği yoktur.
+
+- Bootstrap/login yalnız güncel işlem sonucunu uygular; logout sonrası eski
+  yanıt kullanıcıyı geri getiremez. Dispose sonrası token yazılmaz.
+- 401 yalnız istekte kullanılan token hâlâ güncelse oturumu temizler;
+  token göndermeyen girişin 401'i mevcut oturumu kapatmaz. Eski token'ın
+  iptali devam eden yeni açık giriş girişimini engellemez.
+- Güvenli depo okuma/yazma/silme işleri controller içinde sıralıdır.
+  Logout yerel durumu hemen kapatır, sonra yakaladığı eski token'ı sunucuda
+  iptal eder. Geciken logout/clear yeni token'ı silmez.
+- Şirket listeleme/seçme sonuçları reset/dispose sonrası uygulanmaz.
+  Aynı anda yalnız bir seçim gönderilir; auth değişikliği UI listener'ı
+  olmadan şirket durumunu reset eder.
+
+Kontroller: 22 dosyada **254 test geçti**, analyzer **0 sorun**, Android
+debug build başarılı, `git diff --check` temiz. Yeni APK `emulator-5554`e
+yüklendi; ekran uyandırıldıktan sonra giriş UI ağacı doğrulandı. Boş form
+yerel API'nin iki alan hatasını gösterdi. AndroidRuntime/flutter crash
+kaydı görülmedi. Günlükler: `.dart_tool/m1-tests.log`,
+`.dart_tool/m1-android-build.log`, `.dart_tool/m1-window.xml`.
+
+M1 açık: şirket değişiminde müşteri/ekip/denetim gibi modüllerin cache/rota
+temizliği ve geç yanıtları, güvenli depo hata yüzeyi, Türkçe alan hataları,
+mobil kabuk ve iki platform smoke kabulü. Bu aşamada auth/şirket yarış
+düzeltmesi bütün uygulamanın tenant kabulü olarak sunulmaz.
 
 Üretim API adresi ve HTTPS sunucu kabulü, kalıcı Android/iOS imzaları ve
 gerçek cihaz testleri hâlâ açık. Web Aşama 9'un canlı kabulü kapanmadı.

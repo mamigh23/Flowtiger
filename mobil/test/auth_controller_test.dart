@@ -37,7 +37,7 @@ void main() {
             config: config,
             tokenStorage: storage,
             httpClient: MockClient((http.Request request) async => handler(request)),
-            onUnauthenticated: storage.clear,
+            onUnauthenticated: (_) => storage.clear(),
           ),
         ),
       ],
@@ -57,7 +57,10 @@ void main() {
 
       await container.read(authControllerProvider.notifier).restoreSession();
 
-      expect(container.read(authControllerProvider).status, AuthStatus.unauthenticated);
+      expect(
+        container.read(authControllerProvider).status,
+        AuthStatus.unauthenticated,
+      );
     });
 
     test('login başarılı olduğunda token saklanır', () async {
@@ -99,7 +102,10 @@ void main() {
 
       await container.read(authControllerProvider.notifier).restoreSession();
 
-      expect(container.read(authControllerProvider).status, AuthStatus.unauthenticated);
+      expect(
+        container.read(authControllerProvider).status,
+        AuthStatus.unauthenticated,
+      );
       expect(await storage.read(), isNull);
     });
 
@@ -114,7 +120,10 @@ void main() {
 
       await container.read(authControllerProvider.notifier).logout();
 
-      expect(container.read(authControllerProvider).status, AuthStatus.unauthenticated);
+      expect(
+        container.read(authControllerProvider).status,
+        AuthStatus.unauthenticated,
+      );
       expect(await storage.read(), isNull);
     });
   });

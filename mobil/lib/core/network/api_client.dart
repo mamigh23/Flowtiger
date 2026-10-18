@@ -30,13 +30,24 @@ class ApiClient {
   final http.Client _http;
 
   /// 401 alındığında çağrılır: oturum temizliği tek noktadan yapılır.
-  final Future<void> Function()? onUnauthenticated;
+  final Future<void> Function(String requestToken)? onUnauthenticated;
 
   Future<T> get<T>(String path, {Map<String, String>? query}) =>
       _send<T>('GET', path, query: query);
 
-  Future<T> post<T>(String path, {Object? body, bool authenticated = true}) =>
-      _send<T>('POST', path, body: body, authenticated: authenticated);
+  Future<T> post<T>(
+    String path, {
+    Object? body,
+    bool authenticated = true,
+    String? accessToken,
+  }) =>
+      _send<T>(
+        'POST',
+        path,
+        body: body,
+        authenticated: authenticated,
+        accessToken: accessToken,
+      );
 
   Future<T> put<T>(String path, {Object? body}) => _send<T>('PUT', path, body: body);
 
@@ -45,7 +56,10 @@ class ApiClient {
   Future<void> delete(String path) => _send<void>('DELETE', path);
 
   /// Sayfalanmış yanıtlar links/meta da taşır; zarf açılmaz.
-  Future<Map<String, dynamic>> getRaw(String path, {Map<String, String>? query}) async {
+  Future<Map<String, dynamic>> getRaw(
+    String path, {
+    Map<String, String>? query,
+  }) async {
     final Object? payload = await _request('GET', path, query: query);
     return (payload as Map<String, dynamic>?) ?? <String, dynamic>{};
   }
@@ -57,6 +71,7 @@ class ApiClient {
     Map<String, String>? query,
     Object? body,
     bool authenticated = true,
+    String? accessToken,
   }) async {
     final Object? payload = await _request(
       method,
@@ -64,6 +79,7 @@ class ApiClient {
       query: query,
       body: body,
       authenticated: authenticated,
+      accessToken: accessToken,
     );
 
     if (payload is Map<String, dynamic> && payload.containsKey('data')) {
@@ -79,6 +95,7 @@ class ApiClient {
     Map<String, String>? query,
     Object? body,
     bool authenticated = true,
+    String? accessToken,
   }) async {
     final Uri uri = _buildUri(path, query);
 
@@ -87,11 +104,9 @@ class ApiClient {
       if (body != null) 'Content-Type': 'application/json',
     };
 
-    if (authenticated) {
-      final String? token = await _tokenStorage.read();
-      if (token != null) {
-        headers['Authorization'] = 'Bearer $token';
-      }
+    final String? requestToken = authenticated ? (accessToken ?? await _tokenStorage.read()) : null;
+    if (requestToken != null) {
+      headers['Authorization'] = 'Bearer $requestToken';
     }
 
     http.Response response;
@@ -115,7 +130,10 @@ class ApiClient {
     final Object? payload = _decode(response.body);
 
     if (response.statusCode >= 400) {
-      throw await _toException(response, payload);
+      if (response.statusCode == 401 && requestToken != null) {
+        await onUnauthenticated?.call(requestToken);
+      }
+      throw _toException(response, payload);
     }
 
     return payload;
@@ -142,13 +160,9 @@ class ApiClient {
     }
   }
 
-  Future<ApiException> _toException(http.Response response, Object? payload) async {
+  ApiException _toException(http.Response response, Object? payload) {
     final Map<String, dynamic> data =
         payload is Map<String, dynamic> ? payload : <String, dynamic>{};
-
-    if (response.statusCode == 401) {
-      await onUnauthenticated?.call();
-    }
 
     Map<String, List<String>>? errors;
     final Object? rawErrors = data['errors'];
