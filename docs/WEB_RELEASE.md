@@ -83,6 +83,14 @@ mail sağlayıcısı, `FRONTEND_URL`, davet ve parola sıfırlama URL şablonlar
 kontrol edilmelidir. Sırların çıktısı alınmaz. Canlı TLS kontrolünde
 sertifika adı ve zinciri doğrulanmalı; `curl -k`/sertifika atlama kullanılmaz.
 
+Web ve API farklı origin'deyse izinli frontend'de bir 429 yanıtının
+`Retry-After` başlığı JavaScript tarafından okunabilmeli. API bu başlığı
+`Access-Control-Expose-Headers: Retry-After` ile açar. Proxy bu başlıkları
+silmemeli; yalnızca ağ panelinde görünmesi tarayıcı kodunun okuyabildiğini
+kanıtlamaz. İzinli origin listesi tam eşleşir; wildcard veya credential
+desteği açarak çözülmez. Kabul sırasında test hesabıyla bekleme metni
+doğrulanır; gerçek kullanıcıya art arda giriş denemesi yapılmaz.
+
 ## 4. Yayın ve geri dönüş
 
 Sunucunun mevcut yöntemi doğrulanmadan varsayımsal dizine kopyalama yapılmaz.

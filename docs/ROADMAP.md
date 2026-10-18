@@ -28,15 +28,15 @@ Takvim, sunucunun açılma ve kabul sonuçları bilinmeden tarih taahhüdüne ç
 
 ## 2. Kanıt ve doğrulama durumu
 
-Son çalıştırılmış kontroller: backend 17.10.2026, UX-01 düzeltmesi sonrası web 18.10.2026.
+Son çalıştırılmış kontroller: HTTP-01 sonrası backend ve UX-01 sonrası web 18.10.2026.
 
 | Kapı | Sonuç | Kanıtın sınırı |
 |---|---|---|
-| Backend tam paket | 824 test, 3.083 assertion geçti | Ayrı `flowtiger_test`; canlı doğrulama değil |
+| Backend tam paket | 828 test, 3.101 assertion geçti | Ayrı `flowtiger_test`, tek süreç; canlı doğrulama değil |
 | Web regresyon | 50 dosya, 843 test geçti | Taklit HTTP yanıtları gerçek sunucunun yerine geçmez |
 | Yayın adresi kontrolü | 14 test geçti | DNS/TLS/erişilebilirlik kontrolü yapmaz |
 | TypeScript, normal build | Geçti | Gerçek API ile yayın paketi henüz üretilmedi |
-| Pint | Değişen üç PHP dosyası geçti | Tüm deponun stil kontrolü olarak yorumlanmaz |
+| Pint | HTTP-01'de değişen iki PHP dosyası geçti | Tüm deponun stil kontrolü olarak yorumlanmaz |
 | `git diff --check` | Geçti | İşlevsellik veya canlı çalışma kanıtı değil |
 | Gerçek browser/API turu | Bekliyor | İzole test şirketleriyle çalıştırılmalı |
 | Canlı yayın/geri dönüş | Bekliyor | Sunucu envanteri ve yedek gerekli |
@@ -84,7 +84,7 @@ regresyon veya gerçek kullanım kanıtı olmadan kesin hata olarak kapatılmaz.
 | FIN-02 | P1 | Gerçek paralel bağlantı testi yok | Ayrı test ortamında update/void ve void/void yarışları; tek ilk iptal/audit |
 | UX-01 | Yerel düzeltme tamamlandı | PaymentForm müşteri/hedef seçenekleri istek üzerine sayfalanıyor | 101. müşteri/hedef seçilip doğru kimlikle gönderildi; ek sayfa hatasında seçim ve mevcut dağıtımlar korunur. Gerçek sunucu kabulünde tekrar doğrulanacak |
 | AUTH-01 | P1 inceleme | API 401 yarışı düzeltildi; AuthContext bootstrap/refresh/logout ayrı async yollar | Çıkış-yeni giriş-gecikmiş başarı/hata sıraları için kullanıcı/token tutarlılığı testleri |
-| HTTP-01 | P1 koşullu | CORS `exposed_headers=[]`; client `Retry-After` okuyor | API farklı origin ise 429 bekleme süresinin tarayıcıdan okunmasını doğrula |
+| HTTP-01 | Yerel düzeltme tamamlandı | CORS yalnızca `Retry-After` yanıt başlığını izinli frontend'e açıyor | Gerçek throttle 429 + izinli/izinsiz origin regresyonları geçti; canlı farklı origin ve proxy üzerinden tarayıcı kabulü bekliyor |
 | OPS-01 | P1 | CI var; sunucu deployment/izleme bağlantısı kayıtlı değil | Commit→build→yayın izlenebilirliği, sağlık/log kontrolü |
 | DOC-01 | P1 | Eski README/faz tarihleri güncel ürünle eşleşmiyor | Tarihsel kaydı koruyarak güncel durum ve engelleri tek checkpoint'e bağla |
 | SEC-01 | P2 | Token yalnızca bellekte, yenilemede giriş gerekiyor | Mevcut davranışı kullanıcıya açıklığa kavuştur; kalıcılığı localStorage ile çözme |

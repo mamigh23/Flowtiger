@@ -62,7 +62,8 @@ return [
 
     'allowed_headers' => ['*'],
 
-    'exposed_headers' => [],
+    // Farklı origin'deki web istemcisi 429 bekleme süresini okuyabilmeli.
+    'exposed_headers' => ['Retry-After'],
 
     'max_age' => 0,
 

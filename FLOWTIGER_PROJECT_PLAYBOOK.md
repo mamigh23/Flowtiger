@@ -722,6 +722,15 @@ Bu nedenle lansmana kadar gereksiz büyük refactor, yeni dependency ve mimari d
 
 # 11. GÜNCEL CHECKPOINT
 
+## 18.10.2026 — HTTP-01 / farklı origin'de 429 bekleme başlığı
+
+- Web istemcisi `Retry-After` okuyor fakat CORS bu yanıt başlığını açmıyordu. Yeni regresyon eksik `Access-Control-Expose-Headers` başlığı nedeniyle önce başarısız oldu.
+- CORS yalnızca `Retry-After` başlığını okunabilir yapacak şekilde düzeltildi. İzinli origin listesi, wildcard yasağı, Bearer kimliği ve `supports_credentials=false` korunur.
+- Dört yeni test gerçek Laravel throttle middleware'inin 429 yanıtını, izinli origin/preflight davranışını ve tek/çok origin yapılandırmasında izinsiz adresin erişim kazanmamasını doğrular. Tek origin optimizasyonunda izinli adres sabit başlık olabilir; izinsiz istek adresine yansıtılmaz ve eşleşmediği için tarayıcı erişim vermez.
+- Tam backend paketi tek süreçte, yalnızca korumalı `flowtiger_test` PostgreSQL ortamında geçti: 828 test / 3.101 assertion. Yeni CORS dosyasında 4 test / 18 assertion. Değişen iki PHP dosyası Pint ve diff kontrolü geçti.
+- Web kaynakları değişmedi; son tam web kanıtı 50 dosya / 843 test ve 14 yayın kontrolü, typecheck/build başarılı. Bu tur web paketi yeniden çalıştırılmadı.
+- Yayın kontrol listesine gerçek frontend/proxy üzerinden başlığın JavaScript tarafından okunması kabulü eklendi. HTTP-01 yerel düzeltmesi tamamlandı; canlı CORS/TLS/mail ve kullanıcı zinciri kabulü hâlâ bekliyor. Aşama 9 açık.
+
 ## 18.10.2026 — UX-01 / ödeme seçicilerinde 100 kayıt sınırı
 
 - Ödeme oluşturma/düzenlemede müşteri ve finans hedefi seçenekleri artık bağımsız sayfalanır. İlk istek ve her "daha fazla yükle" işlemi yalnızca bir sayfa (`per_page=100`) getirir; tüm sayfalar kendiliğinden indirilmez.
