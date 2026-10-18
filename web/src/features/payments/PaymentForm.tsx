@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { api, endpoints } from '@/lib/api';
 import { Button, Card, ErrorState, Input, Select, Textarea, useFocusFirstInvalidFieldOnError } from '@/components/ui';
 import { MoneyFormatError, parseMinorAmount } from '@/lib/finance/money';
-import type { Customer, PaymentAllocationInput, PaymentInput } from '@/types/api';
+import type { PaymentAllocationInput, PaymentInput } from '@/types/api';
+import { usePagedPicker } from './usePagedPicker';
 import { financeEntryOptionLabel } from './paymentFormat';
 import { fieldErrorOf, paymentErrorMessage, unhandledValidationMessages } from './paymentErrors';
 
@@ -25,7 +26,7 @@ import { fieldErrorOf, paymentErrorMessage, unhandledValidationMessages } from '
  * açıkça `[]` gider.
  *
  * HEDEF SEÇENEKLERİ İKİ KAYNAĞIN BİRLEŞİMİDİR:
- *   1. GET /finance-entries?per_page=100
+ *   1. GET /finance-entries?per_page=100&page=N (istek üzerine sonraki sayfa)
  *   2. Düzenlenen ödemenin kendi dağıtım hedefleri (`extraTargets`)
  *
  * İkincisi olmadan gerçek bir veri kaybı yolu açılırdı: mevcut bir
@@ -70,6 +71,7 @@ interface PaymentFormProps {
    * dağıtımın hedefi kaydederken kaybolur.
    */
   extraTargets: FinanceEntryOption[];
+  extraCustomer?: { id: number; name: string } | null;
   cancelTo: string;
   onSubmit: (values: PaymentInput) => Promise<void>;
 }
@@ -79,6 +81,7 @@ export function PaymentForm({
   submitLabel,
   initialValues,
   extraTargets,
+  extraCustomer = null,
   cancelTo,
   onSubmit,
 }: PaymentFormProps) {
@@ -89,10 +92,15 @@ export function PaymentForm({
   const [note, setNote] = useState(initialValues.note);
   const [rows, setRows] = useState<PaymentAllocationDraft[]>(initialValues.allocations);
 
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [customersError, setCustomersError] = useState<unknown>(null);
-  const [apiTargets, setApiTargets] = useState<FinanceEntryOption[]>([]);
-  const [targetsError, setTargetsError] = useState<unknown>(null);
+  const customerPicker = usePagedPicker(fetchCustomers);
+  const targetPicker = usePagedPicker(fetchTargets);
+  const customers = [
+    ...customerPicker.items,
+    ...(extraCustomer && !customerPicker.items.some((item) => item.id === extraCustomer.id) ? [extraCustomer] : []),
+  ];
+  const apiTargets = targetPicker.items.map((entry) => ({ id: entry.id, label: financeEntryOptionLabel(entry) }));
+  const customersError = customerPicker.error;
+  const targetsError = targetPicker.error;
 
   const [amountError, setAmountError] = useState<string | undefined>(undefined);
   const [rowErrors, setRowErrors] = useState<Record<string, string>>({});
@@ -111,41 +119,6 @@ export function PaymentForm({
   // Yeni satırlara benzersiz anahtar üretir; dizinin indeksi anahtar
   // OLARAK KULLANILAMAZ — araya satır silinince kimlikler kayardı.
   const nextKey = useRef(0);
-
-  /**
-   * Seçenek kaynakları — ikisi de "izin verilen en büyük sayfa" ile.
-   *
-   * Bu ekranlarda sayfalama YOK: varsayılan 15 ile gelen bir seçici,
-   * on altıncı kaydı seçilemez hâle getirir ve kullanıcı sebebini göremez.
-   * 100 backend'in üst sınırıdır (MAX_PER_PAGE); üstü 422 döner.
-   */
-  const loadPickers = useCallback(async () => {
-    try {
-      const result = await endpoints.customers.list(api, { per_page: 100 });
-      setCustomers(result.data);
-      setCustomersError(null);
-    } catch (caught) {
-      // Yutulmaz: seçicinin altında gösterilir. Sessizce boş bir liste,
-      // kullanıcıya "hiç müşterin yok" demek olurdu.
-      setCustomersError(caught);
-      setCustomers([]);
-    }
-
-    try {
-      const result = await endpoints.financeEntries.list(api, { per_page: 100 });
-      setApiTargets(
-        result.data.map((entry) => ({ id: entry.id, label: financeEntryOptionLabel(entry) })),
-      );
-      setTargetsError(null);
-    } catch (caught) {
-      setTargetsError(caught);
-      setApiTargets([]);
-    }
-  }, []);
-
-  useEffect(() => {
-    void loadPickers();
-  }, [loadPickers]);
 
   /**
    * Uçtan gelen hedefler + ödemenin kendi hedefleri, ID bazında birleşim.
@@ -344,6 +317,7 @@ export function PaymentForm({
               </option>
             ))}
           </Select>
+          <PickerProgress picker={customerPicker} moreLabel="Daha fazla müşteri yükle" retryLabel="Müşterileri tekrar yükle" />
 
           <Textarea
             label="Not"
@@ -359,6 +333,7 @@ export function PaymentForm({
             {targetsError !== null && (
               <ErrorState message={paymentErrorMessage(targetsError)} />
             )}
+            <PickerProgress picker={targetPicker} moreLabel="Daha fazla finans kaydı yükle" retryLabel="Finans kayıtlarını tekrar yükle" />
 
             {rows.map((row, index) => (
               <div key={row.key} data-testid={`allocation-row-${index + 1}`}>
@@ -415,6 +390,26 @@ export function PaymentForm({
           </div>
         </form>
       </Card>
+    </div>
+  );
+}
+
+const fetchCustomers = (page: number) => endpoints.customers.list(api, { per_page: 100, page });
+const fetchTargets = (page: number) => endpoints.financeEntries.list(api, { per_page: 100, page });
+
+function PickerProgress({ picker, moreLabel, retryLabel }: {
+  picker: { loading: boolean; hasMore: boolean; error: unknown; loadMore: () => void };
+  moreLabel: string;
+  retryLabel: string;
+}) {
+  return (
+    <div className="ft-picker-progress">
+      <span role="status">{picker.loading ? 'Seçenekler yükleniyor…' : picker.hasMore ? 'Listenin devamında başka kayıtlar var.' : ''}</span>
+      {(picker.hasMore || picker.error !== null) && (
+        <Button type="button" variant="secondary" disabled={picker.loading} onClick={picker.loadMore}>
+          {picker.error !== null ? retryLabel : moreLabel}
+        </Button>
+      )}
     </div>
   );
 }

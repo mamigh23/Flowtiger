@@ -146,7 +146,7 @@ describe('PaymentEditPage', () => {
   /**
    * REGRESYON — HEDEF KAYBOLMAZ (gerçek bir veri kaybı yolu).
    *
-   * Finans seçicisi `per_page=100` ile TEK sayfa çekiyor; backend'de arama
+   * Finans seçicisi ilk istekte `per_page=100` ile bir sayfa çekiyor; backend'de arama
    * ucu yok. Mevcut bir dağıtımın hedefi o ilk 100 kaydın DIŞINDAysa,
    * seçenekler yalnızca uçtan kurulsaydı:
    *   1. <select> o değeri gösteremez ve seçim boşa düşer,

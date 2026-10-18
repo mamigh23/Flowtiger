@@ -295,6 +295,9 @@
 
 /* Finans, ekip ve hesap: önce yönlendirme, sonra kayıtlar. */
 .ft-mobile-cell-label { display: none; }
+.ft-shell--workspace .ft-picker-progress { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; margin-block: 0.5rem 1rem; }
+.ft-shell--workspace .ft-picker-progress:has(> span:empty):not(:has(button)) { display: none; }
+.ft-shell--workspace .ft-picker-progress [role="status"] { color: #aeb8c7; font-size: 0.8125rem; }
 .ft-shell--workspace .ft-empty-actions {
   display: flex; flex-wrap: wrap; justify-content: center; gap: 0.75rem; margin-top: 1.25rem;
 }

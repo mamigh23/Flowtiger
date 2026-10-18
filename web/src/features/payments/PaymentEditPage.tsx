@@ -98,6 +98,7 @@ export function PaymentEditPage() {
       submitLabel="Kaydet"
       initialValues={initialValuesOf(payment)}
       extraTargets={existingTargetsOf(payment)}
+      extraCustomer={payment.customer}
       cancelTo={`/app/payments/${payment.id}`}
       onSubmit={handleSubmit}
     />

@@ -722,6 +722,15 @@ Bu nedenle lansmana kadar gereksiz büyük refactor, yeni dependency ve mimari d
 
 # 11. GÜNCEL CHECKPOINT
 
+## 18.10.2026 — UX-01 / ödeme seçicilerinde 100 kayıt sınırı
+
+- Ödeme oluşturma/düzenlemede müşteri ve finans hedefi seçenekleri artık bağımsız sayfalanır. İlk istek ve her "daha fazla yükle" işlemi yalnızca bir sayfa (`per_page=100`) getirir; tüm sayfalar kendiliğinden indirilmez.
+- Ek sayfa hatasında önceden yüklenen seçenekler korunur, aynı sayfa tekrar denenir. Aynı ID tek seçenek olur; yükleme sürerken yinelenen istek engellenir. Kapanmış formun yanıtı yeni formu güncellemez.
+- Düzenlenen ödemenin müşteri özeti ilk sayfada bulunmasa veya müşteri seçicisi başarısız olsa bile korunur. Mevcut dağıtım hedeflerini koruyan birleştirme de devam eder. Para hesapları ve gönderim sözleşmesi değişmedi.
+- Üç yeni regresyon: 100+1 müşteri/hedefin seçilip doğru ID ile gönderilmesi, ikinci sayfa hatası/tekrar deneme/seçim koruma/tekilleştirme, mevcut müşterinin seçici hatasında korunması. İlgili ödeme paketinde 66 test geçti.
+- Tam kapı: 50 dosyada 843 web testi, 14 yayın kontrol testi, typecheck, build ve diff kontrolü geçti. Backend değişmedi; backend testleri yeniden çalıştırılmadı.
+- Yol haritasında UX-01 yerel düzeltme tamamlandı olarak işaretlendi. Gerçek sunucuda 101+ kayıt kabulü bekliyor; Aşama 9 açık. Yeni API, migration veya bağımlılık eklenmedi. Diğer modüllerin seçicileri bu değişikliğin kapsamı değil.
+
 ## 18.10.2026 — Boş ekranlardan ilk işleme geçiş ve profil kurtarma
 
 - Başarılı fakat boş finans listesinde doğrudan gelir/gider oluşturma bağlantıları eklendi. Boş ödeme listesi ilk ödeme kaydına ve finans kayıtlarına yönlendirir; gerçekleşmemiş para hareketi kaydetmeye teşvik etmez.

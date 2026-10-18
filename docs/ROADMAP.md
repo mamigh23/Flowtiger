@@ -28,12 +28,12 @@ Takvim, sunucunun açılma ve kabul sonuçları bilinmeden tarih taahhüdüne ç
 
 ## 2. Kanıt ve doğrulama durumu
 
-Son çalıştırılmış kontroller: backend 17.10.2026, günlük rehber sonrası web 18.10.2026.
+Son çalıştırılmış kontroller: backend 17.10.2026, UX-01 düzeltmesi sonrası web 18.10.2026.
 
 | Kapı | Sonuç | Kanıtın sınırı |
 |---|---|---|
 | Backend tam paket | 824 test, 3.083 assertion geçti | Ayrı `flowtiger_test`; canlı doğrulama değil |
-| Web regresyon | 49 dosya, 839 test geçti | Taklit HTTP yanıtları gerçek sunucunun yerine geçmez |
+| Web regresyon | 50 dosya, 843 test geçti | Taklit HTTP yanıtları gerçek sunucunun yerine geçmez |
 | Yayın adresi kontrolü | 14 test geçti | DNS/TLS/erişilebilirlik kontrolü yapmaz |
 | TypeScript, normal build | Geçti | Gerçek API ile yayın paketi henüz üretilmedi |
 | Pint | Değişen üç PHP dosyası geçti | Tüm deponun stil kontrolü olarak yorumlanmaz |
@@ -55,7 +55,7 @@ dalının aynı olduğu varsayılmaz. Canlıya alınmış commit henüz doğrula
 | Müşteri | Sayfalı liste, oluşturma, detay, güncelleme, silme | Büyük listelerde ilişkili form seçicileri |
 | Görev | Oluşturma, atama, tarih/saat, tamamlama/yeniden açma | Canlı saat dilimi, günlük görünüm ve atama kabulü |
 | Ekip/davet | Üyelik/rol, kaldırma, davet gönderme/iptal/kabul, gelen davetler | Gerçek alıcılarla kabul ve e-posta doğrulama zinciri |
-| Audit | Liste, filtre/sayfalama, güvenli detay gösterimi | Canlı iş işlemiyle iz tutarlılığı ve erişim kabulü |
+| Audit | Liste, sayfalama, güvenli detay gösterimi | Sunucu filtre sunmuyor; canlı iş işlemiyle iz tutarlılığı ve erişim kabulü |
 | Dashboard | Kişisel atamayı gözeten günlük rehber, şirket planı, rehbere dönüş, alt bölümde kayıt sayıları | Öneri görünen günlük görevlerle sınırlı; dönemsel finansal raporlama API'si yok |
 | İşletme finansı | Gelir/gider, KDV hesabı, ödeme/dağıtım ve iptal | Fatura, tam alacak/borç, dönem raporları, export yok |
 | Güvenlik yönetimi | Backend oturum ve güvenlik olayı uçları | Web profilinde oturum/güvenlik olayı ekranları yok |
@@ -82,7 +82,7 @@ regresyon veya gerçek kullanım kanıtı olmadan kesin hata olarak kapatılmaz.
 | REL-05 | P0 | Gerçek API kökü bilinmiyor | Doğru origin ile `build:release`; localhost paketi yüklenmemesi |
 | FIN-01 | Tamamlandı | Eski model iptal durumunu atlayabiliyordu | Kilit altında güncel okuma; dört regresyon geçti, `a6cd7b3` |
 | FIN-02 | P1 | Gerçek paralel bağlantı testi yok | Ayrı test ortamında update/void ve void/void yarışları; tek ilk iptal/audit |
-| UX-01 | P1 | PaymentForm seçenekleri `per_page=100` ilk sayfasından geliyor | 101. müşteri/hedefin seçilebilirliği; mevcut seçim kaybolmamalı |
+| UX-01 | Yerel düzeltme tamamlandı | PaymentForm müşteri/hedef seçenekleri istek üzerine sayfalanıyor | 101. müşteri/hedef seçilip doğru kimlikle gönderildi; ek sayfa hatasında seçim ve mevcut dağıtımlar korunur. Gerçek sunucu kabulünde tekrar doğrulanacak |
 | AUTH-01 | P1 inceleme | API 401 yarışı düzeltildi; AuthContext bootstrap/refresh/logout ayrı async yollar | Çıkış-yeni giriş-gecikmiş başarı/hata sıraları için kullanıcı/token tutarlılığı testleri |
 | HTTP-01 | P1 koşullu | CORS `exposed_headers=[]`; client `Retry-After` okuyor | API farklı origin ise 429 bekleme süresinin tarayıcıdan okunmasını doğrula |
 | OPS-01 | P1 | CI var; sunucu deployment/izleme bağlantısı kayıtlı değil | Commit→build→yayın izlenebilirliği, sağlık/log kontrolü |
@@ -95,6 +95,14 @@ kontrolsüz indirme veya yeni bağımlılık ekleme varsayılan çözüm değild
 Finans dağıtımlarında yön, müşteri, iptal edilmiş hedef ve fazla tahsilat
 politikaları da raporlama öncesi netleştirilmelidir; bugünkü kuralların
 ötesinde davranış varsayılarak mevcut veriler değiştirilemez.
+
+18.10.2026 UX-01 uygulaması: ödeme formunda iki bağımsız "daha fazla yükle"
+kontrolü, her tıklamada en fazla bir sayfa (`per_page=100`). Hata aynı sayfada
+tekrar denenebilir; yüklenen kayıtlar silinmez, ID bazında tekilleştirilir.
+Düzenlemede ödemenin kendi müşteri özeti ve mevcut dağıtım hedefleri ilk
+sayfada olmasa veya seçici isteği başarısız olsa da seçenek olarak korunur.
+Yeni API, arama kontratı veya bağımlılık eklenmedi. Diğer modüllerin
+seçicileri bu değişiklik kapsamında değildir.
 
 ## 5. Şimdi yapılacaklar — Aşama 9
 
