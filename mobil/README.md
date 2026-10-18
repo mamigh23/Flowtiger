@@ -9,6 +9,12 @@ istedi. [Mobil yol haritası](../docs/MOBILE_ROADMAP.md) mevcut envanteri,
 M0–M7 sırasını ve iki platformun kabul kapılarını içerir. Web'in canlı
 yayın kabulü ayrı ve açıktır; mobil temel mağazaya hazır kabul edilmez.
 
+[M0 ortam ve test kaydı](../docs/MOBILE_ENVIRONMENT.md): Flutter analizi
+temiz, mevcut 229 test başarılı; Android cihaz ve iOS kabulü açıktır.
+Eksik SDK paketleri kendi lisans koşulları değerlendirilerek Android SDK
+araçlarıyla ayrıca kurulmalıdır. `android.builder.sdkDownload=false`
+NDK indirmesini engelleme garantisi vermez; M0 kaydına bakın.
+
 Depoda `android/` ve `ios/` klasörleri **mevcuttur**. Yeniden platform
 üretmek yerine mevcut projeler korunur. İlk adım SDK/cihaz envanteri ve
 mevcut testlerin başlangıç sonucudur:

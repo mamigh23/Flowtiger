@@ -4,6 +4,9 @@ Tarih: 18.10.2026. Kullanıcı Android ve iOS çalışmasını, önce yol harita
 hazırlanarak başlatmayı istedi. Bu belge uygulama geliştirme sırasıdır;
 mağazaya gönderim veya tamamlanmış mobil sürüm beyanı değildir.
 
+M0 uygulama kanıtı: [Mobil geliştirme ortamı](MOBILE_ENVIRONMENT.md).
+Flutter analizi temiz, mevcut 229 test başarılı; cihaz ve iOS kabulü açıktır.
+
 ## 1. Hedef ve kapsam
 
 Tek Flutter kod tabanıyla Android ve iOS'ta aynı hesap, şirket ve mevcut

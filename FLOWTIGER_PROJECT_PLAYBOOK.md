@@ -722,6 +722,14 @@ Bu nedenle lansmana kadar gereksiz büyük refactor, yeni dependency ve mimari d
 
 # 11. GÜNCEL CHECKPOINT
 
+## 18.10.2026 — M0 mobil araçlar ve başlangıç testleri
+
+- Flutter 3.47.7 / Dart 3.13.5, Temurin JDK 21 ve kullanıcının açık lisans onayı kapsamındaki Android SDK 36 paketleri kuruldu. Araçlar depoya eklenmedi; bağımlılık kilidi korundu.
+- `flutter analyze`: 0 sorun. Mevcut 21 test dosyasındaki 229 test başarılı. Bu sonuç cihaz veya iOS build kabulü değildir.
+- Android Gradle bellek sınırı 8 GB bilgisayar için 2 GB heap / 1 GB metaspace ve iki worker olarak düzenlendi. SDK indirme ayarı kapatıldı, ancak NDK 28.2'nin otomatik kurulduğu sonradan doğrulandı; ayarın NDK için güvence olmadığı ve onay kapsamından sapma kullanıcıya bildirildi. Ayrıntı ortam kaydında.
+- Ayrıntılı sonuç ve açık maddeler: `docs/MOBILE_ENVIRONMENT.md`. Android debug derlemesi ve cihaz açılışı ile Mac/Xcode doğrulaması tamamlanmadan M0 kapatılmaz. Web Aşama 9 canlı kabulü açık kalır.
+- Android debug denemesi JNI için CMake 3.22.1 eksikliğiyle durdu; APK üretilmedi. NDK/CMake için ek kapsam ve lisans onayı soruldu, yanıt bekleniyor.
+
 ## 18.10.2026 — Android ve iOS mobil yol haritası
 
 - Kullanıcı mobil çalışmaya önce yol haritası hazırlayarak başlamayı açıkça istedi. Yeni talimat doğrultusunda mobil hazırlık planlandı; web Aşama 9'un canlı kabulü kapatılmadı.
