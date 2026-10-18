@@ -57,6 +57,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
    * değil.
    */
   const deliberateLogout = useRef(false);
+  // İstek sonucu yalnızca başlatıldığı oturuma yazabilir. Aynı token
+  // yeniden kullanılsa da yeni giriş/çıkış, eski yanıtları geçersiz kılar.
+  const sessionVersion = useRef(0);
+  const authAttempt = useRef(0);
+  const refreshVersion = useRef(0);
 
   /**
    * Token düştüğünde oturum da düşer.
@@ -73,7 +78,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
    * (gerçek tarayıcıda doğrulandı).
    */
   useEffect(() => {
-    return tokenStorage.subscribe((token) => {
+    const unsubscribe = tokenStorage.subscribe((token) => {
+      sessionVersion.current += 1;
       if (token !== null) return;
 
       setUser(null);
@@ -82,28 +88,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!deliberateLogout.current) {
         setSessionExpired(true);
       }
+      deliberateLogout.current = false;
     });
+    return () => {
+      sessionVersion.current += 1;
+      authAttempt.current += 1;
+      unsubscribe();
+    };
   }, []);
 
   /** Açılışta: token varsa kim olduğumuzu backend'e soralım. */
   useEffect(() => {
     let cancelled = false;
+    const version = sessionVersion.current;
+    const token = tokenStorage.get();
 
     async function bootstrap() {
-      if (!tokenStorage.get()) {
+      if (!token) {
         setStatus('unauthenticated');
         return;
       }
 
       try {
         const me = await endpoints.auth.me(api);
-        if (cancelled) return;
+        if (cancelled || version !== sessionVersion.current || tokenStorage.get() !== token) return;
         setUser(me);
         setStatus('authenticated');
       } catch {
         // 401 ise token zaten temizlendi; diğer hatalarda da oturum
         // açık sayılmaz — fail closed.
-        if (cancelled) return;
+        if (cancelled || version !== sessionVersion.current || tokenStorage.get() !== token) return;
         tokenStorage.clear();
       }
     }
@@ -116,7 +130,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
+    const attempt = ++authAttempt.current;
     const result = await endpoints.auth.login(api, email, password);
+    if (attempt !== authAttempt.current) return;
+    deliberateLogout.current = false;
 
     // Token yalnızca burada saklanır; başka hiçbir yer storage'a yazmaz.
     tokenStorage.set(result.token);
@@ -128,7 +145,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const register = useCallback(
     async (name: string, email: string, password: string, companyName: string) => {
+      const attempt = ++authAttempt.current;
       const result = await endpoints.auth.register(api, name, email, password, companyName);
+      if (attempt !== authAttempt.current) return;
+      deliberateLogout.current = false;
 
       // login'deki AYNI tek nokta: token yalnızca burada saklanır.
       tokenStorage.set(result.token);
@@ -140,6 +160,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const logout = useCallback(async () => {
+    const version = ++sessionVersion.current;
+    authAttempt.current += 1;
+    const token = tokenStorage.get();
     // Bayrak İSTEKTEN ÖNCE kalkar: logout ucunun kendisi 401 dönerse
     // (token sunucuda çoktan geçersizse) bu yine de kullanıcının istediği
     // bir çıkıştır ve "oturumunuz sona erdi" uyarısı gösterilmemelidir.
@@ -151,13 +174,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Sunucuya ulaşılamasa bile yerel oturum kapatılır: kullanıcı
       // "çıkış yaptım" dediyse istemcide token kalmamalı.
     } finally {
-      tokenStorage.clear();
-      deliberateLogout.current = false;
+      if (version === sessionVersion.current && tokenStorage.get() === token) {
+        tokenStorage.clear();
+        deliberateLogout.current = false;
+      }
     }
   }, []);
 
   const refreshUser = useCallback(async () => {
+    const version = sessionVersion.current;
+    const refresh = ++refreshVersion.current;
+    const token = tokenStorage.get();
+    if (!token) return;
     const me = await endpoints.auth.me(api);
+    if (version !== sessionVersion.current || tokenStorage.get() !== token || refresh !== refreshVersion.current) return;
     setUser(me);
   }, []);
 

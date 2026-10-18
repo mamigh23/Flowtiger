@@ -722,6 +722,18 @@ Bu nedenle lansmana kadar gereksiz büyük refactor, yeni dependency ve mimari d
 
 # 11. GÜNCEL CHECKPOINT
 
+## 18.10.2026 — Web kapanış kontrolleri / AUTH-01, FIN-02, DOC-01
+
+- Yeni web özelliği eklenmedi. AuthContext'te gecikmiş bootstrap/refresh yanıtları oturum sürümü ve tokenla eşleştirilir. Son başlatılan refresh kazanır; eski yanıt çıkıştan sonra kullanıcıyı geri yazamaz.
+- Giriş/kayıt girişimleri ayrı sıra numarası taşır. Eski logout yeni başarılı girişin tokenını temizleyemez; başarısız yeni giriş de devam eden çıkışı iptal edemez. Provider kapanınca eski giriş token yazamaz. Token yalnızca bellekte kalır.
+- 12 yeni kontrollü yanıt sırası testi: bootstrap başarı/500/401, yeni giriş, logout, refresh sırası, provider kapanışı, gecikmiş kayıt ve başarısız giriş/çıkış çakışmaları.
+- FIN-02: tek PHPUnit sürecinin yönettiği bağımsız PHP işçisiyle iki gerçek PostgreSQL bağlantısı kullanıldı. Finans kaydı/ödeme için update–void ve void–void olmak üzere dört yarışta `pg_blocking_pids` ile gerçek kilit beklemesi ölçüldü; ilk iptal, tüm kayıt değerleri ve yalnızca bir yeni audit korundu.
+- Yarış fixture'ları commit edilmiş olmalı assertion'ı eklendi. Ana test bariyerine ek olarak işçi, ilk sorgudan önce `testing` / `pgsql` / `flowtiger_test` doğrular. Aynı DB'de ikinci PHPUnit paketi çalıştırılmaz. Finans üretim kodu ve migration değişmedi.
+- Tam kapı: 51 dosyada 855 web testi, typecheck, normal build, 14 yayın kontrolü; tek süreçte ayrı PostgreSQL üzerinde 832 backend testi / 3.129 assertion; eklenen iki PHP dosyasında Pint ve diff kontrolü geçti.
+- İlk paralel web koşusunda zaman aşımları görüldü; süreler artırılmadan tek worker ile tam paket geçti. İlk tam backend koşusunda bir işçi 30s zaman aşımına takıldı; aşama tanısı/commit fixture kontrolü eklendi, aynı süre sınırında sonraki tam paket geçti. Başarısız/yarım koşular kabul kanıtı sayılmadı.
+- Backend/web README güncel ürün fazına ve ana checkpoint'e bağlandı; eski backend faz numaralarının tarihsel kapsamı açıklandı. DOC-01 kapatıldı.
+- Yerel kritik maddeler kapandı; sıradaki iş sunucu envanteri, gerçek HTTPS/API ile release paketi, yedek/geri dönüş, gerçek mail ve iki şirketli owner/member kabulü. Canlı yayın henüz yapılmadı; Aşama 9 açık. Mobil, Finance V2, AI veya abonelik aşaması başlatılmadı.
+
 ## 18.10.2026 — HTTP-01 / farklı origin'de 429 bekleme başlığı
 
 - Web istemcisi `Retry-After` okuyor fakat CORS bu yanıt başlığını açmıyordu. Yeni regresyon eksik `Access-Control-Expose-Headers` başlığı nedeniyle önce başarısız oldu.

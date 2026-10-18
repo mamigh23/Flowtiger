@@ -2,7 +2,7 @@
 
 Çok kiracılı (multi-tenant) SaaS backend'i. Laravel 13 · PHP 8.3+ · PostgreSQL 17 · Sanctum.
 
-Faz 0–10 tamamlandı; backend çekirdeği **foundation freeze** durumundadır. Web ve Flutter istemcileri bu API üzerine kurulacaktır.
+Backend foundation çalışmaları tamamlandı; mevcut web ve Flutter temeli bu API'yi kullanır. Ürünün güncel aşaması **Aşama 9 — Web Release Stabilization**: canlı yayın kabulü tamamlanmadı. Bu dosyadaki eski faz numaraları backend foundation tarihçesidir; güncel durum ve sıra [ana playbook](../FLOWTIGER_PROJECT_PLAYBOOK.md#11-güncel-checkpoint), [yol haritası](../docs/ROADMAP.md) ve [web yayın adımlarında](../docs/WEB_RELEASE.md) izlenir.
 
 ---
 
@@ -60,6 +60,8 @@ php artisan test
 ```
 
 Test suite'i yalnızca `flowtiger_test` veritabanında çalışır. Bu bir kolaylık değil **güvenlik bariyeridir**: `RefreshDatabase` yıkıcıdır ve yanlış yapılandırılmış bir `.env`, testleri geliştirme veya production veritabanına yöneltebilirdi. `tests/TestCase.php` başka bir veritabanı görürse tek bir test bile çalıştırmaz.
+
+Aynı test veritabanında iki PHPUnit paketi eşzamanlı çalıştırılmaz. Finans yarış testleri tek PHPUnit sürecinin yönettiği bağımsız bir PHP işçisiyle ikinci PostgreSQL bağlantısını açar; işçi de yalnızca `testing` / `flowtiger_test` ortamını kabul eder. Testler canlı sunucuda çalıştırılmaz.
 
 SQLite'a geçmeyin: `lockForUpdate()` SQLite'ta sessizce hiçbir şey yapmaz ve eşzamanlılık korumaları test edilemez hale gelir.
 

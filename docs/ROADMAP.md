@@ -28,15 +28,15 @@ Takvim, sunucunun açılma ve kabul sonuçları bilinmeden tarih taahhüdüne ç
 
 ## 2. Kanıt ve doğrulama durumu
 
-Son çalıştırılmış kontroller: HTTP-01 sonrası backend ve UX-01 sonrası web 18.10.2026.
+Son çalıştırılmış kontroller: FIN-02 sonrası backend ve AUTH-01 sonrası web 18.10.2026.
 
 | Kapı | Sonuç | Kanıtın sınırı |
 |---|---|---|
-| Backend tam paket | 828 test, 3.101 assertion geçti | Ayrı `flowtiger_test`, tek süreç; canlı doğrulama değil |
-| Web regresyon | 50 dosya, 843 test geçti | Taklit HTTP yanıtları gerçek sunucunun yerine geçmez |
+| Backend tam paket | 832 test, 3.129 assertion geçti | Ayrı `flowtiger_test`, tek PHPUnit süreci; yarış işçisi ikinci bağlantı açar. Canlı doğrulama değil |
+| Web regresyon | 51 dosya, 855 test geçti | Tek worker, mevcut zaman aşımı sınırları; gerçek sunucunun yerine geçmez |
 | Yayın adresi kontrolü | 14 test geçti | DNS/TLS/erişilebilirlik kontrolü yapmaz |
 | TypeScript, normal build | Geçti | Gerçek API ile yayın paketi henüz üretilmedi |
-| Pint | HTTP-01'de değişen iki PHP dosyası geçti | Tüm deponun stil kontrolü olarak yorumlanmaz |
+| Pint | FIN-02'de eklenen iki PHP test dosyası geçti | Tüm deponun stil kontrolü olarak yorumlanmaz |
 | `git diff --check` | Geçti | İşlevsellik veya canlı çalışma kanıtı değil |
 | Gerçek browser/API turu | Bekliyor | İzole test şirketleriyle çalıştırılmalı |
 | Canlı yayın/geri dönüş | Bekliyor | Sunucu envanteri ve yedek gerekli |
@@ -81,12 +81,12 @@ regresyon veya gerçek kullanım kanıtı olmadan kesin hata olarak kapatılmaz.
 | REL-04 | P0 | Yayın yedeği/geri dönüş kanıtı yok | Yedek ve geri yükleme kontrolü, önceki uygulama paketinin korunması |
 | REL-05 | P0 | Gerçek API kökü bilinmiyor | Doğru origin ile `build:release`; localhost paketi yüklenmemesi |
 | FIN-01 | Tamamlandı | Eski model iptal durumunu atlayabiliyordu | Kilit altında güncel okuma; dört regresyon geçti, `a6cd7b3` |
-| FIN-02 | P1 | Gerçek paralel bağlantı testi yok | Ayrı test ortamında update/void ve void/void yarışları; tek ilk iptal/audit |
+| FIN-02 | Yerel doğrulama tamamlandı | İki gerçek PostgreSQL bağlantısıyla dört update/void ve void/void yarışı geçti | İkinci bağlantının satır kilidinde beklediği ölçüldü; ilk iptal/değerler ve tek audit korundu. Canlı kabul ayrıca yapılacak |
 | UX-01 | Yerel düzeltme tamamlandı | PaymentForm müşteri/hedef seçenekleri istek üzerine sayfalanıyor | 101. müşteri/hedef seçilip doğru kimlikle gönderildi; ek sayfa hatasında seçim ve mevcut dağıtımlar korunur. Gerçek sunucu kabulünde tekrar doğrulanacak |
-| AUTH-01 | P1 inceleme | API 401 yarışı düzeltildi; AuthContext bootstrap/refresh/logout ayrı async yollar | Çıkış-yeni giriş-gecikmiş başarı/hata sıraları için kullanıcı/token tutarlılığı testleri |
+| AUTH-01 | Yerel düzeltme tamamlandı | Bootstrap/refresh/auth girişimleri oturum ve istek sürümleriyle korunur | 12 gecikmiş yanıt regresyonu geçti; eski logout yeni tokenı silemez, eski refresh kullanıcıyı geri getiremez |
 | HTTP-01 | Yerel düzeltme tamamlandı | CORS yalnızca `Retry-After` yanıt başlığını izinli frontend'e açıyor | Gerçek throttle 429 + izinli/izinsiz origin regresyonları geçti; canlı farklı origin ve proxy üzerinden tarayıcı kabulü bekliyor |
 | OPS-01 | P1 | CI var; sunucu deployment/izleme bağlantısı kayıtlı değil | Commit→build→yayın izlenebilirliği, sağlık/log kontrolü |
-| DOC-01 | P1 | Eski README/faz tarihleri güncel ürünle eşleşmiyor | Tarihsel kaydı koruyarak güncel durum ve engelleri tek checkpoint'e bağla |
+| DOC-01 | Tamamlandı | Backend/web README güncel Aşama 9 ve ana checkpoint'e bağlandı | Tarihsel backend fazları ürün fazlarından ayrıldı; canlı yayın kabulü yapılmış gibi gösterilmiyor |
 | SEC-01 | P2 | Token yalnızca bellekte, yenilemede giriş gerekiyor | Mevcut davranışı kullanıcıya açıklığa kavuştur; kalıcılığı localStorage ile çözme |
 
 UX-01 çözümünde ilk tercih mevcut sayfalı API'yle daha fazla seçenek yüklemek;
@@ -228,6 +228,10 @@ gider kaydı ve PDF ekranı var diye yapılmaz.
 - Eski 05.09 ve 01.10 hedefleri tarihsel kayıttır; gerçekleşmiş sayılmaz.
 
 ## 8. Bir sonraki somut adım
+
+Yerelde AUTH-01, FIN-02, UX-01, HTTP-01 ve web/backend belge güncelliği
+kontrolleri tamamlandı. Mevcut web kapsamına yeni özellik eklenmeden canlı
+yayın kabulüne ilerlenir. Yerel testler gerçek sunucu kabulünü kapatmaz.
 
 Sunucu açılınca proje klasöründen `pwd`, `git status -sb`,
 `git branch --show-current`, `git log -1 --oneline` çıktılarıyla yayın
