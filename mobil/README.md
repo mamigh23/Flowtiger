@@ -2,21 +2,27 @@
 
 Android + iOS, tek Dart kod tabanı. Backend: `../backend` (Laravel + Sanctum).
 
-## ⚠ İlk kurulum — platform klasörleri
+## Güncel durum ve yol haritası
 
-Bu depo `lib/`, `test/` ve yapılandırmayı içerir; `android/` ve `ios/`
-klasörleri **yoktur**. Onlar makinenizdeki Flutter SDK'sı tarafından
-üretilir:
+18.10.2026: kullanıcı Android ve iOS çalışmasını önce planla başlatmayı
+istedi. [Mobil yol haritası](../docs/MOBILE_ROADMAP.md) mevcut envanteri,
+M0–M7 sırasını ve iki platformun kabul kapılarını içerir. Web'in canlı
+yayın kabulü ayrı ve açıktır; mobil temel mağazaya hazır kabul edilmez.
+
+Depoda `android/` ve `ios/` klasörleri **mevcuttur**. Yeniden platform
+üretmek yerine mevcut projeler korunur. İlk adım SDK/cihaz envanteri ve
+mevcut testlerin başlangıç sonucudur:
 
 ```bash
 cd mobil
-flutter create --platforms=android,ios --org com.flowtiger --project-name flowtiger .
 flutter pub get
+flutter analyze
+flutter test
 ```
 
-`flutter create` var olan dosyaların üzerine yazmaz; yalnızca eksik
-platform iskeletini ekler. Yine de komuttan sonra `git status` ile
-`lib/main.dart` ve `pubspec.yaml`'ın değişmediğini doğrulayın.
+Android release şu anda debug imzasını kullanır; üretime hazır değildir.
+iOS için macOS/Xcode ve signing doğrulaması gerekir. Aşağıdaki production
+API adresi yalnızca örnektir; gerçek sunucu adresi doğrulanmalıdır.
 
 ## Çalıştırma
 

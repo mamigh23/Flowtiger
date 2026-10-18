@@ -5,7 +5,11 @@
 geçmişi ve ana playbook checkpoint'lerinde izlenir.
 Bu belge ana playbook'un operasyonel tamamlayıcısıdır; güvenlik kurallarını
 ve faz sırasını değiştirmez. Öncelik mevcut web sürümünün yayınıdır.
-Sonraki fazlar burada planlanır; başlatılmaları ayrıca kararlaştırılır.
+18.10.2026 yeni kullanıcı talimatı: Android ve iOS için mobil planlama
+yetkilendirildi. [Mobil yol haritası](MOBILE_ROADMAP.md) M0–M7 sırasını
+belirler; mobil hazırlık/geliştirme ilerleyebilir. Web Aşama 9 canlı kabulü
+açık kalır ve mobil üretim yayını için de önkoşuldur. Finance V2, AI ve
+abonelikler henüz başlatılmaz.
 
 ## 1. Yönetim özeti
 
@@ -194,12 +198,12 @@ başarılı. Kalan P1'ler açıkça kaydedilip yayın etkisi değerlendirilmiş.
 Çıkış: doğrulanmış sürüm gerçek sunucuda çalışıyor. Ancak bundan sonra Aşama 9
 kapatılır. Ayrıntılı operasyon adımları: [WEB_RELEASE.md](WEB_RELEASE.md).
 
-## 6. Web yayınından sonra — henüz başlatılmayacak işler
+## 6. Mobil yetkilendirmesi ve sonraki fazlar
 
 | Sıra / bağlılık | İş paketi | Teslim / kabul |
 |---|---|---|
 | Web kabulü sonrası | Kullanım ve işletim doğrulaması | Gerçek kullanıcı geri bildirimi, 5xx/429 ve sağlık takibi, geri yükleme tatbikatı; yayın engellerinin yeniden açılmaması |
-| Aşama 10, ayrıca yetki sonrası | Mobile Productization | Auth→şirket→dashboard→müşteri→görev→finans→ödeme→ekip→profil; aynı API; analyzer/test ve gerçek cihaz kabulü |
+| Aşama 10, 18.10.2026 planlama yetkisi verildi | Mobile Productization | MOBILE_ROADMAP.md M0–M7; ortak Flutter kodu, Android ve iOS için ayrı build/cihaz/mağaza kabulü |
 | Mobil kapısı | Android/iOS hazırlığı | Android release build; iOS için macOS/Xcode signing/archive; Flutter CI; mağaza yayını ayrı onay/süreç |
 | Aşama 11 | Finance V2 / raporlama | Şirket/dönem filtreli sunucu toplamları, iptal kayıt politikası, kısmi tahsilat/alacak-borç ve tutarlı KDV özeti |
 | Raporlama temeli sonrası | Fatura ve mali kimlik | Ürün/hizmet kalemleri, miktar/birim fiyat/iskonto/KDV, durum/numaralandırma, mali kimlik UI ve tahsilat ilişkisi |

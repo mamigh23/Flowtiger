@@ -722,6 +722,15 @@ Bu nedenle lansmana kadar gereksiz büyük refactor, yeni dependency ve mimari d
 
 # 11. GÜNCEL CHECKPOINT
 
+## 18.10.2026 — Android ve iOS mobil yol haritası
+
+- Kullanıcı mobil çalışmaya önce yol haritası hazırlayarak başlamayı açıkça istedi. Yeni talimat doğrultusunda mobil hazırlık planlandı; web Aşama 9'un canlı kabulü kapatılmadı.
+- `docs/MOBILE_ROADMAP.md`: mevcut Flutter envanteri, M0–M7 paketleri, Bugün odaklı gezinme, görev/finans/ödeme eksikleri, iki platformun ayrı kabul kapıları ve mağaza öncesi ihtiyaçlar kaydedildi.
+- Android/iOS klasörleri mevcut ve Git'te; mobil README'deki ters bilgi düzeltildi. Android release debug signing, iOS signing/Mac ihtiyacı ve PATH'te Flutter/adb bulunamaması envantere alındı. SDK kurulu değil veya iOS build geçti iddiası yok.
+- Apple/Google/Flutter resmi yayın kaynakları kontrol edildi. Hesap oluşturma/silme akışı ve Play dış silme talep sayfası, mali/audit verisini gelişigüzel silmeden ayrıca tasarlanacak mağaza kapısı olarak kaydedildi.
+- Bu iş belge/plan değişikliğidir; mobil uygulama kodu ve bağımlılık değişmedi, Flutter test/build çalıştırılmadı. Son web/backend test kanıtları mobil başarı kanıtı sayılmaz.
+- Sonraki uygulama işi M0: araç/cihaz envanteri, SDK uyumu, mevcut analyzer/test başlangıcı ve Android debug açılışı; iOS ortamı erken doğrulanacak. Mobil üretim yayını gerçek HTTPS/API ve sunucu kabulüne bağlı.
+
 ## 18.10.2026 — Web kapanış kontrolleri / AUTH-01, FIN-02, DOC-01
 
 - Yeni web özelliği eklenmedi. AuthContext'te gecikmiş bootstrap/refresh yanıtları oturum sürümü ve tokenla eşleştirilir. Son başlatılan refresh kazanır; eski yanıt çıkıştan sonra kullanıcıyı geri yazamaz.
@@ -983,13 +992,17 @@ A11Y-01 sonrası değişiklikler commit edildi ve GitHub'a pushlandı.
 
 # 12. SIRADAKİ İŞ
 
-**NEXT:** Web Release Stabilization / gerçek kullanıcı akışı.
+**NEXT (18.10.2026 kullanıcı talimatı):** Android + iOS Mobile Productization
+için `docs/MOBILE_ROADMAP.md` M0. Web Release Stabilization canlı kabulü
+ayrı açık iş olarak korunur.
 
-İlk görev:
+Web için açık kabul işi:
 
 > Web uygulamasını gerçek kullanıcı gözüyle uçtan uca çalıştır; Auth → Company → Dashboard → Customer → Task → Payment → Finance → Team → Invitation → Audit → Profile akışlarını kontrol et. Bulunan ilk gerçek blocker üzerinde çalış. Yeni feature'a geçmeden önce blocker'ı kapat ve test gate'i yeniden çalıştır.
 
-Bu iş tamamlanmadan Mobile Productization'a tam geçiş yapılmaz.
+Önceki sıra web kabulünden sonra mobile tam geçişti. Kullanıcının yeni
+talimatıyla mobil hazırlık ve geliştirme ilerleyebilir; web/canlı API
+kabulü yapılmadan mobil üretim yayını tamamlandı sayılmaz.
 
 ---
 
