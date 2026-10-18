@@ -5,7 +5,8 @@ hazırlanarak başlatmayı istedi. Bu belge uygulama geliştirme sırasıdır;
 mağazaya gönderim veya tamamlanmış mobil sürüm beyanı değildir.
 
 M0 uygulama kanıtı: [Mobil geliştirme ortamı](MOBILE_ENVIRONMENT.md).
-Flutter analizi temiz, mevcut 229 test başarılı; cihaz ve iOS kabulü açıktır.
+Flutter analizi temiz, mevcut 229 test ve Android debug APK derlemesi
+başarılı; cihaz açılışı ve iOS kabulü açıktır.
 
 ## 1. Hedef ve kapsam
 

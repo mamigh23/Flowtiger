@@ -722,6 +722,12 @@ Bu nedenle lansmana kadar gereksiz büyük refactor, yeni dependency ve mimari d
 
 # 11. GÜNCEL CHECKPOINT
 
+## 18.10.2026 — M0 Android debug paketi üretildi
+
+- Kullanıcı NDK 28.2'nin korunmasını, CMake 3.22.1 kurulumunu ve yalnızca bu paketlerin gerektirdiği SDK lisans kabulünü açıkça onayladı. CMake kuruldu.
+- `flutter build apk --debug --no-pub` başarılı. `com.flowtiger.flowtiger` 0.1.0 (1), target SDK 36; üç Android mimarisi mevcut. `apksigner verify` başarılı, imza Android Debug. Yerel APK yolu ve SHA256 `docs/MOBILE_ENVIRONMENT.md` içinde; paket Git'e eklenmedi.
+- Önceki 229 mobil test ve temiz analyzer sonucu korundu; bu adımda Dart kodu/bağımlılıklar değişmedi. CMake derleme engeli kapandı; Android cihaz açılışı/API turu ve Mac/Xcode doğrulaması henüz yok. M0 ve web canlı kabulü açık.
+
 ## 18.10.2026 — M0 mobil araçlar ve başlangıç testleri
 
 - Flutter 3.47.7 / Dart 3.13.5, Temurin JDK 21 ve kullanıcının açık lisans onayı kapsamındaki Android SDK 36 paketleri kuruldu. Araçlar depoya eklenmedi; bağımlılık kilidi korundu.
